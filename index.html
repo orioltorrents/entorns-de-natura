@@ -3,11 +3,208 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entorns de Natura </title>
+  <title>Entorns de Natura | Recursos per rol</title>
   <meta name="description" content="Web informativa del projecte Entorns de Natura de 4t d'ESO: backend, recursos curriculars i dades publicables.">
-
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Navegació principal">
+      <a class="brand" href="#inici">
+        <span class="brand-mark" aria-hidden="true">EDN</span>
+        <span>Entorns de Natura</span>
+      </a>
+      <div class="nav-links">
+        <a href="#recursos">Recursos</a>
+        <a href="#model">Model de permisos</a>
+      </div>
+    </nav>
+  </header>
 
+  <main id="inici">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">4t ESO · Supabase · visibilitat per rol</p>
+        <h1>Una web que mostra cada recurs a qui toca.</h1>
+        <p>
+          El projecte pot tenir contingut públic, materials per a l'alumnat, eines docents i apartats d'administració. La base de dades ja prepara aquest filtre amb rols i Row Level Security.
+        </p>
+      </div>
+
+      <aside class="role-panel" aria-labelledby="role-title">
+        <h2 id="role-title">Vista actual</h2>
+        <div class="role-options" role="group" aria-label="Selecciona un rol per previsualitzar la web">
+          <button class="role-button is-active" type="button" data-role="guest">Públic</button>
+          <button class="role-button" type="button" data-role="student">Alumne</button>
+          <button class="role-button" type="button" data-role="teacher">Professor</button>
+          <button class="role-button" type="button" data-role="admin">Admin</button>
+        </div>
+        <p id="role-description" class="role-description"></p>
+      </aside>
+    </section>
+
+    <section id="recursos" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">Recursos filtrats</p>
+        <h2>Projectes i materials visibles</h2>
+        <p>La maqueta aplica la mateixa jerarquia que tens a Supabase: públic &lt; alumne &lt; professor &lt; admin.</p>
+      </div>
+
+      <div id="project-list" class="project-list" aria-live="polite"></div>
+    </section>
+
+    <section id="model" class="section model-section">
+      <div class="section-heading">
+        <p class="eyebrow">Model de permisos</p>
+        <h2>La dada decideix la visibilitat</h2>
+        <p>
+          Cada recurs té un camp <code>visibility</code>. Si un recurs és <code>student</code>, també el veu el professorat i admin; si és <code>teacher</code>, només professorat i admin.
+        </p>
+      </div>
+
+      <div class="permission-grid">
+        <article>
+          <span class="pill">guest</span>
+          <h3>Públic general</h3>
+          <p>Veu presentacions, descripcions i materials publicables sense iniciar sessió.</p>
+        </article>
+        <article>
+          <span class="pill">student</span>
+          <h3>Alumnat</h3>
+          <p>Accedeix als dossiers, tasques, instruccions de camp i documents de treball.</p>
+        </article>
+        <article>
+          <span class="pill">teacher</span>
+          <h3>Professorat</h3>
+          <p>Recupera rúbriques, guies docents, solucionaris i criteris d'avaluació interns.</p>
+        </article>
+        <article>
+          <span class="pill">admin</span>
+          <h3>Administració</h3>
+          <p>Pot gestionar projectes, recursos i perfils des de Supabase o una futura zona privada.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const roleRank = {
+      guest: 0,
+      student: 1,
+      teacher: 2,
+      admin: 3
+    };
+
+    const roleDescriptions = {
+      guest: "Mostrant només continguts oberts al públic general.",
+      student: "Mostrant continguts públics i materials pensats per a l'alumnat.",
+      teacher: "Mostrant continguts públics, d'alumnat i eines internes de professorat.",
+      admin: "Mostrant tot el contingut publicat i preparat per a gestió."
+    };
+
+    const projects = [
+      {
+        slug: "projecte-rius",
+        title: "Projecte Rius",
+        trimester: 1,
+        description: "Diagnosi ambiental d'un tram fluvial proper.",
+        resources: [
+          {
+            title: "Presentació del Projecte Rius",
+            type: "text",
+            visibility: "guest",
+            description: "Introducció pública al Projecte Rius."
+          },
+          {
+            title: "Dossier de camp Projecte Rius",
+            type: "document",
+            visibility: "student",
+            description: "Material de treball per preparar i registrar la sortida."
+          },
+          {
+            title: "Rúbrica docent Projecte Rius",
+            type: "rubrica",
+            visibility: "teacher",
+            description: "Instrument d'avaluació per al professorat."
+          }
+        ]
+      },
+      {
+        slug: "eia",
+        title: "Estudi d'Impacte Ambiental",
+        trimester: 2,
+        description: "Estudi ambiental simplificat sobre una actuació humana.",
+        resources: []
+      },
+      {
+        slug: "liquencity",
+        title: "LiquenCity",
+        trimester: 3,
+        description: "Projecte de líquens com a bioindicadors de qualitat de l'aire.",
+        resources: []
+      },
+      {
+        slug: "vespa-velutina",
+        title: "Vespa velutina",
+        trimester: 3,
+        description: "Estudi d'una espècie invasora i el seu impacte ambiental.",
+        resources: []
+      },
+      {
+        slug: "orenetes",
+        title: "Projecte Orenetes",
+        trimester: 3,
+        description: "Cens de nius i estudi de biodiversitat urbana.",
+        resources: []
+      }
+    ];
+
+    const projectList = document.querySelector("#project-list");
+    const roleDescription = document.querySelector("#role-description");
+    const roleButtons = document.querySelectorAll(".role-button");
+
+    function canSee(resource, role) {
+      return roleRank[role] >= roleRank[resource.visibility];
+    }
+
+    function render(role) {
+      roleDescription.textContent = roleDescriptions[role];
+
+      projectList.innerHTML = projects.map((project) => {
+        const visibleResources = project.resources.filter((resource) => canSee(resource, role));
+        const resourcesHtml = visibleResources.length
+          ? visibleResources.map((resource) => `
+              <li>
+                <span class="resource-type">${resource.type}</span>
+                <strong>${resource.title}</strong>
+                <p>${resource.description}</p>
+                <span class="visibility">visible des de: ${resource.visibility}</span>
+              </li>
+            `).join("")
+          : `<li class="empty-resource">Encara no hi ha recursos publicats per a aquest rol.</li>`;
+
+        return `
+          <article class="project-card">
+            <div>
+              <span class="trimester">Trimestre ${project.trimester}</span>
+              <h3>${project.title}</h3>
+              <p>${project.description}</p>
+            </div>
+            <ul class="resource-list">${resourcesHtml}</ul>
+          </article>
+        `;
+      }).join("");
+    }
+
+    roleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        roleButtons.forEach((item) => item.classList.remove("is-active"));
+        button.classList.add("is-active");
+        render(button.dataset.role);
+      });
+    });
+
+    render("guest");
+  </script>
 </body>
 </html>

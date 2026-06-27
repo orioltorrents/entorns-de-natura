@@ -135,6 +135,12 @@ for select
 using (
   status = 'published'
   and public.role_rank(public.current_app_role()) >= public.role_rank(visibility)
+  and exists (
+    select 1
+    from public.projects p
+    where p.id = resources.project_id
+    and p.visible = true
+  )
 );
 
 create policy "Admins can manage resources"
