@@ -5,14 +5,16 @@ require_once dirname(__DIR__) . '/app/Helpers/lang.php';
 require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
+require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
 require_once dirname(__DIR__) . '/app/Controllers/TeacherController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 
+$authService = new AuthService();
 $controller = new PublicController();
-$authController = new AuthController();
+$authController = new AuthController($authService);
 $studentController = new StudentController();
 $teacherController = new TeacherController();
 $adminController = new AdminController();
@@ -43,15 +45,22 @@ switch ($requestUri) {
         echo $authController->login();
         break;
 
+    case '/logout':
+        $authController->logout();
+        break;
+
     case '/alumne':
+        $authService->requireRole('student');
         echo $studentController->dashboard();
         break;
 
     case '/professor':
+        $authService->requireRole('teacher');
         echo $teacherController->dashboard();
         break;
 
     case '/admin':
+        $authService->requireRole('admin');
         echo $adminController->dashboard();
         break;
 
