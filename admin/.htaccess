@@ -1,0 +1,5 @@
+# Només es pot accedir si està logat
+AuthType Basic
+AuthName "Accés restringit"
+AuthUserFile /ruta/completa/.htpasswd
+Require valid-user
