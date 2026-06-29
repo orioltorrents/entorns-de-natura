@@ -7,6 +7,7 @@ require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
+require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
@@ -15,7 +16,8 @@ require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 
 $authService = new AuthService();
 $projectAssignmentService = new ProjectAssignmentService();
-$controller = new PublicController();
+$projectService = new ProjectService();
+$controller = new PublicController($projectService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);
