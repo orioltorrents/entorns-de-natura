@@ -11,8 +11,7 @@ class AuthController
     public function login(): string
     {
         if ($this->authService->check()) {
-            header('Location: ' . url($this->authService->redirectPathForCurrentUser()));
-            exit;
+            $this->redirectToDashboard();
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -46,8 +45,7 @@ class AuthController
         }
 
         if ($this->authService->attemptLogin($email, $password)) {
-            header('Location: ' . url($this->authService->redirectPathForCurrentUser()));
-            exit;
+            $this->redirectToDashboard();
         }
 
         return $this->loginView($email, 'Email o contrasenya incorrectes.');
@@ -61,5 +59,13 @@ class AuthController
             'error' => $error,
             'email' => $email,
         ]);
+    }
+
+    public function redirectToDashboard(): void
+    {
+        $path = $this->authService->redirectPathForCurrentUser();
+
+        header('Location: ' . url($path !== '' ? $path : 'login'));
+        exit;
     }
 }

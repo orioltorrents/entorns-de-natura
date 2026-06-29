@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
+require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
@@ -13,10 +14,11 @@ require_once dirname(__DIR__) . '/app/Controllers/TeacherController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 
 $authService = new AuthService();
+$projectAssignmentService = new ProjectAssignmentService();
 $controller = new PublicController();
 $authController = new AuthController($authService);
-$studentController = new StudentController();
-$teacherController = new TeacherController();
+$studentController = new StudentController($authService, $projectAssignmentService);
+$teacherController = new TeacherController($authService, $projectAssignmentService);
 $adminController = new AdminController();
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
@@ -47,6 +49,15 @@ switch ($requestUri) {
 
     case '/logout':
         $authController->logout();
+        break;
+
+    case '/dashboard':
+        if (!$authService->check()) {
+            header('Location: ' . url('login'));
+            exit;
+        }
+
+        $authController->redirectToDashboard();
         break;
 
     case '/alumne':
