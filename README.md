@@ -1,17 +1,17 @@
 # Entorns de Natura
 
-Entorns de Natura és una aplicació web PHP modular pensada per a projectes educatius de 4ESO, amb una estructura preparada per a una web pública, un espai per a alumnat, un espai per a professorat, una zona d’administració i futur suport per a sincronització amb Google Docs i Google Sheets.
+Entorns de Natura és una aplicació web PHP modular pensada per a projectes educatius de 4ESO. El projecte està orientat a convertir-se en una plataforma amb una web pública, un espai per a alumnat, un espai per a professorat, un panell d’administració i una base preparada per a la gestió de projectes educatius i sincronització amb Google.
 
-## Objectiu del projecte
+## Estat actual del projecte
 
-Aquest projecte pretén servir com a base per a:
+El projecte ja disposa d’una estructura base refactoritzada amb:
 
-- una web pública amb informació dels projectes educatius;
-- un espai d’alumnat amb accés personalitzat;
-- un espai de professorat amb eines de seguiment;
-- un panell d’administració per gestionar continguts i usuaris;
-- un futur sistema multilingüe en català, castellà i anglès;
-- una arquitectura preparada per créixer sense dependre de frameworks grans.
+- una arquitectura modular amb carpetes per a controladors, models, serveis i helpers;
+- una capa de vistes separada amb llenguatges de plantilla PHP;
+- una configuració centralitzada amb fitxer `.env`;
+- una entrada pública des de `public/index.php`;
+- una estructura preparada per a futurs usos amb base de dades, autenticació i multilingüisme;
+- un fitxer SQL inicial per crear taules educatives (`database/02_education_tables.sql`).
 
 ## Tecnologies utilitzades
 
@@ -49,7 +49,7 @@ entorns-de-natura/
 
 ## Requisits
 
-Per executar aquest projecte necessites:
+Per executar el projecte localment necessites:
 
 - XAMPP o un servidor local amb Apache i MySQL/MariaDB
 - PHP 8 o superior
@@ -57,7 +57,7 @@ Per executar aquest projecte necessites:
 
 ## Instal·lació local
 
-1. Clona o copia el projecte a la carpeta del servidor local, per exemple:
+1. Col·loca el projecte dins de la carpeta del servidor local, per exemple:
 
 ```text
 C:\xampp8.2\htdocs\entorns-de-natura
@@ -83,13 +83,13 @@ DB_PASS=
 
 4. Inicia Apache i MySQL des de XAMPP.
 
-5. Crea la base de dades MySQL/MariaDB manualment, per exemple:
+5. Crea la base de dades MySQL/MariaDB si encara no existeix:
 
 ```sql
 CREATE DATABASE entorns_de_natura;
 ```
 
-6. Executa l’esquema SQL que hi ha a `database/schema.sql` si vols començar a treballar amb una estructura inicial.
+6. Si vols, executa els fitxers SQL de la carpeta `database/` per crear l’estructura inicial.
 
 ## Punt d’entrada
 
@@ -99,59 +99,56 @@ La web pública es serveix des de:
 public/index.php
 ```
 
-Per accedir localment:
+I es pot accedir localment a:
 
 ```text
 http://localhost/entorns-de-natura/public/
 ```
 
-## Funcionalitats actuals
+## Fitxers SQL disponibles
 
-Actualment el projecte ja inclou una base modular amb:
+Actualment hi ha dos fitxers SQL preparats per a la base de dades:
+
+- `database/schema.sql`: esquema base inicial
+- `database/02_education_tables.sql`: taules educatives per a idiomes, cursos, grups, membres, professors, projectes i configuració
+
+## Funcionalitats ja presents
+
+El projecte ja inclou una base sòlida amb:
 
 - pàgina d’inici pública;
 - pàgina de projectes;
 - pàgina de login;
 - estructura preparada per a alumnat, professorat i administració;
-- fitxers de traducció per a català, castellà i anglès;
+- traduccions per a català, castellà i anglès;
 - configuració d’entorn amb `.env`;
-- estructura de carpetes preparada per escalar.
+- estructura modular preparada per escalar.
 
 ## Funcionalitats pendents
 
-Les següents parts es poden desenvolupar en fases posteriors:
+Aquestes funcionalitats es poden desenvolupar en fases posteriors:
 
-- autenticació real amb usuaris i contrasenyes protegides;
-- connexió real a MySQL/MariaDB amb PDO;
+- autenticació real amb usuaris i contrasenyes segures;
+- connexió real a MySQL/MariaDB amb PDO completament integrada;
 - gestió d’usuaris i rols;
-- gestió de grups de classe;
+- gestió de grups de classe i membres;
 - gestió de projectes educatius;
 - rúbriques, notes i dades d’aula;
 - sincronització amb Google Docs i Google Sheets;
-- millora del disseny i la UX.
-
-## Base de dades
-
-La base de dades encara no està creada. Quan la creïs, pots fer servir el fitxer:
-
-```text
-database/schema.sql
-```
-
-com a punt de partida per a l’esquema inicial.
+- millora del disseny i de la UX.
 
 ## Recomanacions de desenvolupament
 
-- Mantingueu la lògica de negoci dins de `app/`.
-- Mantingueu les vistes dins de `resources/views/`.
-- No escriviu credencials directament al codi.
+- Mantingues la lògica de negoci dins de `app/`.
+- Mantingues les vistes dins de `resources/views/`.
+- No escriguis credencials directament al codi.
 - Feu servir sempre `.env` per a valors sensibles.
-- Mantenir els controladors senzills i la lògica en serveis.
+- Mantingues els controladors simples i separa la lògica en serveis.
 
 ## Contribució
 
-Aquest projecte està pensat per créixer de manera progressiva. Si vols col·laborar, el millor és seguir l’estructura actual i mantenir el codi ordenat, modular i fàcil d’entendre.
+Aquest projecte està pensat per créixer de manera progressiva. La idea és mantenir el codi ordenat, modular i fàcil d’entendre mentre s’afegeixen noves funcionalitats.
 
 ## Autor
 
-Projecte desenvolupat per a Entorns de Natura.
+Projecte desenvolupat per Oriol Torrents Cabestany i Oriol Rovira Bertran.
