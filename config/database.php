@@ -10,10 +10,14 @@ if (!file_exists($envPath)) {
 
 $env = parse_ini_file($envPath);
 
+if ($env === false) {
+    throw new RuntimeException('No s’ha pogut llegir el fitxer .env');
+}
+
 $host = $env['DB_HOST'] ?? 'localhost';
 $dbname = $env['DB_NAME'] ?? '';
 $user = $env['DB_USER'] ?? 'root';
-$password = $env['DB_PASSWORD'] ?? '';
+$password = $env['DB_PASSWORD'] ?? $env['DB_PASS'] ?? '';
 $charset = $env['DB_CHARSET'] ?? 'utf8mb4';
 
 $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";
