@@ -1,175 +1,192 @@
 # Entorns de Natura
 
-Web del projecte **Entorns de Natura de 4t d'ESO**.
-
-L'objectiu és construir un espai públic i ordenat per consultar projectes, recursos, materials curriculars i eines docents, amb diferents nivells de visibilitat segons el rol de cada usuari.
-
-Web publicada a GitHub Pages:
-
-https://orioltorrents.github.io/entorns-de-natura/
-
-## Objectiu del projecte
-
-Aquest repositori vol servir com a base per a una web que pugui ser útil per a:
-
-- alumnat que cursa Entorns de Natura
-- professorat que imparteix la matèria
-- professorat que vol recuperar eines, rúbriques o materials
-- públic general interessat en el projecte
-
-La idea de fons és separar bé:
-
-```text
-Frontend estàtic = GitHub Pages
-Backend i dades = Supabase
-Permisos = Row Level Security
-```
+**Entorns de Natura** es una aplicacio web educativa per a projectes de 4t d'ESO. El projecte ha evolucionat des d'una primera maqueta estatica cap a una aplicacio PHP modular amb web publica, espais per a alumnat i professorat, panell d'administracio i base de dades MySQL/MariaDB.
 
 ## Estat actual
 
-El projecte ara mateix inclou:
+El projecte es troba en desenvolupament inicial i ja inclou:
 
-- una primera maqueta web estàtica
-- una estructura visual per mostrar projectes i recursos
-- un selector de rol per simular què veu cada tipus d'usuari
-- migracions inicials de Supabase
-- taules per a projectes, recursos i perfils
-- policies RLS per filtrar recursos segons rol
+- estructura modular amb `app/`, `config/`, `public/`, `resources/` i `database/`;
+- entrada publica des de `public/index.php`;
+- configuracio centralitzada amb `.env`;
+- connexio amb MySQL/MariaDB mitjancant PDO;
+- taules inicials d'usuaris, rols, classes, projectes i idiomes;
+- assignacions inicials de professorat, alumnat, classes i projectes;
+- vistes publiques, d'alumnat, de professorat i d'administracio;
+- base preparada per ampliar amb Google Docs, Google Sheets, rubriques i notes.
 
-Encara falta connectar el frontend amb Supabase de manera real.
+També es conserven fitxers de la primera versio estatica del projecte, com `index.html`, `css/styles.css` i les migracions de `supabase/`, com a referencia historica o punt de recuperacio.
 
-## Rols previstos
+## Tecnologies
 
-Els rols inicials són:
+- PHP
+- HTML
+- CSS
+- JavaScript
+- MySQL / MariaDB
+- PDO
+- Apache amb XAMPP
+- Arquitectura propia modular, sense frameworks grans
 
-| Rol | Ús previst |
-| --- | --- |
-| `guest` | Públic general sense iniciar sessió |
-| `student` | Alumnat |
-| `teacher` | Professorat |
-| `admin` | Gestió del projecte |
+## Entorn local
 
-La jerarquia és:
+Ruta local prevista amb XAMPP:
 
 ```text
-guest < student < teacher < admin
+C:\xampp\htdocs\entorns-de-natura
 ```
 
-Això vol dir que un recurs visible per a `student` també el poden veure `teacher` i `admin`.
+URL local:
 
-## Estructura del repositori
+```text
+http://localhost/entorns-de-natura/public/
+```
+
+Base de dades local:
+
+```text
+entorns_natura_dev
+```
+
+## Configuracio
+
+El projecte utilitza un fitxer `.env` per guardar la configuracio local. El fitxer `.env` no s'ha de publicar.
+
+Exemple:
+
+```env
+APP_NAME="Entorns de Natura"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost/entorns-de-natura/public
+
+DB_HOST=localhost
+DB_NAME=entorns_natura_dev
+DB_USER=root
+DB_PASSWORD=
+DB_CHARSET=utf8mb4
+```
+
+## Estructura principal
 
 ```text
 entorns-de-natura/
-├── assets/
-│   └── hero-entorns-natura.png
+├── app/
+│   ├── Controllers/
+│   ├── Models/
+│   ├── Services/
+│   └── Helpers/
+├── config/
+├── database/
+├── public/
+│   ├── index.php
+│   ├── .htaccess
+│   └── assets/
+├── resources/
+│   ├── lang/
+│   └── views/
 ├── css/
-│   └── styles.css
 ├── supabase/
-│   └── migrations/
-│       ├── 20260627150000_initial_schema.sql
-│       ├── 20260627151000_seed_initial_data.sql
-│       └── 20260627152000_lock_down_security_definer_functions.sql
 ├── index.html
+├── index.php
+├── composer.json
 └── README.md
 ```
 
-## Supabase
+## Rols previstos
 
-La base de dades inicial inclou:
-
-- `profiles`: perfils vinculats a Supabase Auth
-- `projects`: projectes de l'assignatura
-- `resources`: recursos associats als projectes
-
-També inclou el tipus:
-
-```sql
-public.app_role as enum ('guest', 'student', 'teacher', 'admin')
+```text
+student
+teacher
+coordinator
+admin
 ```
 
-I funcions de suport com:
+Criteri de rols:
 
-- `role_rank(role)`
-- `current_app_role()`
-- `handle_new_user()`
+```text
+admin       -> tambe pot actuar com a coordinator i teacher
+coordinator -> tambe pot actuar com a teacher
+teacher     -> professorat
+student     -> alumnat
+```
+
+## Projectes inicials
+
+- Projecte Rius
+- MAT Penedes
+- Agroparc
+- Projecte Orenetes
+- Liquencity
+- Vespa velutina
+
+## URLs previstes
+
+Web publica:
+
+```text
+/
+/ca
+/ca/projectes
+/ca/projectes/projecte-rius
+/ca/projectes/mat-penedes
+/ca/projectes/agroparc
+/ca/projectes/projecte-orenetes
+/ca/projectes/liquencity
+/ca/projectes/vespa-velutina
+```
+
+Zones privades:
+
+```text
+/login
+/logout
+/alumne
+/professor
+/admin
+```
+
+## Google Docs i Google Sheets
+
+El projecte esta pensat per sincronitzar informacio des de Google Workspace:
+
+```text
+Google Docs / Google Sheets
+        ->
+Servei PHP de sincronitzacio
+        ->
+Base de dades MySQL/MariaDB
+        ->
+Web publica / alumnat / professorat / administracio
+```
 
 ## Seguretat
 
-El projecte fa servir **Row Level Security** a Supabase.
-
-La taula `resources` filtra els recursos segons:
-
-- estat publicat
-- rol mínim necessari
-- projecte visible
-
-També hi ha una migració per tancar funcions `SECURITY DEFINER` que no han de quedar exposades públicament via RPC.
-
-Important:
-
-- la `anon key` de Supabase pot anar al frontend
-- la `service_role key` no s'ha de posar mai al frontend ni a GitHub
-- la seguretat real ha de quedar definida a les policies RLS
-
-## GitHub Pages
-
-La web es pot publicar directament amb GitHub Pages perquè és un frontend estàtic.
-
-Configuració recomanada:
-
-- Source: `Deploy from a branch`
-- Branch: `main`
-- Folder: `/root`
-
-URL pública:
-
-```text
-https://orioltorrents.github.io/entorns-de-natura/
-```
-
-Quan s'activi autenticació amb Supabase, caldrà afegir aquesta URL a:
-
-```text
-Supabase > Authentication > URL Configuration
-```
-
-Com a `Site URL` i també com a `Redirect URL`.
+- No publicar el fitxer `.env`.
+- No escriure credencials directament dins el codi.
+- Protegir les zones internes segons rol.
+- No exposar dades personals a la part publica.
+- Fer servir `password_hash()` i `password_verify()` si s'utilitzen contrasenyes propies.
+- Eliminar o protegir fitxers de prova com `public/test-db.php` quan ja no siguin necessaris.
 
 ## Full de ruta
 
-Possibles següents passos:
+1. Consolidar estructura del projecte.
+2. Consolidar connexio a base de dades.
+3. Consolidar usuaris, rols, classes i projectes.
+4. Crear sistema de rutes estable.
+5. Mostrar projectes des de la base de dades.
+6. Crear login basic.
+7. Crear control d'acces per rols.
+8. Crear dashboards inicials.
+9. Preparar Google Docs i Google Sheets.
+10. Crear rubriques i notes.
 
-- connectar `index.html` amb Supabase
-- substituir les dades simulades per consultes reals
-- afegir login amb Supabase Auth
-- mostrar el perfil i rol de l'usuari connectat
-- crear una vista pública de projectes
-- crear una vista d'alumnat
-- crear una vista de professorat
-- preparar una zona d'administració
-- afegir més taules curriculars: sabers, competències i criteris
-- documentar el procés de manteniment de continguts
+## Autoria
 
-## Desenvolupament local
-
-Com que ara mateix és una web estàtica, es pot obrir directament:
+Projecte desenvolupat per:
 
 ```text
-index.html
+Oriol Torrents Cabestany
+Oriol Rovira Bertran
 ```
-
-Si més endavant s'afegeixen mòduls JavaScript o eines de build, es podrà incorporar un servidor local de desenvolupament.
-
-## Notes de treball
-
-Aquest README és inicial i s'anirà millorant a mesura que el projecte avanci.
-
-Idees pendents per documentar:
-
-- criteris de publicació dels recursos
-- com donar d'alta usuaris
-- com assignar rols
-- com editar projectes i recursos
-- relació amb documents de Google Drive
-- estructura curricular completa d'Entorns de Natura
