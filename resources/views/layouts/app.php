@@ -14,5 +14,6 @@
     </main>
 
     <?php include dirname(__DIR__) . '/layouts/footer.php'; ?>
+    <script src="<?= url('assets/js/scripts.js') ?>"></script>
 </body>
 </html>

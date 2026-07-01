@@ -1,8 +1,70 @@
 -- --------------------------------------------------------
--- Entorns de Natura - Bloc educatiu (no toca users, roles ni user_roles)
+-- Entorns de Natura - Esquema actual de base de dades
+-- Utilitzar com a referència oficial per recrear o revisar
+-- l’estructura del projecte.
 -- --------------------------------------------------------
 
 SET NAMES utf8mb4;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    surname VARCHAR(255) NULL,
+    email VARCHAR(255) NOT NULL,
+    google_id VARCHAR(255) NULL,
+    password_hash VARCHAR(255) NULL,
+    avatar_url VARCHAR(500) NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    last_login_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS roles (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_roles_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS site_visits (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    session_id VARCHAR(100) NULL,
+    user_id INT UNSIGNED NULL,
+    visited_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    path VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NULL,
+    country_code VARCHAR(10) NULL,
+    region VARCHAR(255) NULL,
+    device_type VARCHAR(50) NULL,
+    os_family VARCHAR(50) NULL,
+    browser VARCHAR(100) NULL,
+    user_agent TEXT NULL,
+    PRIMARY KEY (id),
+    KEY idx_site_visits_visited_at (visited_at),
+    KEY idx_site_visits_user_id (user_id),
+    KEY idx_site_visits_session_id (session_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_roles (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id INT UNSIGNED NOT NULL,
+    role_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_user_roles (user_id, role_id),
+    CONSTRAINT fk_user_roles_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_user_roles_role
+        FOREIGN KEY (role_id) REFERENCES roles (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS languages (
     id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,

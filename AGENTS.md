@@ -142,6 +142,7 @@ entorns-de-natura/
 
 - `public/index.php` és el punt d’entrada de l’aplicació.
 - Els assets públics han d’estar dins `public/assets/`.
+- Els fitxers JavaScript i CSS utilitzats per la web pública han de viure a `public/assets/`; si un script s’afegeix a `assets/` fora de `public/`, no es carregarà correctament des del navegador.
 - Les vistes han d’estar dins `resources/views/`.
 - La lògica PHP ha d’estar dins `app/`.
 - La configuració ha d’estar dins `config/`.

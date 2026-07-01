@@ -103,6 +103,11 @@ Objectiu:
 - tenir una estructura visual comuna;
 - facilitar canvis globals de disseny.
 
+## Nota important per a assets públics
+
+Els fitxers JavaScript i CSS que la web ha de carregar des del navegador han d’estar dins de `public/assets/`.
+Si un script es posa a `assets/` fora de `public/`, el navegador no el veurà i les interaccions del panell (per exemple, el botó Editar) deixaran de funcionar.
+
 ---
 
 ## Vistes públiques

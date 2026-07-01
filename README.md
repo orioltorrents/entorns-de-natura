@@ -7,6 +7,7 @@
 El projecte es troba en desenvolupament inicial i ja inclou:
 
 - estructura modular amb `app/`, `config/`, `public/`, `resources/` i `database/`;
+- l’esquema actiu del projecte és el definit a `database/02_education_tables.sql`; `database/schema.sql` és una versió antiga i no s’ha d’utilitzar com a referència.
 - entrada publica des de `public/index.php`;
 - configuracio centralitzada amb `.env`;
 - connexio amb MySQL/MariaDB mitjancant PDO;

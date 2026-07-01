@@ -8,6 +8,7 @@ require_once dirname(__DIR__) . '/app/Helpers/view.php';
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
+require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
@@ -17,6 +18,7 @@ require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 $authService = new AuthService();
 $projectAssignmentService = new ProjectAssignmentService();
 $projectService = new ProjectService();
+$analyticsService = new AnalyticsService();
 $controller = new PublicController($projectService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
@@ -31,6 +33,8 @@ if ($basePath !== '' && str_starts_with($requestUri, $basePath)) {
 }
 
 $requestUri = '/' . trim($requestUri, '/');
+$currentUser = $authService->user();
+$analyticsService->recordVisit($requestUri, $_SERVER, $currentUser['id'] ?? null);
 
 switch ($requestUri) {
     case '/':
