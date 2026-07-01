@@ -15,12 +15,22 @@ if ($env === false) {
 }
 
 $host = $env['DB_HOST'] ?? 'localhost';
-$dbname = $env['DB_NAME'] ?? '';
 $user = $env['DB_USER'] ?? 'root';
 $password = $env['DB_PASSWORD'] ?? $env['DB_PASS'] ?? '';
 $charset = $env['DB_CHARSET'] ?? 'utf8mb4';
 
-$dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";
+$dbNames = array_values(array_unique(array_filter([
+    $env['DB_NAME'] ?? '',
+    $env['DB_NAME_FALLBACK'] ?? $env['DB_NAME_ALT'] ?? '',
+    'entorns_natura_dev',
+    'entorns_de_natura',
+], static function ($value): bool {
+    return $value !== '';
+})));
+
+if ($dbNames === []) {
+    throw new RuntimeException('No s’ha configurat cap base de dades a .env');
+}
 
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -28,8 +38,15 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
-try {
-    return new PDO($dsn, $user, $password, $options);
-} catch (PDOException $e) {
-    throw new RuntimeException('Error de connexió amb la base de dades: ' . $e->getMessage());
+$lastException = null;
+foreach ($dbNames as $dbname) {
+    $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";
+
+    try {
+        return new PDO($dsn, $user, $password, $options);
+    } catch (PDOException $e) {
+        $lastException = $e;
+    }
 }
+
+throw new RuntimeException('Error de connexió amb la base de dades. S’ha provat amb: ' . implode(', ', $dbNames) . '. Detall: ' . ($lastException ? $lastException->getMessage() : 'sense detall'));

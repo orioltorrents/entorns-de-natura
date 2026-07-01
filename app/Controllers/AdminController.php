@@ -12,10 +12,17 @@ class AdminController
 
         $usersStmt = $pdo->query(
             'SELECT u.id, u.name, u.surname, u.email, u.is_active, u.created_at,
+                    u.academic_role, u.gender, u.article, u.inaturalist_user_login,
+                    sp.class_group, sp.project, sp.team_number, sp.group_number, sp.group_code_1t,
+                    sp.members_count, sp.external_id, sp.trimester,
                     COUNT(DISTINCT sv.id) AS visit_count
              FROM users u
              LEFT JOIN site_visits sv ON sv.user_id = u.id
-             GROUP BY u.id, u.name, u.surname, u.email, u.is_active, u.created_at
+             LEFT JOIN student_profiles sp ON sp.user_id = u.id
+             GROUP BY u.id, u.name, u.surname, u.email, u.is_active, u.created_at,
+                      u.academic_role, u.gender, u.article, u.inaturalist_user_login,
+                      sp.class_group, sp.project, sp.team_number, sp.group_number, sp.group_code_1t,
+                      sp.members_count, sp.external_id, sp.trimester
              ORDER BY u.created_at DESC'
         );
         $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -209,22 +216,64 @@ class AdminController
         }
 
         $isActive = isset($_POST['is_active']) ? 1 : 0;
-        $stmt = $pdo->prepare('UPDATE users SET name = :name, surname = :surname, email = :email, is_active = :is_active WHERE id = :id');
+        $academicRole = trim((string) ($_POST['academic_role'] ?? ''));
+        $gender = trim((string) ($_POST['gender'] ?? ''));
+        $article = trim((string) ($_POST['article'] ?? ''));
+        $inaturalistUserLogin = trim((string) ($_POST['inaturalist_user_login'] ?? ''));
+        $project = trim((string) ($_POST['project'] ?? ''));
+        $teamNumber = trim((string) ($_POST['team_number'] ?? ''));
+        $groupNumber = trim((string) ($_POST['group_number'] ?? ''));
+        $groupCode1T = trim((string) ($_POST['group_code_1t'] ?? ''));
+        $membersCount = trim((string) ($_POST['members_count'] ?? ''));
+        $externalId = trim((string) ($_POST['external_id'] ?? ''));
+        $trimester = trim((string) ($_POST['trimester'] ?? ''));
+
+        $stmt = $pdo->prepare(
+            'UPDATE users
+             SET name = :name,
+                 surname = :surname,
+                 email = :email,
+                 is_active = :is_active,
+                 academic_role = :academic_role,
+                 gender = :gender,
+                 article = :article,
+                 inaturalist_user_login = :inaturalist_user_login
+             WHERE id = :id'
+        );
         $stmt->execute([
             'name' => $name,
             'surname' => $surname,
             'email' => $email,
             'is_active' => $isActive,
+            'academic_role' => $academicRole !== '' ? $academicRole : null,
+            'gender' => $gender !== '' ? $gender : null,
+            'article' => $article !== '' ? $article : null,
+            'inaturalist_user_login' => $inaturalistUserLogin !== '' ? $inaturalistUserLogin : null,
             'id' => $userId,
         ]);
 
         $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
-        $this->syncClassAssignment($pdo, $userId, $classId === null || $classId === false ? null : $classId);
+        $resolvedClassId = $classId === null || $classId === false ? null : (int) $classId;
+        $this->syncClassAssignment($pdo, $userId, $resolvedClassId);
 
         $roles = $_POST['roles'] ?? [];
         if (is_array($roles)) {
             $this->syncUserRoles($pdo, $userId, array_map('intval', $roles));
         }
+
+        $this->upsertStudentProfile(
+            $pdo,
+            $userId,
+            '',
+            $project,
+            $teamNumber,
+            $groupNumber,
+            $groupCode1T,
+            $membersCount,
+            $externalId,
+            $trimester,
+            $resolvedClassId
+        );
 
         $this->setMessage('Informació de l’alumne actualitzada.', 'success');
     }
@@ -272,13 +321,23 @@ class AdminController
                 $data[$header] = isset($row[$index]) ? (string) $row[$index] : '';
             }
 
-            $name = trim($data['name'] ?? '');
-            $surname = trim($data['surname'] ?? '');
+            $name = trim($data['name'] ?? $data['nom'] ?? '');
+            $surname = trim($data['surname'] ?? $data['cognoms'] ?? '');
             $email = strtolower(trim($data['email'] ?? ''));
             $password = trim($data['password'] ?? '');
-            $className = trim($data['class'] ?? $data['classe'] ?? '');
-            $rolesInput = trim($data['roles'] ?? $data['role'] ?? 'student');
-            $trimester = trim($data['trimester'] ?? $data['trimestre'] ?? '');
+            $className = trim($data['class'] ?? $data['classe'] ?? $data['grup_classe'] ?? $data['grup_classes'] ?? '');
+            $rolesInput = trim($data['roles'] ?? $data['role'] ?? $data['rol'] ?? 'student');
+            $trimester = trim($data['trimester'] ?? $data['trimestre'] ?? $data['codi_grup_1t'] ?? '');
+            $academicRole = trim($data['academic_role'] ?? $data['rol'] ?? '');
+            $gender = trim($data['gender'] ?? $data['genere'] ?? '');
+            $article = trim($data['article'] ?? '');
+            $inaturalistUserLogin = trim($data['inaturalist_user_login'] ?? '');
+            $project = trim($data['projecte'] ?? $data['project'] ?? '');
+            $teamNumber = trim($data['numero_equip'] ?? '');
+            $groupNumber = trim($data['numero_grup'] ?? '');
+            $groupCode1T = trim($data['codi_grup_1t'] ?? '');
+            $membersCount = trim($data['quants_membres'] ?? '');
+            $externalId = trim($data['id'] ?? $data['userid'] ?? $data['userId'] ?? '');
 
             if ($name === '' || $email === '') {
                 $errors[] = 'Fila ' . $lineNumber . ': falta nom o email.';
@@ -296,6 +355,8 @@ class AdminController
             }
 
             $this->setRolesForUser($pdo, $userId, $rolesInput);
+            $this->updateUserAcademicFields($pdo, $userId, $academicRole, $gender, $article, $inaturalistUserLogin);
+            $this->upsertStudentProfile($pdo, $userId, $className, $project, $teamNumber, $groupNumber, $groupCode1T, $membersCount, $externalId, $trimester);
 
             if ($className !== '') {
                 $classId = $this->findOrCreateClass($pdo, $className);
@@ -435,6 +496,84 @@ class AdminController
                 $insertStmt->execute(['user_id' => $userId, 'role_id' => $roleId]);
             }
         }
+    }
+
+    private function updateUserAcademicFields(PDO $pdo, int $userId, string $academicRole, string $gender, string $article, string $inaturalistUserLogin): void
+    {
+        $stmt = $pdo->prepare(
+            'UPDATE users
+             SET academic_role = :academic_role,
+                 gender = :gender,
+                 article = :article,
+                 inaturalist_user_login = :inaturalist_user_login
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            'academic_role' => $academicRole !== '' ? $academicRole : null,
+            'gender' => $gender !== '' ? $gender : null,
+            'article' => $article !== '' ? $article : null,
+            'inaturalist_user_login' => $inaturalistUserLogin !== '' ? $inaturalistUserLogin : null,
+            'id' => $userId,
+        ]);
+    }
+
+    private function upsertStudentProfile(PDO $pdo, int $userId, string $className, string $project, string $teamNumber, string $groupNumber, string $groupCode1T, string $membersCount, string $externalId, string $trimester, ?int $classId = null): void
+    {
+        $resolvedClassId = $classId;
+        if ($resolvedClassId === null && $className !== '') {
+            $resolvedClassId = $this->findOrCreateClass($pdo, $className);
+        }
+
+        $existingStmt = $pdo->prepare('SELECT id FROM student_profiles WHERE user_id = :user_id LIMIT 1');
+        $existingStmt->execute(['user_id' => $userId]);
+        $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing !== false) {
+            $stmt = $pdo->prepare(
+                'UPDATE student_profiles
+                 SET class_id = :class_id,
+                     class_group = :class_group,
+                     project = :project,
+                     team_number = :team_number,
+                     group_number = :group_number,
+                     group_code_1t = :group_code_1t,
+                     members_count = :members_count,
+                     external_id = :external_id,
+                     trimester = :trimester,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE user_id = :user_id'
+            );
+            $stmt->execute([
+                'class_id' => $resolvedClassId,
+                'class_group' => $className !== '' ? $className : null,
+                'project' => $project !== '' ? $project : null,
+                'team_number' => $teamNumber !== '' ? (int) $teamNumber : null,
+                'group_number' => $groupNumber !== '' ? (int) $groupNumber : null,
+                'group_code_1t' => $groupCode1T !== '' ? $groupCode1T : null,
+                'members_count' => $membersCount !== '' ? (int) $membersCount : null,
+                'external_id' => $externalId !== '' ? $externalId : null,
+                'trimester' => $trimester !== '' ? $trimester : null,
+                'user_id' => $userId,
+            ]);
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO student_profiles (user_id, class_id, class_group, project, team_number, group_number, group_code_1t, members_count, external_id, trimester, created_at, updated_at)
+             VALUES (:user_id, :class_id, :class_group, :project, :team_number, :group_number, :group_code_1t, :members_count, :external_id, :trimester, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'class_id' => $resolvedClassId,
+            'class_group' => $className !== '' ? $className : null,
+            'project' => $project !== '' ? $project : null,
+            'team_number' => $teamNumber !== '' ? (int) $teamNumber : null,
+            'group_number' => $groupNumber !== '' ? (int) $groupNumber : null,
+            'group_code_1t' => $groupCode1T !== '' ? $groupCode1T : null,
+            'members_count' => $membersCount !== '' ? (int) $membersCount : null,
+            'external_id' => $externalId !== '' ? $externalId : null,
+            'trimester' => $trimester !== '' ? $trimester : null,
+        ]);
     }
 
     private function findOrCreateRole(PDO $pdo, string $roleName): ?int

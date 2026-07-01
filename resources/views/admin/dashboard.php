@@ -311,6 +311,17 @@ ob_start();
                                                     <?php endforeach; ?>
                                                 </select>
                                             </label>
+                                            <label>Rol acadèmic<input type="text" name="academic_role" value="<?= htmlspecialchars((string) ($user['academic_role'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Gènere<input type="text" name="gender" value="<?= htmlspecialchars((string) ($user['gender'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Article<input type="text" name="article" value="<?= htmlspecialchars((string) ($user['article'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Inaturalist<input type="text" name="inaturalist_user_login" value="<?= htmlspecialchars((string) ($user['inaturalist_user_login'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Projecte<input type="text" name="project" value="<?= htmlspecialchars((string) ($user['project'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Equip<input type="number" name="team_number" value="<?= htmlspecialchars((string) ($user['team_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Grup<input type="number" name="group_number" value="<?= htmlspecialchars((string) ($user['group_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Codi grup 1T<input type="text" name="group_code_1t" value="<?= htmlspecialchars((string) ($user['group_code_1t'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Membres<input type="number" name="members_count" value="<?= htmlspecialchars((string) ($user['members_count'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>External ID<input type="text" name="external_id" value="<?= htmlspecialchars((string) ($user['external_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                            <label>Trimestre<input type="text" name="trimester" value="<?= htmlspecialchars((string) ($user['trimester'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
                                         </div>
                                         <div class="form-group">
                                             <label>Rols</label>

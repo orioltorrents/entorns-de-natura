@@ -16,10 +16,40 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url VARCHAR(500) NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     last_login_at TIMESTAMP NULL DEFAULT NULL,
+    academic_role VARCHAR(100) NULL,
+    gender VARCHAR(50) NULL,
+    article VARCHAR(255) NULL,
+    inaturalist_user_login VARCHAR(255) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS student_profiles (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id INT UNSIGNED NOT NULL,
+    class_id INT UNSIGNED NULL,
+    class_group VARCHAR(100) NULL,
+    project VARCHAR(255) NULL,
+    team_number INT UNSIGNED NULL,
+    group_number INT UNSIGNED NULL,
+    group_code_1t VARCHAR(100) NULL,
+    members_count INT UNSIGNED NULL,
+    external_id VARCHAR(100) NULL,
+    trimester VARCHAR(100) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_student_profiles_user (user_id),
+    CONSTRAINT fk_student_profiles_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_student_profiles_class
+        FOREIGN KEY (class_id) REFERENCES classes (id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS roles (
