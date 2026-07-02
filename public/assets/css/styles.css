@@ -40,6 +40,9 @@ body { font-family: Arial, sans-serif; margin: 0; background: #f4f8f2; color: #1
 .data-table th, .data-table td { border-bottom: 1px solid #e6ece2; padding: .75rem .5rem; text-align: left; }
 .data-table th { color: #47624a; font-size: .875rem; text-transform: uppercase; letter-spacing: .04em; }
 .role-pill { background: #e7efdf; border-radius: 999px; color: #2f5d3a; display: inline-block; font-size: .8rem; margin: .15rem; padding: .25rem .6rem; }
+.student-meta { display: flex; flex-wrap: wrap; gap: .35rem; min-width: 130px; }
+.student-meta span { background: #f4f8f2; border-radius: 999px; color: #47624a; display: inline-block; font-size: .8rem; padding: .25rem .55rem; }
+.student-meta .muted { background: transparent; padding-left: 0; }
 .muted { color: #6d7a6b; font-style: italic; }
 .admin-shell { display: grid; gap: 1.5rem; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
 .admin-sidebar { background: #284d34; border-radius: 12px; color: white; padding: 1.25rem; position: sticky; top: 1rem; }
@@ -57,6 +60,7 @@ body { font-family: Arial, sans-serif; margin: 0; background: #f4f8f2; color: #1
 .checkbox-group { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .35rem; }
 .checkbox-pill { background: #f4f8f2; border-radius: 999px; padding: .45rem .75rem; }
 .inline-form { display: inline-block; }
+.inline-form select { border: 1px solid #cbd7ca; border-radius: 8px; font: inherit; margin-right: .5rem; padding: .55rem .7rem; }
 .project-list { display: grid; gap: .85rem; margin-top: .75rem; }
 .project-item { background: #f4f8f2; border-radius: 8px; padding: .9rem 1rem; }
 .project-item p { margin: .25rem 0 0; color: #556b57; }
@@ -72,4 +76,5 @@ body { font-family: Arial, sans-serif; margin: 0; background: #f4f8f2; color: #1
 .analytics-grid .card { padding: 1rem 1.1rem; }
 .analytics-list { display: grid; gap: .5rem; padding-left: 1.1rem; }
 .analytics-list li { line-height: 1.5; }
+.assignment-table { margin-top: 1rem; }
 @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } .admin-sidebar { position: static; } }

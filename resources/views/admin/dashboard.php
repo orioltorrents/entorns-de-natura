@@ -11,6 +11,7 @@ ob_start();
             <a class="active" href="#panell">Panell</a>
             <a href="#usuaris">Usuaris</a>
             <a href="#projectes-lista">Projectes</a>
+            <a href="#assignacions-projectes">Assignacions</a>
             <a href="#analytics">Analítica</a>
             <a href="#sincronitzacions">Google Sync</a>
             <a href="#logs">Logs</a>
@@ -259,6 +260,10 @@ ob_start();
                         <tr>
                             <th>Usuari</th>
                             <th>Email</th>
+                            <th>Classe</th>
+                            <th>Projecte</th>
+                            <th>Equip / grup</th>
+                            <th>iNaturalist</th>
                             <th>Visites</th>
                             <th>Rols</th>
                             <th>Estat</th>
@@ -270,6 +275,43 @@ ob_start();
                             <tr>
                                 <td><?= htmlspecialchars(trim(($user['name'] ?? '') . ' ' . ($user['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <?php if (!empty($user['class_group'])): ?>
+                                        <?= htmlspecialchars((string) $user['class_group'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?php else: ?>
+                                        <span class="muted">Sense classe</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($user['project'])): ?>
+                                        <?= htmlspecialchars((string) $user['project'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?php else: ?>
+                                        <span class="muted">Sense projecte</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="student-meta">
+                                        <?php if (!empty($user['team_number'])): ?>
+                                            <span>Equip <?= htmlspecialchars((string) $user['team_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($user['group_number'])): ?>
+                                            <span>Grup <?= htmlspecialchars((string) $user['group_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($user['group_code_1t'])): ?>
+                                            <span><?= htmlspecialchars((string) $user['group_code_1t'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?php if (empty($user['team_number']) && empty($user['group_number']) && empty($user['group_code_1t'])): ?>
+                                            <span class="muted">Sense grup</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <?php if (!empty($user['inaturalist_user_login'])): ?>
+                                        <?= htmlspecialchars((string) $user['inaturalist_user_login'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?php else: ?>
+                                        <span class="muted">No informat</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= (int) ($user['visit_count'] ?? 0) ?></td>
                                 <td>
                                     <?php if (!empty($user['roles'])): ?>
@@ -295,7 +337,7 @@ ob_start();
                                 </td>
                             </tr>
                             <tr id="student-<?= (int) $user['id'] ?>" class="student-editor-row">
-                                <td colspan="6">
+                                <td colspan="10">
                                     <form class="admin-form compact-form" method="post" action="<?= url('admin') ?>">
                                         <input type="hidden" name="action" value="update_student">
                                         <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
@@ -343,6 +385,105 @@ ob_start();
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="assignacions-projectes" class="card">
+            <div class="card-actions">
+                <h2>Assignar projectes a classes</h2>
+                <span class="status">Projectes per grup</span>
+            </div>
+
+            <form class="admin-form" method="post" action="<?= url('admin') ?>">
+                <input type="hidden" name="action" value="assign_project_to_class">
+                <div class="form-grid">
+                    <label>
+                        Classe
+                        <select name="class_id" required>
+                            <option value="">Selecciona una classe</option>
+                            <?php foreach ($classes as $class): ?>
+                                <option value="<?= (int) $class['id'] ?>"><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label>
+                        Projecte
+                        <select name="project_id" required>
+                            <option value="">Selecciona un projecte</option>
+                            <?php foreach ($projects as $project): ?>
+                                <option value="<?= (int) $project['id'] ?>"><?= htmlspecialchars((string) $project['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label>
+                        Estat
+                        <select name="status" required>
+                            <option value="pendent">Pendent</option>
+                            <option value="actiu" selected>Actiu</option>
+                            <option value="realitzat">Realitzat</option>
+                        </select>
+                    </label>
+                </div>
+                <button class="button" type="submit">Assignar projecte</button>
+            </form>
+
+            <div class="table-wrapper assignment-table">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Classe</th>
+                            <th>Projecte</th>
+                            <th>Slug</th>
+                            <th>Estat</th>
+                            <th>Accions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($projectAssignments)): ?>
+                            <?php foreach ($projectAssignments as $assignment): ?>
+                                <?php
+                                    $assignmentStatus = strtolower(trim((string) ($assignment['status'] ?? 'actiu')));
+                                    $assignmentStatusMap = [
+                                        'planned' => 'pendent',
+                                        'previst' => 'pendent',
+                                        'active' => 'actiu',
+                                        'completed' => 'realitzat',
+                                        'completat' => 'realitzat',
+                                    ];
+                                    $assignmentStatus = $assignmentStatusMap[$assignmentStatus] ?? $assignmentStatus;
+                                    $statusLabels = [
+                                        'pendent' => 'Pendent',
+                                        'actiu' => 'Actiu',
+                                        'realitzat' => 'Realitzat',
+                                    ];
+                                    $statusLabel = $statusLabels[$assignmentStatus] ?? $assignmentStatus;
+                                ?>
+                                <tr>
+                                    <td><?= htmlspecialchars((string) ($assignment['class_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= htmlspecialchars((string) ($assignment['project_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= htmlspecialchars((string) ($assignment['project_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><span class="status"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
+                                    <td>
+                                        <form method="post" action="<?= url('admin') ?>" class="inline-form">
+                                            <input type="hidden" name="action" value="update_project_assignment_status">
+                                            <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
+                                            <select name="status" aria-label="Estat del projecte">
+                                                <option value="pendent" <?= $assignmentStatus === 'pendent' ? 'selected' : '' ?>>Pendent</option>
+                                                <option value="actiu" <?= $assignmentStatus === 'actiu' ? 'selected' : '' ?>>Actiu</option>
+                                                <option value="realitzat" <?= $assignmentStatus === 'realitzat' ? 'selected' : '' ?>>Realitzat</option>
+                                            </select>
+                                            <button class="button secondary" type="submit">Guardar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5"><span class="muted">Encara no hi ha projectes assignats a classes.</span></td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

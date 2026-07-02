@@ -5,6 +5,7 @@ class AdminController
     public function dashboard(): string
     {
         $pdo = $this->pdo();
+        $this->ensureProjectGroupsTable($pdo);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handlePost($pdo);
@@ -51,6 +52,18 @@ class AdminController
         $classesStmt = $pdo->query('SELECT id, name, code FROM classes ORDER BY name');
         $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $projectAssignmentsStmt = $pdo->query(
+            'SELECT pg.id, pg.class_id, pg.project_id, pg.status, pg.created_at,
+                    c.name AS class_name,
+                    p.name AS project_name,
+                    p.slug AS project_slug
+             FROM project_groups pg
+             INNER JOIN classes c ON c.id = pg.class_id
+             INNER JOIN projects p ON p.id = pg.project_id
+             ORDER BY c.name, p.name'
+        );
+        $projectAssignments = $projectAssignmentsStmt->fetchAll(PDO::FETCH_ASSOC);
+
         $classMembershipsStmt = $pdo->query(
             'SELECT cm.user_id, cm.class_id, c.name AS class_name
              FROM class_members cm
@@ -92,6 +105,7 @@ class AdminController
             'roles' => $roles,
             'projects' => $projects,
             'classes' => $classes,
+            'projectAssignments' => $projectAssignments,
             'roleMap' => $roleMap,
             'analytics' => $analytics,
             'message' => $message,
@@ -120,6 +134,16 @@ class AdminController
 
         if ($action === 'toggle_project') {
             $this->toggleProject($pdo);
+            return;
+        }
+
+        if ($action === 'assign_project_to_class') {
+            $this->assignProjectToClass($pdo);
+            return;
+        }
+
+        if ($action === 'update_project_assignment_status') {
+            $this->updateProjectAssignmentStatus($pdo);
             return;
         }
 
@@ -326,18 +350,18 @@ class AdminController
             $email = strtolower(trim($data['email'] ?? ''));
             $password = trim($data['password'] ?? '');
             $className = trim($data['class'] ?? $data['classe'] ?? $data['grup_classe'] ?? $data['grup_classes'] ?? '');
-            $rolesInput = trim($data['roles'] ?? $data['role'] ?? $data['rol'] ?? 'student');
+            $rolesInput = trim($data['roles'] ?? $data['role'] ?? 'student');
             $trimester = trim($data['trimester'] ?? $data['trimestre'] ?? $data['codi_grup_1t'] ?? '');
             $academicRole = trim($data['academic_role'] ?? $data['rol'] ?? '');
             $gender = trim($data['gender'] ?? $data['genere'] ?? '');
             $article = trim($data['article'] ?? '');
             $inaturalistUserLogin = trim($data['inaturalist_user_login'] ?? '');
             $project = trim($data['projecte'] ?? $data['project'] ?? '');
-            $teamNumber = trim($data['numero_equip'] ?? '');
-            $groupNumber = trim($data['numero_grup'] ?? '');
+            $teamNumber = $this->extractInteger($data['numero_equip'] ?? '');
+            $groupNumber = $this->extractInteger($data['numero_grup'] ?? '');
             $groupCode1T = trim($data['codi_grup_1t'] ?? '');
-            $membersCount = trim($data['quants_membres'] ?? '');
-            $externalId = trim($data['id'] ?? $data['userid'] ?? $data['userId'] ?? '');
+            $membersCount = $this->extractInteger($data['quants_membres'] ?? '');
+            $externalId = trim($data['userid'] ?? $data['id'] ?? '');
 
             if ($name === '' || $email === '') {
                 $errors[] = 'Fila ' . $lineNumber . ': falta nom o email.';
@@ -415,6 +439,71 @@ class AdminController
         $updateStmt->execute(['is_active' => $newState, 'id' => $projectId]);
 
         $this->setMessage('Estat del projecte actualitzat.', 'success');
+    }
+
+    private function assignProjectToClass(PDO $pdo): void
+    {
+        $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
+        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
+        $status = $this->normalizeProjectAssignmentStatus((string) ($_POST['status'] ?? 'actiu'));
+        $allowedStatuses = ['pendent', 'actiu', 'realitzat'];
+
+        if ($classId === null || $classId === false || $projectId === null || $projectId === false) {
+            $this->setMessage('Classe o projecte no vÃ lid.', 'error');
+            return;
+        }
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            $this->setMessage('Estat de lâ€™assignaciÃ³ no vÃ lid.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO project_groups (class_id, project_id, status, created_at)
+             VALUES (:class_id, :project_id, :status, NOW())
+             ON DUPLICATE KEY UPDATE status = VALUES(status)'
+        );
+        $stmt->execute([
+            'class_id' => (int) $classId,
+            'project_id' => (int) $projectId,
+            'status' => $status,
+        ]);
+
+        $this->setMessage('Projecte assignat a la classe correctament.', 'success');
+    }
+
+    private function updateProjectAssignmentStatus(PDO $pdo): void
+    {
+        $assignmentId = filter_input(INPUT_POST, 'assignment_id', FILTER_VALIDATE_INT);
+        $status = $this->normalizeProjectAssignmentStatus((string) ($_POST['status'] ?? 'actiu'));
+        $allowedStatuses = ['pendent', 'actiu', 'realitzat'];
+
+        if ($assignmentId === null || $assignmentId === false) {
+            $this->setMessage('AssignaciÃ³ no vÃ lida.', 'error');
+            return;
+        }
+
+        if (!in_array($status, $allowedStatuses, true)) {
+            $this->setMessage('Estat de lâ€™assignaciÃ³ no vÃ lid.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT status FROM project_groups WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $assignmentId]);
+        $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($assignment === false) {
+            $this->setMessage('No sâ€™ha trobat lâ€™assignaciÃ³.', 'error');
+            return;
+        }
+
+        $updateStmt = $pdo->prepare('UPDATE project_groups SET status = :status WHERE id = :id');
+        $updateStmt->execute([
+            'status' => $status,
+            'id' => (int) $assignmentId,
+        ]);
+
+        $this->setMessage('Estat de lâ€™assignaciÃ³ actualitzat.', 'success');
     }
 
     private function setMessage(string $message, string $type): void
@@ -626,8 +715,49 @@ class AdminController
     private function normalizeHeader(string $header): string
     {
         $normalized = strtolower(trim($header));
+        $normalized = strtr($normalized, [
+            'à' => 'a',
+            'á' => 'a',
+            'â' => 'a',
+            'ä' => 'a',
+            'ç' => 'c',
+            'è' => 'e',
+            'é' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'í' => 'i',
+            'ï' => 'i',
+            'ò' => 'o',
+            'ó' => 'o',
+            'ô' => 'o',
+            'ö' => 'o',
+            'ú' => 'u',
+            'ü' => 'u',
+            'ñ' => 'n',
+        ]);
         $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized) ?? '';
         return trim($normalized, '_');
+    }
+
+    private function extractInteger(string $value): string
+    {
+        if (preg_match('/\d+/', $value, $matches) !== 1) {
+            return '';
+        }
+
+        return $matches[0];
+    }
+
+    private function normalizeProjectAssignmentStatus(string $status): string
+    {
+        $normalized = strtolower(trim($status));
+
+        return match ($normalized) {
+            'planned', 'previst', 'pendent' => 'pendent',
+            'active', 'actiu' => 'actiu',
+            'completed', 'completat', 'realitzat' => 'realitzat',
+            default => $normalized,
+        };
     }
 
     private function userExistsByEmail(PDO $pdo, string $email): bool
@@ -635,6 +765,44 @@ class AdminController
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
+
+    private function ensureProjectGroupsTable(PDO $pdo): void
+    {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS project_groups (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                class_id INT UNSIGNED NOT NULL,
+                project_id INT UNSIGNED NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT "actiu",
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_project_groups (class_id, project_id),
+                KEY idx_project_groups_class_id (class_id),
+                KEY idx_project_groups_project_id (project_id),
+                CONSTRAINT fk_project_groups_class
+                    FOREIGN KEY (class_id) REFERENCES classes (id)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE,
+                CONSTRAINT fk_project_groups_project
+                    FOREIGN KEY (project_id) REFERENCES projects (id)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
+        $pdo->exec(
+            "UPDATE project_groups
+             SET status = CASE status
+                 WHEN 'planned' THEN 'pendent'
+                 WHEN 'previst' THEN 'pendent'
+                 WHEN 'active' THEN 'actiu'
+                 WHEN 'completed' THEN 'realitzat'
+                 WHEN 'completat' THEN 'realitzat'
+                 ELSE status
+             END
+             WHERE status IN ('planned', 'previst', 'active', 'completed', 'completat')"
+        );
     }
 
     private function pdo(): PDO

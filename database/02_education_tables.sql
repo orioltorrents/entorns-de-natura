@@ -194,6 +194,26 @@ CREATE TABLE IF NOT EXISTS project_translations (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS project_groups (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    class_id INT UNSIGNED NOT NULL,
+    project_id INT UNSIGNED NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'actiu',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_project_groups (class_id, project_id),
+    KEY idx_project_groups_class_id (class_id),
+    KEY idx_project_groups_project_id (project_id),
+    CONSTRAINT fk_project_groups_class
+        FOREIGN KEY (class_id) REFERENCES classes (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_project_groups_project
+        FOREIGN KEY (project_id) REFERENCES projects (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS settings (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `key` VARCHAR(100) NOT NULL,
