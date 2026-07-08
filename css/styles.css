@@ -1,7 +1,6 @@
 /*
-Legacy stylesheet kept for reference only.
-This file is not loaded by the application. The active stylesheet is
-public/assets/css/styles.css.
+Main stylesheet for the project.
+This is the single source of styles used by the site and the app.
 */
 
 :root {
@@ -10,7 +9,7 @@ public/assets/css/styles.css.
   --paper: #fbf9f4;
   --white: #ffffff;
   --line: #d8e3dc;
-  --leaf: #2727bf;
+  --leaf: #1212e7;
   --leaf-dark: #ceddd6;
   --water: #2f6f8f;
   --sun: #d7902d;
