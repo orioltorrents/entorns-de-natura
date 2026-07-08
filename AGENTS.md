@@ -719,6 +719,7 @@ docs/skills/02-base-de-dades.md
 docs/skills/03-rutes-i-vistes.md
 docs/skills/04-auth-rols-i-seguretat.md
 docs/skills/05-google-docs-sheets.md
+docs/skills/06-css-i-ui.md
 ```
 
 ---

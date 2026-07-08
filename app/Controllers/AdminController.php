@@ -6,6 +6,7 @@ class AdminController
     {
         $pdo = $this->pdo();
         $this->ensureProjectGroupsTable($pdo);
+        $this->ensureProjectsDisplayOrderColumn($pdo);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handlePost($pdo);
@@ -28,11 +29,19 @@ class AdminController
         );
         $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $rolesStmt = $pdo->query('SELECT id, name FROM roles ORDER BY name');
+        $rolesStmt = $pdo->query(
+            'SELECT r.id, r.name, COUNT(ur.user_id) AS user_count
+             FROM roles r
+             LEFT JOIN user_roles ur ON ur.role_id = r.id
+             GROUP BY r.id, r.name
+             ORDER BY r.name'
+        );
         $roles = $rolesStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $projectsStmt = $pdo->query(
-            'SELECT id, name, slug, is_active, created_at FROM projects ORDER BY name'
+            'SELECT id, name, slug, display_order, is_active, created_at
+             FROM projects
+             ORDER BY display_order, name'
         );
         $projects = $projectsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -60,7 +69,7 @@ class AdminController
              FROM project_groups pg
              INNER JOIN classes c ON c.id = pg.class_id
              INNER JOIN projects p ON p.id = pg.project_id
-             ORDER BY c.name, p.name'
+             ORDER BY c.name, p.display_order, p.name'
         );
         $projectAssignments = $projectAssignmentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -71,6 +80,7 @@ class AdminController
              ORDER BY cm.user_id, c.name'
         );
         $classMemberships = $classMembershipsStmt->fetchAll(PDO::FETCH_ASSOC);
+        $assessmentStructure = $this->assessmentStructure($pdo);
 
         $roleMap = [];
         foreach ($userRoles as $row) {
@@ -106,6 +116,7 @@ class AdminController
             'projects' => $projects,
             'classes' => $classes,
             'projectAssignments' => $projectAssignments,
+            'assessmentStructure' => $assessmentStructure,
             'roleMap' => $roleMap,
             'analytics' => $analytics,
             'message' => $message,
@@ -137,6 +148,11 @@ class AdminController
             return;
         }
 
+        if ($action === 'update_project_order') {
+            $this->updateProjectOrder($pdo);
+            return;
+        }
+
         if ($action === 'assign_project_to_class') {
             $this->assignProjectToClass($pdo);
             return;
@@ -147,9 +163,184 @@ class AdminController
             return;
         }
 
+        if ($action === 'delete_project_assignment') {
+            $this->deleteProjectAssignment($pdo);
+            return;
+        }
+
         if ($action === 'import_students') {
             $this->importStudents($pdo);
+            return;
         }
+
+        if ($action === 'import_assessment_structure') {
+            $this->importAssessmentStructure($pdo);
+            return;
+        }
+
+        if ($action === 'toggle_assessment_phase') {
+            $this->toggleAssessmentPhase($pdo);
+            return;
+        }
+
+        if ($action === 'toggle_assessment_task') {
+            $this->toggleAssessmentTask($pdo);
+        }
+    }
+
+    private function assessmentStructure(PDO $pdo): array
+    {
+        $stmt = $pdo->query(
+            'SELECT
+                p.id AS project_id,
+                p.name AS project_name,
+                p.slug AS project_slug,
+                ap.id AS phase_id,
+                ap.phase_key,
+                ap.title AS phase_title,
+                ap.section_type,
+                ap.display_order AS phase_order,
+                ap.is_active,
+                at.id AS task_id,
+                at.source_column,
+                at.title AS task_title,
+                at.weight_label,
+                at.role_filter,
+                at.display_order AS task_order,
+                at.is_visible
+             FROM assessment_phases ap
+             INNER JOIN projects p ON p.id = ap.project_id
+             LEFT JOIN assessment_tasks at ON at.phase_id = ap.id
+             ORDER BY p.display_order, p.name, ap.display_order, ap.id, at.display_order, at.id'
+        );
+
+        $projects = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $projectId = (int) $row['project_id'];
+            $phaseId = (int) $row['phase_id'];
+
+            if (!isset($projects[$projectId])) {
+                $projects[$projectId] = [
+                    'id' => $projectId,
+                    'name' => (string) $row['project_name'],
+                    'slug' => (string) $row['project_slug'],
+                    'phases' => [],
+                ];
+            }
+
+            if (!isset($projects[$projectId]['phases'][$phaseId])) {
+                $projects[$projectId]['phases'][$phaseId] = [
+                    'id' => $phaseId,
+                    'phase_key' => (string) $row['phase_key'],
+                    'title' => (string) $row['phase_title'],
+                    'section_type' => (string) $row['section_type'],
+                    'display_order' => (int) $row['phase_order'],
+                    'is_active' => (int) $row['is_active'],
+                    'tasks' => [],
+                ];
+            }
+
+            if ($row['task_id'] !== null) {
+                $projects[$projectId]['phases'][$phaseId]['tasks'][] = [
+                    'id' => (int) $row['task_id'],
+                    'source_column' => (string) $row['source_column'],
+                    'title' => (string) $row['task_title'],
+                    'weight_label' => $row['weight_label'] !== null ? (string) $row['weight_label'] : '',
+                    'role_filter' => $row['role_filter'] !== null ? (string) $row['role_filter'] : '',
+                    'display_order' => (int) $row['task_order'],
+                    'is_visible' => (int) $row['is_visible'],
+                ];
+            }
+        }
+
+        foreach ($projects as &$project) {
+            $project['phases'] = array_values($project['phases']);
+        }
+        unset($project);
+
+        return array_values($projects);
+    }
+
+    private function toggleAssessmentPhase(PDO $pdo): void
+    {
+        $phaseId = filter_input(INPUT_POST, 'phase_id', FILTER_VALIDATE_INT);
+        if ($phaseId === null || $phaseId === false) {
+            $this->setMessage('Fase no vàlida.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT is_active FROM assessment_phases WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $phaseId]);
+        $phase = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($phase === false) {
+            $this->setMessage('No s’ha trobat la fase.', 'error');
+            return;
+        }
+
+        $newState = ((int) $phase['is_active'] === 1) ? 0 : 1;
+        $update = $pdo->prepare('UPDATE assessment_phases SET is_active = :is_active WHERE id = :id');
+        $update->execute(['is_active' => $newState, 'id' => (int) $phaseId]);
+
+        $this->setMessage('Estat de la fase actualitzat.', 'success');
+    }
+
+    private function toggleAssessmentTask(PDO $pdo): void
+    {
+        $taskId = filter_input(INPUT_POST, 'task_id', FILTER_VALIDATE_INT);
+        if ($taskId === null || $taskId === false) {
+            $this->setMessage('Tasca no vàlida.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT is_visible FROM assessment_tasks WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $taskId]);
+        $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($task === false) {
+            $this->setMessage('No s’ha trobat la tasca.', 'error');
+            return;
+        }
+
+        $newState = ((int) $task['is_visible'] === 1) ? 0 : 1;
+        $update = $pdo->prepare('UPDATE assessment_tasks SET is_visible = :is_visible WHERE id = :id');
+        $update->execute(['is_visible' => $newState, 'id' => (int) $taskId]);
+
+        $this->setMessage('Visibilitat de la tasca actualitzada.', 'success');
+    }
+
+    private function importAssessmentStructure(PDO $pdo): void
+    {
+        if (!isset($_FILES['phases_file'], $_FILES['tasks_file'])
+            || !is_uploaded_file($_FILES['phases_file']['tmp_name'])
+            || !is_uploaded_file($_FILES['tasks_file']['tmp_name'])
+        ) {
+            $this->setMessage('Cal pujar els CSV assessment_phases i assessment_tasks.', 'error');
+            return;
+        }
+
+        try {
+            $importer = new AssessmentStructureImportService($pdo);
+            $result = $importer->importFromCsv(
+                (string) $_FILES['phases_file']['tmp_name'],
+                (string) $_FILES['tasks_file']['tmp_name']
+            );
+        } catch (Throwable $e) {
+            $this->setMessage('No s’ha pogut importar l’estructura d’avaluació: ' . $e->getMessage(), 'error');
+            return;
+        }
+
+        $message = 'Estructura importada: '
+            . (int) $result['phases_imported'] . ' fases i '
+            . (int) $result['tasks_imported'] . ' tasques.';
+
+        if (!empty($result['errors'])) {
+            $message .= ' Errors: ' . implode(' | ', array_slice($result['errors'], 0, 5));
+            $this->setMessage($message, 'error');
+            return;
+        }
+
+        $this->setMessage($message, 'success');
     }
 
     private function createUser(PDO $pdo): void
@@ -220,6 +411,11 @@ class AdminController
             return;
         }
 
+        if ((int) $user['is_active'] === 1 && $this->userHasRole($pdo, (int) $userId, 'admin')) {
+            $this->setMessage('No es pot desactivar un usuari administrador.', 'error');
+            return;
+        }
+
         $newState = ((int) $user['is_active'] === 1) ? 0 : 1;
         $updateStmt = $pdo->prepare('UPDATE users SET is_active = :is_active WHERE id = :id');
         $updateStmt->execute(['is_active' => $newState, 'id' => $userId]);
@@ -240,6 +436,9 @@ class AdminController
         }
 
         $isActive = isset($_POST['is_active']) ? 1 : 0;
+        if ($this->userHasRole($pdo, (int) $userId, 'admin')) {
+            $isActive = 1;
+        }
         $academicRole = trim((string) ($_POST['academic_role'] ?? ''));
         $gender = trim((string) ($_POST['gender'] ?? ''));
         $article = trim((string) ($_POST['article'] ?? ''));
@@ -441,6 +640,38 @@ class AdminController
         $this->setMessage('Estat del projecte actualitzat.', 'success');
     }
 
+    private function updateProjectOrder(PDO $pdo): void
+    {
+        $orders = $_POST['display_order'] ?? [];
+        if (!is_array($orders)) {
+            $this->setMessage('Ordre de projectes no vàlid.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare('UPDATE projects SET display_order = :display_order WHERE id = :id');
+        $updated = 0;
+
+        foreach ($orders as $projectId => $displayOrder) {
+            $id = filter_var($projectId, FILTER_VALIDATE_INT);
+            if ($id === false || $id === null) {
+                continue;
+            }
+
+            $order = filter_var($displayOrder, FILTER_VALIDATE_INT);
+            if ($order === false || $order === null || $order < 0) {
+                $order = 0;
+            }
+
+            $stmt->execute([
+                'display_order' => (int) $order,
+                'id' => (int) $id,
+            ]);
+            $updated++;
+        }
+
+        $this->setMessage('Ordre dels projectes actualitzat (' . $updated . ').', 'success');
+    }
+
     private function assignProjectToClass(PDO $pdo): void
     {
         $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
@@ -506,10 +737,51 @@ class AdminController
         $this->setMessage('Estat de lâ€™assignaciÃ³ actualitzat.', 'success');
     }
 
+    private function deleteProjectAssignment(PDO $pdo): void
+    {
+        $assignmentId = filter_input(INPUT_POST, 'assignment_id', FILTER_VALIDATE_INT);
+
+        if ($assignmentId === null || $assignmentId === false) {
+            $this->setMessage('Assignació no vàlida.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT id FROM project_groups WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $assignmentId]);
+
+        if ($stmt->fetch(PDO::FETCH_ASSOC) === false) {
+            $this->setMessage('No s’ha trobat l’assignació.', 'error');
+            return;
+        }
+
+        $deleteStmt = $pdo->prepare('DELETE FROM project_groups WHERE id = :id');
+        $deleteStmt->execute(['id' => (int) $assignmentId]);
+
+        $this->setMessage('Assignació eliminada correctament.', 'success');
+    }
+
     private function setMessage(string $message, string $type): void
     {
         $_SESSION['admin_message'] = $message;
         $_SESSION['admin_message_type'] = $type;
+    }
+
+    private function userHasRole(PDO $pdo, int $userId, string $roleName): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT 1
+             FROM user_roles ur
+             INNER JOIN roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :user_id
+               AND r.name = :role_name
+             LIMIT 1'
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'role_name' => $roleName,
+        ]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     private function syncClassAssignment(PDO $pdo, int $userId, ?int $classId): void
@@ -802,6 +1074,41 @@ class AdminController
                  ELSE status
              END
              WHERE status IN ('planned', 'previst', 'active', 'completed', 'completat')"
+        );
+    }
+
+    private function ensureProjectsDisplayOrderColumn(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = :table_name
+               AND COLUMN_NAME = :column_name'
+        );
+        $stmt->execute([
+            'table_name' => 'projects',
+            'column_name' => 'display_order',
+        ]);
+
+        if ((int) $stmt->fetchColumn() > 0) {
+            return;
+        }
+
+        $pdo->exec('ALTER TABLE projects ADD COLUMN display_order INT UNSIGNED NOT NULL DEFAULT 0 AFTER name');
+        $pdo->exec('ALTER TABLE projects ADD KEY idx_projects_display_order (display_order)');
+        $pdo->exec(
+            "UPDATE projects
+             SET display_order = CASE slug
+                 WHEN 'projecte-rius' THEN 10
+                 WHEN 'mat-penedes' THEN 20
+                 WHEN 'agroparc' THEN 30
+                 WHEN 'projecte-orenetes' THEN 40
+                 WHEN 'liquencity' THEN 50
+                 WHEN 'vespa-velutina' THEN 60
+                 ELSE display_order
+             END
+             WHERE display_order = 0"
         );
     }
 

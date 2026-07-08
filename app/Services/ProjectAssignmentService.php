@@ -20,6 +20,9 @@ class ProjectAssignmentService
             throw new InvalidArgumentException('Taula de relacio no valida.');
         }
 
+        $pdo = $this->pdo();
+        $this->ensureProjectsDisplayOrderColumn($pdo);
+
         $sql = "
             SELECT
                 classes.id AS class_id,
@@ -27,6 +30,7 @@ class ProjectAssignmentService
                 classes.code AS class_code,
                 projects.id AS project_id,
                 projects.slug,
+                projects.display_order,
                 COALESCE(project_translations.title, projects.name) AS title,
                 project_translations.description,
                 project_groups.status
@@ -40,10 +44,10 @@ class ProjectAssignmentService
                 AND project_translations.language_id = languages.id
             WHERE {$membershipTable}.user_id = :user_id
                 AND projects.is_active = 1
-            ORDER BY classes.name, title
+            ORDER BY classes.name, projects.display_order, title
         ";
 
-        $stmt = $this->pdo()->prepare($sql);
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([
             'language_code' => $languageCode,
             'user_id' => $userId,
@@ -71,6 +75,7 @@ class ProjectAssignmentService
             $classes[$classId]['projects'][] = [
                 'id' => (int) $row['project_id'],
                 'slug' => (string) $row['slug'],
+                'display_order' => (int) $row['display_order'],
                 'title' => (string) $row['title'],
                 'description' => $row['description'] !== null ? (string) $row['description'] : '',
                 'status' => (string) $row['status'],
@@ -83,5 +88,40 @@ class ProjectAssignmentService
     private function pdo(): PDO
     {
         return require dirname(__DIR__, 2) . '/config/database.php';
+    }
+
+    private function ensureProjectsDisplayOrderColumn(PDO $pdo): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = :table_name
+               AND COLUMN_NAME = :column_name'
+        );
+        $stmt->execute([
+            'table_name' => 'projects',
+            'column_name' => 'display_order',
+        ]);
+
+        if ((int) $stmt->fetchColumn() > 0) {
+            return;
+        }
+
+        $pdo->exec('ALTER TABLE projects ADD COLUMN display_order INT UNSIGNED NOT NULL DEFAULT 0 AFTER name');
+        $pdo->exec('ALTER TABLE projects ADD KEY idx_projects_display_order (display_order)');
+        $pdo->exec(
+            "UPDATE projects
+             SET display_order = CASE slug
+                 WHEN 'projecte-rius' THEN 10
+                 WHEN 'mat-penedes' THEN 20
+                 WHEN 'agroparc' THEN 30
+                 WHEN 'projecte-orenetes' THEN 40
+                 WHEN 'liquencity' THEN 50
+                 WHEN 'vespa-velutina' THEN 60
+                 ELSE display_order
+             END
+             WHERE display_order = 0"
+        );
     }
 }

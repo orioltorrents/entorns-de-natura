@@ -6,9 +6,7 @@ class AuthService
 {
     public function __construct()
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        startAppSession();
     }
 
     public function attemptLogin(string $email, string $password): bool

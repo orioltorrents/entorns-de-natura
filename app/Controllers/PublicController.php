@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 class PublicController
 {
-    public function __construct(private ProjectService $projectService)
-    {
+    public function __construct(
+        private ProjectService $projectService,
+        private AuthService $authService,
+        private AssessmentService $assessmentService
+    ) {
     }
 
     public function home(): string
@@ -36,9 +39,18 @@ class PublicController
             ]);
         }
 
+        $studentGrades = null;
+        $currentUser = $this->authService->user();
+
+        if ($currentUser !== null && $this->authService->hasRole('student')) {
+            $studentGrades = $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
+        }
+
         return view('public.project-detail', [
             'title' => (string) $project['title'],
             'project' => $project,
+            'currentUser' => $currentUser,
+            'studentGrades' => $studentGrades,
         ]);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 require_once dirname(__DIR__) . '/app/Helpers/env.php';
+require_once dirname(__DIR__) . '/app/Helpers/session.php';
 require_once dirname(__DIR__) . '/app/Helpers/lang.php';
 require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
@@ -8,6 +9,8 @@ require_once dirname(__DIR__) . '/app/Helpers/view.php';
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
+require_once dirname(__DIR__) . '/app/Services/AssessmentService.php';
+require_once dirname(__DIR__) . '/app/Services/AssessmentStructureImportService.php';
 require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
@@ -18,8 +21,9 @@ require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 $authService = new AuthService();
 $projectAssignmentService = new ProjectAssignmentService();
 $projectService = new ProjectService();
+$assessmentService = new AssessmentService();
 $analyticsService = new AnalyticsService();
-$controller = new PublicController($projectService);
+$controller = new PublicController($projectService, $authService, $assessmentService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);

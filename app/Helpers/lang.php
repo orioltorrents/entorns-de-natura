@@ -1,9 +1,7 @@
 <?php
 
 function getLanguage(): string {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    startAppSession();
 
     if (isset($_GET['lang']) && in_array($_GET['lang'], ['ca', 'es', 'en'], true)) {
         $_SESSION['lang'] = $_GET['lang'];

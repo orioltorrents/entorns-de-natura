@@ -1,11 +1,17 @@
+/*
+Legacy stylesheet kept for reference only.
+This file is not loaded by the application. The active stylesheet is
+public/assets/css/styles.css.
+*/
+
 :root {
   --ink: #18211e;
   --muted: #5f6e66;
   --paper: #fbf9f4;
   --white: #ffffff;
   --line: #d8e3dc;
-  --leaf: #2f7d57;
-  --leaf-dark: #1f5d41;
+  --leaf: #2727bf;
+  --leaf-dark: #ceddd6;
   --water: #2f6f8f;
   --sun: #d7902d;
   --clay: #b96745;

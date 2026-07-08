@@ -6,4 +6,5 @@ class Project
     public string $name;
     public string $slug;
     public string $description;
+    public int $display_order = 0;
 }

@@ -169,10 +169,12 @@ CREATE TABLE IF NOT EXISTS projects (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     slug VARCHAR(100) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    display_order INT UNSIGNED NOT NULL DEFAULT 0,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_projects_slug (slug)
+    UNIQUE KEY uq_projects_slug (slug),
+    KEY idx_projects_display_order (display_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS project_translations (
@@ -267,28 +269,28 @@ SELECT 'current_academic_year', '2025-2026'
 WHERE NOT EXISTS (SELECT 1 FROM settings WHERE `key` = 'current_academic_year');
 
 -- Projectes inicials
-INSERT INTO projects (slug, name, is_active)
-SELECT 'projecte-rius', 'Projecte Rius', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'projecte-rius', 'Projecte Rius', 10, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'projecte-rius');
 
-INSERT INTO projects (slug, name, is_active)
-SELECT 'mat-penedes', 'MAT Penedès', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'mat-penedes', 'MAT Penedès', 20, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'mat-penedes');
 
-INSERT INTO projects (slug, name, is_active)
-SELECT 'agroparc', 'Agroparc', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'agroparc', 'Agroparc', 30, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'agroparc');
 
-INSERT INTO projects (slug, name, is_active)
-SELECT 'projecte-orenetes', 'Projecte Orenetes', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'projecte-orenetes', 'Projecte Orenetes', 40, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'projecte-orenetes');
 
-INSERT INTO projects (slug, name, is_active)
-SELECT 'liquencity', 'Liquencity', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'liquencity', 'Liquencity', 50, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'liquencity');
 
-INSERT INTO projects (slug, name, is_active)
-SELECT 'vespa-velutina', 'Vespa velutina', 1
+INSERT INTO projects (slug, name, display_order, is_active)
+SELECT 'vespa-velutina', 'Vespa velutina', 60, 1
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE slug = 'vespa-velutina');
 
 -- Traduccions dels projectes

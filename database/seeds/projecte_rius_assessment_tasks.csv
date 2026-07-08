@@ -1,0 +1,24 @@
+project_slug,phase_key,source_column,title,description,weight_label,role_filter,display_order,is_visible
+projecte-rius,preparacio-sortida,Identificació de flora amb iNaturalist,Identificació de flora amb iNaturalist,Ús d'iNaturalist per identificar flora de l'entorn.,5%,,1,1
+projecte-rius,preparacio-sortida,Macroinvertebrats de riu - Dibuix d'un macroinvertebrat,Dibuix d'un macroinvertebrat,Observació i representació d'un macroinvertebrat aquàtic.,5%,,2,1
+projecte-rius,preparacio-sortida,Informàtic/a - Protocol de recollida de dades,Protocol de recollida de dades,Tasca específica del rol d'informàtic/a.,30%,informàtic/a,3,1
+projecte-rius,preparacio-sortida,Cartògraf/a - Mapa de la zona d’actuació,Mapa de la zona d'actuació,Tasca específica del rol de cartògraf/a.,15%,cartògraf/a,4,1
+projecte-rius,preparacio-sortida,Científic/a - Normes de bioseguretat,Normes de bioseguretat,Tasca específica del rol de científic/a.,15%,científic/a,5,1
+projecte-rius,preparacio-sortida,Cartògraf/a - Esquema del tram assignat,Esquema del tram assignat,Tasca específica del rol de cartògraf/a.,15%,cartògraf/a,6,1
+projecte-rius,preparacio-sortida,Científic/a - Hipòtesi de la investigació,Hipòtesi de la investigació,Tasca específica del rol de científic/a.,15%,científic/a,7,1
+projecte-rius,preparacio-sortida,Coordinador/a - Material necessari per anar al riu,Material necessari per anar al riu,Tasca específica del rol de coordinador/a.,15%,coordinador/a,8,1
+projecte-rius,preparacio-sortida,Coordinador/a - Diari de seguiment/Planificador,Diari de seguiment / planificador,Tasca específica del rol de coordinador/a.,15%,coordinador/a,9,1
+projecte-rius,preparacio-sortida,Mitjana de les tasques presortida,Mitjana de les tasques presortida,Mitjana de les tasques prèvies a la sortida.,,,10,1
+projecte-rius,preparacio-sortida,co/autoavaluació presortida rebuda,Co/autoavaluació presortida rebuda,Valoració rebuda abans de la sortida.,,,11,1
+projecte-rius,inspeccio-fitxa,nota de l'inspecció,Inspecció del riu,Nota de la inspecció feta durant la sortida de camp.,10%,,1,1
+projecte-rius,inspeccio-fitxa,nota de la fitxa,Fitxa de camp,Nota de la fitxa de recollida de dades.,5%,,2,1
+projecte-rius,inspeccio-fitxa,coavaluació inspecció,Coavaluació de la inspecció,Valoració rebuda durant la inspecció.,,,3,1
+projecte-rius,poster-coavaluacions,Poster científic - rol,Pòster científic - rol,Avaluació de la part del pòster vinculada al rol.,35%,,1,1
+projecte-rius,poster-coavaluacions,Poster científic - equip,Pòster científic - equip,Avaluació global del pòster com a equip.,,,2,1
+projecte-rius,poster-coavaluacions,coavaluació post-sortida,Coavaluació post-sortida,Valoració rebuda després de la sortida.,,,3,1
+projecte-rius,poster-coavaluacions,mitjana de coavaluacions,Mitjana de coavaluacions,Mitjana de les coavaluacions rebudes.,10%,,4,1
+projecte-rius,resultat-final,nota1,Assoliment global,Nivell d'assoliment global del projecte.,,,1,1
+projecte-rius,resultat-final,nota2,Nota final del projecte,Nota final numèrica del projecte.,,,2,1
+projecte-rius,comentaris,nota1-comentari,Comentari del nivell global,Comentari associat a l'assoliment global.,,,1,1
+projecte-rius,comentaris,entregues-comentari,Seguiment de les entregues,Comentari sobre el seguiment de les entregues.,,,2,1
+projecte-rius,comentaris,comentari-concatenat,Observació global del projecte,Observació global generada a partir de l'avaluació del projecte.,,,3,1

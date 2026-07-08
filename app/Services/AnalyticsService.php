@@ -164,9 +164,7 @@ class AnalyticsService
 
     private function sessionId(): string
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        startAppSession();
 
         return (string) session_id();
     }

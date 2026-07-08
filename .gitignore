@@ -2,3 +2,4 @@
 /vendor/
 /storage/logs/*
 /storage/cache/*
+/storage/imports/notes/*.csv

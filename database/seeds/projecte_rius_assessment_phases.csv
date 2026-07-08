@@ -1,0 +1,6 @@
+project_slug,phase_key,title,description,section_type,display_order,is_active
+projecte-rius,preparacio-sortida,Fase 1. Preparació i sortida al riu,Tasques inicials i evidències vinculades a la preparació de la inspecció del riu.,phase,1,1
+projecte-rius,inspeccio-fitxa,Fase 2. Inspecció i fitxa de camp,Avaluació de la feina feta durant la inspecció i el registre de dades de camp.,phase,2,1
+projecte-rius,poster-coavaluacions,Fase 3. Pòster científic i coavaluacions,Producte final del projecte i valoracions rebudes del treball en equip.,phase,3,1
+projecte-rius,resultat-final,Resultat final,Assoliment i nota final del projecte.,final,90,1
+projecte-rius,comentaris,Comentaris i observacions,Observacions qualitatives del projecte.,comments,100,1
