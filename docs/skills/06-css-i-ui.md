@@ -23,14 +23,14 @@ El CSS que carrega l’aplicació és:
 public/assets/css/styles.css
 ```
 
-No posar CSS necessari per la web dins:
+No posar CSS necessari per l’aplicació PHP dins:
 
 ```text
 assets/css/
 css/
 ```
 
-Aquests directoris poden existir com a referència històrica, però el navegador no els carrega des de l’aplicació PHP modular.
+Aquests directoris poden existir com a referència històrica o per a la maqueta estàtica `index.html`, però el navegador no els carrega des de l’aplicació PHP modular.
 
 ---
 

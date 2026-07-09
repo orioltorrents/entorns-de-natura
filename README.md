@@ -16,7 +16,7 @@ El projecte es troba en desenvolupament inicial i ja inclou:
 - vistes publiques, d'alumnat, de professorat i d'administracio;
 - base preparada per ampliar amb Google Docs, Google Sheets, rubriques i notes.
 
-També es conserven fitxers de la primera versio estatica del projecte, com `index.html`, `css/styles.css` i les migracions de `supabase/`, com a referencia historica o punt de recuperacio.
+També es conserven els fitxers de la maqueta estàtica del projecte, com `index.html` i `css/styles.css`, i les migracions de `supabase/`, com a referencia historica o punt de recuperacio.
 
 ## Tecnologies
 

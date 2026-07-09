@@ -4,11 +4,11 @@ This is the single source of styles used by the site and the app.
 */
 
 :root {
-  --ink: #18211e;
-  --muted: #5f6e66;
-  --paper: #fbf9f4;
-  --white: #ffffff;
-  --line: #d8e3dc;
+  --ink: #f4f800;
+  --muted: #f0fc04;
+  --paper: #fbb912;
+  --white: #ffdd00;
+  --line: #fdf100;
   --leaf: #1212e7;
   --leaf-dark: #ceddd6;
   --water: #2f6f8f;

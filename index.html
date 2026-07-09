@@ -9,31 +9,31 @@
 </head>
 <body>
   <header class="site-header">
-    <nav class="nav" aria-label="Navegació principal">
-      <a class="brand" href="#inici">
+    <nav class="nav site-header__nav" aria-label="Navegació principal">
+        <a class="brand site-header__brand" href="#inici">
         <span class="brand-mark" aria-hidden="true">EDN</span>
         <span>Entorns de Natura</span>
       </a>
-      <div class="nav-links">
-        <a href="#recursos">Recursos</a>
-        <a href="#model">Model de permisos</a>
+      <div class="nav-links site-header__nav-links">
+          <a class="site-header__nav-link" href="#recursos">Recursos</a>
+          <a class="site-header__nav-link" href="#model">Model de permisos</a>
       </div>
     </nav>
   </header>
 
   <main id="inici">
-    <section class="hero">
-      <div class="hero-copy">
+    <section class="hero hero--home">
+      <div class="hero-copy hero__content">
         <p class="eyebrow">4t ESO · Supabase · visibilitat per rol</p>
-        <h1>Una web que mostra cada recurs a qui toca.</h1>
-        <p>
+        <h1 class="hero__title">Una web que mostra cada recurs a qui toca.</h1>
+        <p class="hero__text">
           El projecte pot tenir contingut públic, materials per a l'alumnat, eines docents i apartats d'administració. La base de dades ja prepara aquest filtre amb rols i Row Level Security.
         </p>
       </div>
 
       <aside class="role-panel" aria-labelledby="role-title">
         <h2 id="role-title">Vista actual</h2>
-        <div class="role-options" role="group" aria-label="Selecciona un rol per previsualitzar la web">
+        <div class="role-options role-panel__options" role="group" aria-label="Selecciona un rol per previsualitzar la web">
           <button class="role-button is-active" type="button" data-role="guest">Públic</button>
           <button class="role-button" type="button" data-role="student">Alumne</button>
           <button class="role-button" type="button" data-role="teacher">Professor</button>
@@ -44,7 +44,7 @@
     </section>
 
     <section id="recursos" class="section">
-      <div class="section-heading">
+      <div class="section-heading section-heading--default">
         <p class="eyebrow">Recursos filtrats</p>
         <h2>Projectes i materials visibles</h2>
         <p>La maqueta aplica la mateixa jerarquia que tens a Supabase: públic &lt; alumne &lt; professor &lt; admin.</p>
@@ -62,7 +62,7 @@
         </p>
       </div>
 
-      <div class="permission-grid">
+      <div class="permission-grid permission-grid--default">
         <article>
           <span class="pill">guest</span>
           <h3>Públic general</h3>
