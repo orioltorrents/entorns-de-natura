@@ -21,18 +21,24 @@ $gradeAchievementClass = static function (array $grade): string {
         <a class="button" href="<?= url('ca/projectes') ?>">Torna als projectes</a>
     </section>
 <?php else: ?>
-    <article class="project-detail">
-        <p class="breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
-        <h1><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-        <?php if (!empty($project['description'])): ?>
-            <p class="lead"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-        <dl class="meta-list">
+    <article class="public-project-detail">
+        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
+        <div class="public-project-detail__hero">
             <div>
+                <p class="public-project-detail__eyebrow">Fitxa de projecte</p>
+                <h1 class="public-project-detail__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+            </div>
+            <span class="public-project-detail__status status">actiu</span>
+        </div>
+        <?php if (!empty($project['description'])): ?>
+            <p class="lead public-project-detail__lead"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <dl class="public-project-detail__meta">
+            <div class="public-project-detail__meta-item">
                 <dt>Identificador</dt>
                 <dd><?= htmlspecialchars($project['slug'], ENT_QUOTES, 'UTF-8') ?></dd>
             </div>
-            <div>
+            <div class="public-project-detail__meta-item">
                 <dt>Estat</dt>
                 <dd>actiu</dd>
             </div>
@@ -40,8 +46,8 @@ $gradeAchievementClass = static function (array $grade): string {
     </article>
 
     <?php if (($studentGrades ?? null) !== null): ?>
-        <section class="grades-panel">
-            <div class="grades-panel__header">
+        <section class="grades-panel public-project-detail__grades">
+            <div class="grades-panel__header public-project-detail__grades-header">
                 <div>
                     <p class="eyebrow">Espai privat de l'alumne</p>
                     <h2 class="grades-panel__title">Les meves notes de <?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h2>
@@ -58,7 +64,7 @@ $gradeAchievementClass = static function (array $grade): string {
             <?php else: ?>
                 <?php $metadata = $studentGrades['metadata'] ?? []; ?>
                 <?php if (!empty($metadata['group_name']) || !empty($metadata['team_code']) || !empty($metadata['role_name'])): ?>
-                    <div class="grades-panel__meta">
+                    <div class="grades-panel__meta public-project-detail__grades-meta">
                         <?php if (!empty($metadata['role_name'])): ?>
                             <span class="grades-panel__meta-item">Rol: <?= htmlspecialchars((string) $metadata['role_name'], ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endif; ?>
@@ -79,7 +85,7 @@ $gradeAchievementClass = static function (array $grade): string {
                 <?php endif; ?>
 
                 <?php if (!empty($studentGrades['sections'])): ?>
-                    <div class="grades-timeline">
+                    <div class="grades-timeline public-project-detail__grades-timeline">
                         <?php foreach ($studentGrades['sections'] as $section): ?>
                             <section class="grade-phase">
                                 <div class="grade-phase__header">
@@ -106,7 +112,7 @@ $gradeAchievementClass = static function (array $grade): string {
                     </div>
                 <?php else: ?>
                     <?php if (!empty($studentGrades['summary'])): ?>
-                        <div class="grades-overview">
+                        <div class="grades-overview public-project-detail__grades-overview">
                             <?php foreach ($studentGrades['summary'] as $grade): ?>
                                 <article class="grade-card grade-card--highlight<?= $gradeAchievementClass($grade) ?>">
                                     <span class="grade-card__label"><?= htmlspecialchars((string) $grade['label'], ENT_QUOTES, 'UTF-8') ?></span>
@@ -117,7 +123,7 @@ $gradeAchievementClass = static function (array $grade): string {
                     <?php endif; ?>
 
                     <?php if (!empty($studentGrades['grades'])): ?>
-                        <section class="grades-section">
+                        <section class="grades-section public-project-detail__grades-section">
                             <h3 class="grades-section__title">Notes i assoliments</h3>
                             <div class="grade-list">
                                 <?php foreach ($studentGrades['grades'] as $grade): ?>
@@ -132,7 +138,7 @@ $gradeAchievementClass = static function (array $grade): string {
                 <?php endif; ?>
 
                 <?php if (!empty($studentGrades['final'])): ?>
-                    <section class="grades-final">
+                    <section class="grades-final public-project-detail__grades-final">
                         <div>
                             <p class="eyebrow">Resultat final</p>
                             <h3 class="grades-final__title">Assoliment i nota final</h3>
@@ -149,7 +155,7 @@ $gradeAchievementClass = static function (array $grade): string {
                 <?php endif; ?>
 
                 <?php if (!empty($studentGrades['comments'])): ?>
-                    <section class="grades-section">
+                    <section class="grades-section public-project-detail__grades-section">
                         <h3 class="grades-section__title">Comentaris i observacions</h3>
                         <div class="grade-comments">
                             <?php foreach ($studentGrades['comments'] as $comment): ?>

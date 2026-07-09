@@ -1,13 +1,13 @@
 <?php
 ob_start();
 ?>
-<div class="admin-shell admin-layout">
-    <aside class="admin-sidebar admin-layout__sidebar">
-        <div class="admin-brand admin-layout__brand">
+<div class="admin-layout">
+    <aside class="admin-layout__sidebar">
+        <div class="admin-layout__brand">
             <strong>Entorns de Natura</strong>
             <span>Administració</span>
         </div>
-        <nav class="admin-nav admin-layout__nav">
+        <nav class="admin-layout__nav">
             <a class="active" href="#panell">Panell</a>
             <a href="#analytics">Analítica</a>
             <a href="#usuaris">Usuaris</a>
@@ -18,30 +18,30 @@ ob_start();
         </nav>
     </aside>
 
-    <div class="admin-content admin-layout__content">
+    <div class="admin-layout__content">
         <?php if (!empty($message)): ?>
             <div class="flash-message <?= htmlspecialchars((string) $messageType, ENT_QUOTES, 'UTF-8') ?>">
                 <?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') ?>
             </div>
         <?php endif; ?>
 
-        <div class="hero-stats admin-hero-stats">
-            <div class="hero-card">
-                <div class="hero-card__icon">👤</div>
-                <div class="hero-card__body">
-                    <span class="hero-card__label">Usuaris</span>
-                    <span class="hero-card__value"><?= count($users) ?></span>
-                    <span class="hero-card__desc">Registrats al sistema</span>
+        <div class="admin-summary">
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">👤</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Usuaris</span>
+                    <span class="admin-summary__value"><?= count($users) ?></span>
+                    <span class="admin-summary__desc">Registrats al sistema</span>
                 </div>
             </div>
-            <div class="hero-card">
-                <div class="hero-card__icon">🛡️</div>
-                <div class="hero-card__body">
-                    <span class="hero-card__label">Rols</span>
-                    <span class="hero-card__value"><?= count($roles) ?></span>
-                    <div class="hero-card__roles">
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">🛡️</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Rols</span>
+                    <span class="admin-summary__value"><?= count($roles) ?></span>
+                    <div class="admin-summary__roles">
                         <?php foreach ($roles as $role): ?>
-                            <span class="hero-card__role-badge">
+                            <span class="admin-summary__role-badge">
                                 <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
                                 <small><?= (int) $role['user_count'] ?></small>
                             </span>
@@ -49,49 +49,49 @@ ob_start();
                     </div>
                 </div>
             </div>
-            <div class="hero-card hero-card--good">
-                <div class="hero-card__icon">✅</div>
-                <div class="hero-card__body">
-                    <span class="hero-card__label">Actius</span>
-                    <span class="hero-card__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] === 1)) ?></span>
-                    <span class="hero-card__desc">Usuaris amb accés actiu</span>
+            <div class="admin-summary__card admin-summary__card--good">
+                <div class="admin-summary__icon">✅</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Actius</span>
+                    <span class="admin-summary__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] === 1)) ?></span>
+                    <span class="admin-summary__desc">Usuaris amb accés actiu</span>
                 </div>
             </div>
-            <div class="hero-card hero-card--muted">
-                <div class="hero-card__icon">⏸️</div>
-                <div class="hero-card__body">
-                    <span class="hero-card__label">Inactius</span>
-                    <span class="hero-card__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] !== 1)) ?></span>
-                    <span class="hero-card__desc">Usuaris desactivats</span>
+            <div class="admin-summary__card admin-summary__card--muted">
+                <div class="admin-summary__icon">⏸️</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Inactius</span>
+                    <span class="admin-summary__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] !== 1)) ?></span>
+                    <span class="admin-summary__desc">Usuaris desactivats</span>
                 </div>
             </div>
         </div>
 
-        <div id="analytics" class="card admin-card">
-            <div class="card-actions admin-card__header">
+        <div id="analytics" class="card admin-panel">
+            <div class="admin-panel__header">
                 <h2>Analítica web completa</h2>
                 <span class="status">Visites, dispositius, geografia i classes</span>
             </div>
 
-            <div class="stats-grid admin-stats">
-                <div class="card metric-card admin-stat-card">
-                    <div class="metric-icon">📈</div>
+            <div class="admin-metrics">
+                <div class="admin-metrics__card">
+                    <div class="admin-metrics__icon">📈</div>
                     <div>
                         <h2>Visites totals</h2>
                         <p class="stat-value"><?= (int) ($analytics['total_visits'] ?? 0) ?></p>
                         <p>Registres de trànsit des de la instal·lació</p>
                     </div>
                 </div>
-                <div class="card metric-card admin-stat-card">
-                    <div class="metric-icon">🧭</div>
+                <div class="admin-metrics__card">
+                    <div class="admin-metrics__icon">🧭</div>
                     <div>
                         <h2>Sessions úniques</h2>
                         <p class="stat-value"><?= (int) ($analytics['unique_sessions'] ?? 0) ?></p>
                         <p>Sessions diferents capturades</p>
                     </div>
                 </div>
-                <div class="card metric-card admin-stat-card">
-                    <div class="metric-icon">👩‍🏫</div>
+                <div class="admin-metrics__card">
+                    <div class="admin-metrics__icon">👩‍🏫</div>
                     <div>
                         <h2>Usuaris reconeguts</h2>
                         <p class="stat-value"><?= (int) ($analytics['unique_users'] ?? 0) ?></p>
@@ -100,11 +100,11 @@ ob_start();
                 </div>
             </div>
 
-            <div class="dashboard-sections admin-sections">
-                <section class="card admin-card admin-card--table">
+            <div class="admin-panels">
+                <section class="card admin-panel admin-panel--table">
                     <h3>Connexions per classe</h3>
-                    <div class="table-scroll table-wrapper table-wrapper--scroll">
-                        <table class="table admin-table">
+                    <div class="admin-table__wrapper">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Classe</th>
@@ -127,7 +127,7 @@ ob_start();
                     </div>
                 </section>
 
-                <section class="card admin-card admin-card--chart">
+                <section class="card admin-panel admin-panel--chart">
                     <h3>Dispositius i SO</h3>
                     <?php
                     $maxDevice = max(array_column($analytics['device_stats'] ?? [['total' => 0]], 'total'));
@@ -162,8 +162,8 @@ ob_start();
                 </section>
             </div>
 
-            <div class="dashboard-sections admin-sections">
-                <section class="card admin-card admin-card--geo">
+            <div class="admin-panels">
+                <section class="card admin-panel admin-panel--geo">
                     <h3>Geografia</h3>
                     <?php $maxGeo = max(array_column($analytics['geo_stats'] ?? [['total' => 0]], 'total')); ?>
                     <div class="bar-chart">
@@ -180,7 +180,7 @@ ob_start();
                     </div>
                 </section>
 
-                <section class="card admin-card admin-card--pages">
+                <section class="card admin-panel admin-panel--pages">
                     <h3>Pàgines més vistes</h3>
                     <ul>
                         <?php foreach (($analytics['page_stats'] ?? []) as $page): ?>
@@ -190,10 +190,10 @@ ob_start();
                 </section>
             </div>
 
-            <section class="card admin-card admin-card--recent">
+            <section class="card admin-panel admin-panel--recent">
                 <h3>Visites recents</h3>
-                <div class="table-scroll table-wrapper table-wrapper--scroll">
-                    <table class="table admin-table">
+                <div class="admin-table__wrapper">
+                    <table class="admin-table">
                         <thead>
                             <tr>
                                 <th>Data</th>
@@ -221,12 +221,12 @@ ob_start();
             </section>
         </div>
 
-        <div id="usuaris" class="dashboard-sections admin-sections">
-            <section class="card admin-card admin-card--users">
+        <div id="usuaris" class="admin-panels">
+            <section class="card admin-panel admin-panel--users">
                 <h2>Crear usuari</h2>
-                <form class="form admin-form admin-form--users" method="post" action="<?= url('admin') ?>">
+                <form class="admin-form admin-form--users" method="post" action="<?= url('admin') ?>">
                     <input type="hidden" name="action" value="create_user">
-                    <div class="form-grid form__grid">
+                    <div class="form__grid">
                         <label>
                             Nom
                             <input type="text" name="name" required>
@@ -244,15 +244,15 @@ ob_start();
                             <input type="password" name="password" required>
                         </label>
                     </div>
-                    <label class="form__check checkbox-row">
+                    <label class="form__check">
                         <input type="checkbox" name="is_active" value="1" checked>
                         Usuari actiu
                     </label>
-                    <div class="form__group form-group">
+                    <div class="form__group">
                         <label>Assignar rols</label>
-                        <div class="form__choices checkbox-group">
+                        <div class="form__choices">
                             <?php foreach ($roles as $role): ?>
-                                <label class="choice-pill checkbox-pill">
+                                <label class="form__choice">
                                     <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>">
                                     <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
                                 </label>
@@ -265,10 +265,10 @@ ob_start();
 
         </div>
 
-        <div class="card admin-card admin-card--import">
+        <div class="card admin-panel admin-panel--import">
             <h2>Importar alumnes CSV</h2>
             <p>Importa fitxers amb columnes com <strong>name</strong>, <strong>surname</strong>, <strong>email</strong>, <strong>password</strong>, <strong>class</strong>, <strong>roles</strong> i <strong>trimester</strong>. La proposta més robusta és tenir una sola base d’usuaris i assignar classe/rols per relació, perquè un alumne pot canviar de grup sense duplicar el registre.</p>
-            <form class="form admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
+            <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                 <input type="hidden" name="action" value="import_students">
                 <label>
                     Fitxer CSV
@@ -286,22 +286,22 @@ ob_start();
         }
         ksort($classGroups);
         ?>
-        <div id="projectes-section" class="card collapsible-card admin-card admin-card--students">
-            <div class="card-actions admin-card__header">
+        <div id="projectes-section" class="card admin-panel admin-panel--students admin-collapsible">
+            <div class="admin-panel__header">
                 <h2>Alumnes</h2>
                 <span class="status" id="alumnes-count"><?= count($users) ?> usuaris</span>
                 <button class="collapse-toggle" type="button" data-collapse="projectes-table-wrap">Amagar</button>
             </div>
-            <div class="filter-bar admin-filters" id="alumnes-filter" data-filter-table="alumnes-table">
-                <span class="filter-label">Classe:</span>
-                <button class="filter-chip admin-filters__chip checked" type="button" data-value="all">Totes</button>
+            <div class="admin-filters" id="alumnes-filter" data-filter-table="alumnes-table">
+                <span class="admin-filters__label">Classe:</span>
+                <button class="admin-filters__chip is-active" type="button" data-value="all">Totes</button>
                 <?php foreach ($classGroups as $group => $_): ?>
-                    <button class="filter-chip admin-filters__chip" type="button" data-value="<?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?></button>
+                    <button class="admin-filters__chip" type="button" data-value="<?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?></button>
                 <?php endforeach; ?>
             </div>
-            <div id="projectes-table-wrap" class="collapsible-content">
-                <div class="table-scroll table-wrapper table-wrapper--scroll">
-                    <table class="table admin-table" id="alumnes-table" data-sortable-table>
+            <div id="projectes-table-wrap" class="admin-collapsible__content">
+                <div class="admin-table__wrapper">
+                    <table class="admin-table" id="alumnes-table" data-sortable-table>
                         <thead>
                             <tr>
                                 <th scope="col" data-sort-type="text">Usuari</th>
@@ -338,18 +338,18 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                        <div class="table-meta admin-table__meta">
+                                        <div class="admin-table__meta">
                                         <?php if (!empty($user['team_number'])): ?>
-                                            <span class="table-meta__item admin-table__meta-item">Equip <?= htmlspecialchars((string) $user['team_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-table__meta-item">Equip <?= htmlspecialchars((string) $user['team_number'], ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
                                         <?php if (!empty($user['group_number'])): ?>
-                                            <span class="table-meta__item admin-table__meta-item">Grup <?= htmlspecialchars((string) $user['group_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-table__meta-item">Grup <?= htmlspecialchars((string) $user['group_number'], ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
                                         <?php if (!empty($user['group_code_1t'])): ?>
-                                            <span class="table-meta__item admin-table__meta-item"><?= htmlspecialchars((string) $user['group_code_1t'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-table__meta-item"><?= htmlspecialchars((string) $user['group_code_1t'], ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endif; ?>
                                         <?php if (empty($user['team_number']) && empty($user['group_number']) && empty($user['group_code_1t'])): ?>
-                                            <span class="table-meta__item admin-table__meta-item muted">Sense grup</span>
+                                            <span class="admin-table__meta-item muted">Sense grup</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -364,7 +364,7 @@ ob_start();
                                 <td>
                                     <?php if (!empty($user['roles'])): ?>
                                         <?php foreach ($user['roles'] as $role): ?>
-                                            <span class="tag admin-table__tag"><?= htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-table__tag"><?= htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <span class="muted">Sense rols</span>
@@ -372,9 +372,9 @@ ob_start();
                                 </td>
                                 <td><span class="status"><?= htmlspecialchars((string) $user['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                 <td>
-                                    <div class="action-stack">
+                                    <div class="admin-actions">
                                         <?php if (!$isAdminUser): ?>
-                                            <form method="post" action="<?= url('admin') ?>" class="inline-action">
+                                            <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
                                                 <input type="hidden" name="action" value="toggle_user">
                                                 <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
                                                 <button class="button button--secondary" type="submit">
@@ -390,10 +390,10 @@ ob_start();
                             </tr>
                             <tr id="student-<?= (int) $user['id'] ?>" class="student-editor-row">
                                 <td colspan="10">
-                                    <form class="form form--compact admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
+                                    <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
                                         <input type="hidden" name="action" value="update_student">
                                         <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
-                                        <div class="form-grid">
+                                        <div class="form__grid form__grid--compact">
                                             <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
                                             <label>Cognoms<input type="text" name="surname" value="<?= htmlspecialchars((string) ($user['surname'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
                                             <label>Email<input type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
@@ -417,11 +417,11 @@ ob_start();
                                             <label>External ID<input type="text" name="external_id" value="<?= htmlspecialchars((string) ($user['external_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
                                             <label>Trimestre<input type="text" name="trimester" value="<?= htmlspecialchars((string) ($user['trimester'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
                                         </div>
-                                            <div class="form__group form-group">
+                                            <div class="form__group">
                                             <label>Rols</label>
-                                            <div class="form__choices checkbox-group">
+                                            <div class="form__choices">
                                                 <?php foreach ($roles as $role): ?>
-                                                    <label class="choice-pill checkbox-pill">
+                                                    <label class="form__choice">
                                                         <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>" <?= in_array((string) $role['name'], $user['roles'], true) ? 'checked' : '' ?>>
                                                         <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
                                                     </label>
@@ -432,7 +432,7 @@ ob_start();
                                             <input type="hidden" name="is_active" value="1">
                                             <p class="muted">Aquest usuari té rol admin i es manté actiu per protegir l’accés al panell.</p>
                                         <?php else: ?>
-                                            <label class="form__check checkbox-row">
+                                            <label class="form__check">
                                                 <input type="checkbox" name="is_active" value="1" <?= ((int) $user['is_active'] === 1) ? 'checked' : '' ?>>
                                                 Usuari actiu
                                             </label>
@@ -463,20 +463,20 @@ ob_start();
             'vespa-velutina' => 'Logotip_EXOCAT.png',
         ];
         ?>
-        <div id="projectes-lista" class="card collapsible-card">
-            <div class="card-actions">
+        <div id="projectes-lista" class="card admin-panel admin-panel--projects admin-collapsible">
+            <div class="admin-panel__header">
                 <h2>Projectes</h2>
-                <div class="action-stack">
+                <div class="admin-actions">
                     <span class="status">Ordre, estat i assignacions</span>
                     <button class="collapse-toggle" type="button" data-collapse="projectes-content">Amagar</button>
                 </div>
             </div>
 
-            <div id="projectes-content" class="collapsible-content">
+            <div id="projectes-content" class="admin-collapsible__content">
                 <form id="project-order-form" method="post" action="<?= url('admin') ?>#projectes-lista">
                     <input type="hidden" name="action" value="update_project_order">
                 </form>
-                <div class="project-list">
+                <div class="admin-projects">
                     <?php foreach ($projects as $project): ?>
                         <?php
                             $projectId = (int) $project['id'];
@@ -504,7 +504,7 @@ ob_start();
                                     <input form="project-order-form" type="number" name="display_order[<?= $projectId ?>]" value="<?= (int) ($project['display_order'] ?? 0) ?>" min="0" step="1">
                                 </label>
                                 <button class="button button--secondary" form="project-order-form" type="submit">Guardar ordre</button>
-                                <form method="post" action="<?= url('admin') ?>#projectes-lista" class="inline-action">
+                                <form method="post" action="<?= url('admin') ?>#projectes-lista" class="admin-inline-action">
                                     <input type="hidden" name="action" value="toggle_project">
                                     <input type="hidden" name="project_id" value="<?= $projectId ?>">
                                     <button class="button button--secondary" type="submit">
@@ -592,19 +592,19 @@ ob_start();
             </div>
         </div>
 
-        <div id="avaluacio" class="card collapsible-card">
-            <div class="card-actions">
+        <div id="avaluacio" class="card admin-panel admin-panel--assessment admin-collapsible">
+            <div class="admin-panel__header">
                 <h2>Fases i tasques</h2>
-                <div class="action-stack">
+                <div class="admin-actions">
                     <span class="status">Estructura d’avaluació</span>
                     <button class="collapse-toggle" type="button" data-collapse="avaluacio-content">Amagar</button>
                 </div>
             </div>
-            <div id="avaluacio-content" class="collapsible-content">
+            <div id="avaluacio-content" class="admin-collapsible__content">
             <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. La importació actualitza fases i tasques existents fent servir <code>project_slug</code>, <code>phase_key</code> i <code>source_column</code>.</p>
-            <form class="form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                 <input type="hidden" name="action" value="import_assessment_structure">
-                <div class="form-grid">
+                <div class="form__grid">
                     <label>
                         assessment_phases.csv
                         <input type="file" name="phases_file" accept=".csv,text/csv" required>
@@ -619,8 +619,8 @@ ob_start();
                 <button class="button" type="submit">Importar estructura</button>
             </form>
 
-            <div class="assessment-admin">
-                <div class="card-actions">
+            <div class="admin-assessment">
+                <div class="admin-panel__header">
                     <h3>Gestionar visibilitat</h3>
                     <span class="status">Projectes configurats</span>
                 </div>
@@ -631,27 +631,27 @@ ob_start();
                     </div>
                 <?php else: ?>
                     <?php foreach ($assessmentStructure as $assessmentProject): ?>
-                        <section class="assessment-project">
-                            <div class="assessment-project__header">
+                        <section class="admin-assessment__project">
+                            <div class="admin-assessment__project-header">
                                 <div>
-                                    <h4 class="assessment-project__title"><?= htmlspecialchars((string) $assessmentProject['name'], ENT_QUOTES, 'UTF-8') ?></h4>
-                                    <p class="assessment-project__slug"><?= htmlspecialchars((string) $assessmentProject['slug'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <h4 class="admin-assessment__project-title"><?= htmlspecialchars((string) $assessmentProject['name'], ENT_QUOTES, 'UTF-8') ?></h4>
+                                    <p class="admin-assessment__project-slug"><?= htmlspecialchars((string) $assessmentProject['slug'], ENT_QUOTES, 'UTF-8') ?></p>
                                 </div>
                                 <span class="status"><?= count($assessmentProject['phases']) ?> fases</span>
                             </div>
 
                             <?php foreach ($assessmentProject['phases'] as $phase): ?>
-                                <article class="assessment-phase<?= ((int) $phase['is_active'] === 1) ? '' : ' assessment-phase--disabled' ?>">
-                                    <div class="assessment-phase__header">
+                                <article class="admin-assessment__phase<?= ((int) $phase['is_active'] === 1) ? '' : ' admin-assessment__phase--disabled' ?>">
+                                    <div class="admin-assessment__phase-header">
                                         <div>
-                                            <h5 class="assessment-phase__title"><?= htmlspecialchars((string) $phase['title'], ENT_QUOTES, 'UTF-8') ?></h5>
-                                            <p class="assessment-phase__meta">
+                                            <h5 class="admin-assessment__phase-title"><?= htmlspecialchars((string) $phase['title'], ENT_QUOTES, 'UTF-8') ?></h5>
+                                            <p class="admin-assessment__phase-meta">
                                                 <?= htmlspecialchars((string) $phase['phase_key'], ENT_QUOTES, 'UTF-8') ?> ·
                                                 <?= htmlspecialchars((string) $phase['section_type'], ENT_QUOTES, 'UTF-8') ?> ·
                                                 ordre <?= (int) $phase['display_order'] ?>
                                             </p>
                                         </div>
-                                        <form method="post" action="<?= url('admin') ?>#avaluacio" class="inline-action">
+                                        <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                             <input type="hidden" name="action" value="toggle_assessment_phase">
                                             <input type="hidden" name="phase_id" value="<?= (int) $phase['id'] ?>">
                                             <button class="button button--secondary" type="submit">
@@ -660,8 +660,8 @@ ob_start();
                                         </form>
                                     </div>
 
-                                    <div class="table-scroll">
-                                        <table class="table table--compact assessment-table">
+                                    <div class="admin-table__wrapper">
+                                        <table class="admin-table admin-table--compact admin-assessment__table">
                                             <thead>
                                                 <tr>
                                                     <th>Tasca</th>
@@ -679,7 +679,7 @@ ob_start();
                                                     </tr>
                                                 <?php else: ?>
                                                     <?php foreach ($phase['tasks'] as $task): ?>
-                                                        <tr class="<?= ((int) $task['is_visible'] === 1) ? '' : 'assessment-table__row--muted' ?>">
+                                                         <tr class="<?= ((int) $task['is_visible'] === 1) ? '' : 'admin-assessment__row--muted' ?>">
                                                             <td>
                                                                 <strong><?= htmlspecialchars((string) $task['title'], ENT_QUOTES, 'UTF-8') ?></strong><br>
                                                                 <span class="muted">ordre <?= (int) $task['display_order'] ?></span>
@@ -689,7 +689,7 @@ ob_start();
                                                             <td><?= $task['role_filter'] !== '' ? htmlspecialchars((string) $task['role_filter'], ENT_QUOTES, 'UTF-8') : '<span class="muted">Tots</span>' ?></td>
                                                             <td><span class="status"><?= ((int) $task['is_visible'] === 1) ? 'Visible' : 'Amagada' ?></span></td>
                                                             <td>
-                                                                <form method="post" action="<?= url('admin') ?>#avaluacio" class="inline-action">
+                                                                 <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                                                     <input type="hidden" name="action" value="toggle_assessment_task">
                                                                     <input type="hidden" name="task_id" value="<?= (int) $task['id'] ?>">
                                                                     <button class="button button--secondary" type="submit">
@@ -712,12 +712,12 @@ ob_start();
             </div>
         </div>
 
-        <div id="sincronitzacions" class="card">
+        <div id="sincronitzacions" class="card admin-panel">
             <h2>Google Sync</h2>
             <p>El mòdul de sincronització està preparat per gestionar documents i fulls des d’aquest panell.</p>
         </div>
 
-        <div id="logs" class="card">
+        <div id="logs" class="card admin-panel">
             <h2>Logs i auditoria</h2>
             <p>En properes versions es mostraran aquí les accions d’admin i els errors del sistema.</p>
         </div>

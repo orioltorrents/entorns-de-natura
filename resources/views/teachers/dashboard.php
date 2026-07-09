@@ -1,35 +1,45 @@
 <?php
 ob_start();
 ?>
-<section class="dashboard-header">
-    <h1>Dashboard professorat</h1>
-    <p>Projectes assignats a les classes on fas docencia.</p>
+<section class="teacher-dashboard__hero">
+    <div>
+        <p class="teacher-dashboard__eyebrow">Espai de professorat</p>
+        <h1 class="teacher-dashboard__title">Projectes de les teves classes</h1>
+        <p class="teacher-dashboard__text">Consulta ràpidament els projectes assignats a les classes on fas docència.</p>
+    </div>
 </section>
 
 <?php if (empty($classes)): ?>
-    <div class="empty-state">
+    <div class="empty-state teacher-dashboard__empty">
         <p>Encara no tens projectes assignats a cap classe.</p>
     </div>
 <?php else: ?>
-    <?php foreach ($classes as $class): ?>
-        <section class="class-projects">
-            <h2><?= htmlspecialchars($class['name'], ENT_QUOTES, 'UTF-8') ?></h2>
-            <div class="project-grid">
+    <div class="teacher-dashboard__classes">
+        <?php foreach ($classes as $class): ?>
+            <section class="teacher-dashboard__class">
+                <div class="teacher-dashboard__class-header">
+                    <h2 class="teacher-dashboard__class-title"><?= htmlspecialchars($class['name'], ENT_QUOTES, 'UTF-8') ?></h2>
+                    <span class="status teacher-dashboard__class-count"><?= count($class['projects']) ?> projectes</span>
+                </div>
+                <div class="teacher-dashboard__projects">
                 <?php foreach ($class['projects'] as $project): ?>
-                    <article class="card project-card">
-                        <h3><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h3>
+                    <article class="teacher-project-card">
+                        <div class="teacher-project-card__header">
+                            <h3 class="teacher-project-card__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h3>
+                            <span class="teacher-project-card__status status"><?= htmlspecialchars($project['status'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
                         <?php if ($project['description'] !== ''): ?>
-                            <p><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="teacher-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
                         <?php endif; ?>
-                        <div class="card-actions">
-                            <span class="status"><?= htmlspecialchars($project['status'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <a class="button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                        <div class="teacher-project-card__actions">
+                            <a class="button teacher-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
                         </div>
                     </article>
                 <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endforeach; ?>
+    </div>
 <?php endif; ?>
 <?php
 $content = ob_get_clean();

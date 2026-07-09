@@ -2,7 +2,7 @@
 
 ## Objectiu
 
-Refactoritzar i ampliar el CSS d’**Entorns de Natura** de manera sostenible, mantenint el resultat visual actual sempre que sigui possible i millorant la claredat del codi.
+Refactoritzar i ampliar el CSS d’**Entorns de Natura** de manera sostenible, mantenint el resultat visual actual quan convingui, però permetent millores visuals petites i segures quan aportin claredat o qualitat.
 
 Aquest skill s’ha de consultar abans de:
 
@@ -44,6 +44,13 @@ Prioritats:
 4. Fer el CSS més llegible.
 5. Preparar components reutilitzables.
 6. Millorar accessibilitat.
+
+Regla pràctica actual:
+
+- en àrees que es refan, preferir classes BEM noves i netes;
+- no conservar compatibilitat antiga si ja s’ha migrat tota la vista;
+- només mantenir selectors antics si hi ha una vista o un script que encara depèn d’ells;
+- si el canvi és visual però petit i clar, es pot aplicar directament.
 
 No fer una reescriptura completa si una refactorització incremental resol el problema.
 
@@ -167,6 +174,8 @@ Patró recomanat inspirat en BEM:
 
 Per components existents, no canviar noms de classe només per “fer-ho més BEM” si això obliga a tocar moltes vistes sense benefici clar.
 
+Quan es refa una vista concreta, sí que es pot retirar la compatibilitat antiga d’aquella vista i deixar només la nomenclatura nova.
+
 Quan es canviï una classe:
 
 1. Actualitzar totes les vistes que la fan servir.
@@ -250,7 +259,9 @@ Exemples de canvis segurs:
 - substituir colors repetits per variables equivalents;
 - unificar radi de targetes semblants;
 - afegir `focus-visible`;
-- compactar CSS duplicat sense canviar HTML.
+- compactar CSS duplicat sense canviar HTML;
+- millorar jerarquia visual amb espai, contrast i ombres més coherents;
+- fer un dashboard més llegible sense canviar la funcionalitat.
 
 Exemples que cal proposar abans:
 
@@ -270,7 +281,7 @@ Després de tocar CSS:
 3. Si s’han tocat vistes PHP, executar lint:
 
 ```bash
-/Applications/XAMPP/xamppfiles/bin/php -l resources/views/admin/dashboard.php
+php -l resources/views/admin/dashboard.php
 ```
 
 4. Si s’ha tocat JS relacionat:
@@ -280,6 +291,8 @@ node --check public/assets/js/scripts.js
 ```
 
 5. Revisar visualment les pantalles afectades quan sigui possible.
+
+6. Si el CSS sembla no aplicar-se, revisar el cache-busting del layout i fer un refresh fort al navegador.
 
 ---
 

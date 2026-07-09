@@ -1,6 +1,8 @@
 # Entorns de Natura
 
-**Entorns de Natura** es una aplicacio web educativa per a projectes de 4t d'ESO. El projecte ha evolucionat des d'una primera maqueta estatica cap a una aplicacio PHP modular amb web publica, espais per a alumnat i professorat, panell d'administracio i base de dades MySQL/MariaDB.
+**Entorns de Natura** es una aplicacio web educativa per a projectes de 4t d'ESO.
+
+El projecte ha evolucionat des d'una maqueta estatica cap a una aplicacio PHP modular amb web publica, espais per a alumnat i professorat, panell d'administracio i base de dades MySQL/MariaDB.
 
 ## Estat actual
 
@@ -14,9 +16,24 @@ El projecte es troba en desenvolupament inicial i ja inclou:
 - taules inicials d'usuaris, rols, classes, projectes i idiomes;
 - assignacions inicials de professorat, alumnat, classes i projectes;
 - vistes publiques, d'alumnat, de professorat i d'administracio;
+- full d'estils principal a `public/assets/css/styles.css`, amb classes BEM i cache-busting des de `resources/views/layouts/app.php`;
+- la maqueta estatica `index.html` i `css/styles.css` es mantenen com a referencia historica o visual;
 - base preparada per ampliar amb Google Docs, Google Sheets, rubriques i notes.
 
-També es conserven els fitxers de la maqueta estàtica del projecte, com `index.html` i `css/styles.css`, i les migracions de `supabase/`, com a referencia historica o punt de recuperacio.
+## UI i CSS
+
+- El CSS actiu de l'aplicacio PHP es `public/assets/css/styles.css`.
+- Les vistes noves o refactoritzades han de preferir classes BEM clares i coherents.
+- Si una vista ja s'ha migrat del tot, no cal mantenir compatibilitat antiga innecessaria.
+- Els canvis visuals petits i segurs son acceptables quan milloren la lectura, la jerarquia o l'usabilitat.
+- Si un canvi no apareix al navegador, fer un refresh fort i comprovar el cache-busting del layout.
+
+## Com començar
+
+1. Configura el fitxer `.env`.
+2. Engega Apache i MySQL a XAMPP.
+3. Obre `http://localhost/entorns-de-natura/public/`.
+4. Si no veus els canvis de CSS, fes `Cmd+Shift+R` o reinicia Apache.
 
 ## Tecnologies
 
@@ -28,6 +45,16 @@ També es conserven els fitxers de la maqueta estàtica del projecte, com `index
 - PDO
 - Apache amb XAMPP
 - Arquitectura propia modular, sense frameworks grans
+
+## Estructura clau
+
+- `public/index.php` es l'entrada de l'aplicacio.
+- `resources/views/` conté les plantilles.
+- `app/` conté la lògica PHP.
+- `config/` conté la configuracio.
+- `database/` conté els SQL, migracions i seeds.
+- `public/assets/css/styles.css` es el CSS actiu de l'app.
+- `index.html` i `css/styles.css` son la maqueta estatica i la referencia visual.
 
 ## Entorn local
 
@@ -93,6 +120,12 @@ entorns-de-natura/
 ├── composer.json
 └── README.md
 ```
+
+## Notes de desenvolupament
+
+- Els canvis visuals i de estructura s'han de fer sobre la vista PHP corresponent, no sobre fitxers solts fora de l'arquitectura.
+- Quan es refa una vista, es pot retirar compatibilitat antiga si ja no la necessita cap altra part del projecte.
+- Si un estil sembla no carregar, revisa `resources/views/layouts/app.php` i el cache-busting del CSS.
 
 ## Rols previstos
 
