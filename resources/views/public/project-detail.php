@@ -23,8 +23,12 @@ $gradeAchievementClass = static function (array $grade): string {
 <?php else: ?>
     <article class="public-project-detail">
         <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
+        <?php $projectAsset = $project['assets'][0] ?? null; ?>
         <div class="public-project-detail__hero">
             <div>
+                <?php if (!empty($projectAsset['logo_path'])): ?>
+                    <img class="public-project-detail__logo" src="<?= url((string) $projectAsset['logo_path']) ?>" alt="<?= htmlspecialchars((string) $projectAsset['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                <?php endif; ?>
                 <p class="public-project-detail__eyebrow">Fitxa de projecte</p>
                 <h1 class="public-project-detail__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
             </div>

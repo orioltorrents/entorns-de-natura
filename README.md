@@ -15,10 +15,26 @@ El projecte es troba en desenvolupament inicial i ja inclou:
 - connexio amb MySQL/MariaDB mitjancant PDO;
 - taules inicials d'usuaris, rols, classes, projectes i idiomes;
 - assignacions inicials de professorat, alumnat, classes i projectes;
+- gestio de `class_teachers` des del dashboard d'administracio;
+- assets de projectes per logos, softwares i apps associats;
 - vistes publiques, d'alumnat, de professorat i d'administracio;
 - full d'estils principal a `public/assets/css/styles.css`, amb classes BEM i cache-busting des de `resources/views/layouts/app.php`;
 - la maqueta estatica `index.html` i `css/styles.css` es mantenen com a referencia historica o visual;
 - base preparada per ampliar amb Google Docs, Google Sheets, rubriques i notes.
+
+## Model d'accés recomanat
+
+El millor enfocament per a les properes fases és un sistema de visibilitat per context dins d'una mateixa aplicacio, no una col·leccio de pàgines separades per perfil.
+
+Proposta de criteri:
+
+- visitant: veu projectes i organització general;
+- alumnat: veu tasques assignades, bastides, ajudes i dades d'aula;
+- professorat visitant: veu programacions i visió general de tasques, sense dades sensibles;
+- professorat que imparteix: veu el contingut complet del projecte;
+- administració: veu tot.
+
+Per a la implementacio, el mes net seria reutilitzar una sola vista de projecte i mostrar o ocultar seccions segons el context. Això evita duplicar plantilles i facilita mantenir la coherència.
 
 ## UI i CSS
 
@@ -55,6 +71,8 @@ El projecte es troba en desenvolupament inicial i ja inclou:
 - `database/` conté els SQL, migracions i seeds.
 - `public/assets/css/styles.css` es el CSS actiu de l'app.
 - `index.html` i `css/styles.css` son la maqueta estatica i la referencia visual.
+- `database/06_project_assets.sql` afegeix la relacio entre projectes i assets/logos d'entitats, softwares i apps.
+- `docs/skills/07-assets-projectes.md` explica com afegir logos i assets a projectes.
 
 ## Entorn local
 
@@ -169,6 +187,8 @@ Web publica:
 /ca/projectes/liquencity
 /ca/projectes/vespa-velutina
 ```
+
+> Nota: en una fase posterior podria afegir-se una entrada de visitant des de la portada per accedir a la part publica i organitzativa, sempre amb contingut limitat.
 
 Zones privades:
 

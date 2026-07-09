@@ -23,16 +23,24 @@ ob_start();
                 </div>
                 <div class="student-dashboard__projects">
                 <?php foreach ($class['projects'] as $project): ?>
+                    <?php $projectAsset = $project['assets'][0] ?? null; ?>
                     <article class="student-project-card">
-                        <div class="student-project-card__header">
-                            <h3 class="student-project-card__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h3>
-                            <span class="student-project-card__status status"><?= htmlspecialchars($project['status'], ENT_QUOTES, 'UTF-8') ?></span>
-                        </div>
-                        <?php if ($project['description'] !== ''): ?>
-                            <p class="student-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if (!empty($projectAsset['logo_path'])): ?>
+                            <div class="student-project-card__media">
+                                <img class="student-project-card__logo" src="<?= url((string) $projectAsset['logo_path']) ?>" alt="<?= htmlspecialchars((string) $projectAsset['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                            </div>
                         <?php endif; ?>
-                        <div class="student-project-card__actions">
-                            <a class="button student-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                        <div class="student-project-card__body">
+                            <div class="student-project-card__header">
+                                <h3 class="student-project-card__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                <span class="student-project-card__status status"><?= htmlspecialchars($project['status'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </div>
+                            <?php if ($project['description'] !== ''): ?>
+                                <p class="student-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                            <div class="student-project-card__actions">
+                                <a class="button student-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                            </div>
                         </div>
                     </article>
                 <?php endforeach; ?>

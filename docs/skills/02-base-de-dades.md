@@ -12,6 +12,7 @@ La base de dades ha de permetre gestionar:
 - alumnes;
 - professorat;
 - projectes;
+- assets, softwares i apps associats a projectes;
 - idiomes;
 - assignacions de projectes;
 - futura sincronització amb Google;
@@ -215,6 +216,8 @@ Taules:
 projects
 project_translations
 project_groups
+project_assets
+project_asset_links
 ```
 
 Funció:
@@ -223,6 +226,8 @@ Funció:
 projects              → dades bàsiques del projecte
 project_translations  → títol i descripció per idioma
 project_groups        → assignació de projectes a classes
+project_assets        → catàleg de logos, softwares i apps
+project_asset_links   → relació d’assets amb projectes
 ```
 
 Projectes inicials:
@@ -266,10 +271,53 @@ en
 ```
 
 Idioma principal:
-
 ```text
 ca
 ```
+
+---
+
+## Assets de projectes
+
+Taules:
+
+```text
+project_assets
+project_asset_links
+```
+
+Funció:
+
+```text
+project_assets      → catàleg reutilitzable de logos, softwares, apps i altres recursos
+project_asset_links → relació entre projectes i els seus assets visuals o tecnològics
+```
+
+Criteris:
+
+- un asset es pot reutilitzar en més d’un projecte;
+- un projecte pot tenir diversos assets;
+- `logo_path` ha de guardar una ruta relativa dins `public/assets/logos/` o un subdirectori equivalent;
+- `website_url` és opcional i permet enllaçar el logo a la seva web oficial;
+- `asset_type` pot servir per separar `partner`, `software`, `app` o `tool`;
+- `display_order` controla l’ordre de sortida a la portada o a la fitxa del projecte.
+
+Veure també:
+
+- `docs/skills/07-assets-projectes.md`
+
+---
+
+## Visibilitat i context
+
+Encara no implementat, però recomanat per al futur:
+
+- mantenir una sola font de dades per projecte;
+- afegir camps o taules de control només si cal separar continguts per context;
+- evitar guardar la mateixa informació duplicada per rol;
+- preferir flags o nivells de visibilitat abans que rutes o taules separades per perfil.
+
+Si més endavant cal modelar seccions de projecte, programacions o materials amb visibilitat diferent, serà millor fer-ho amb una estructura controlada a la base de dades i no amb fitxers solts.
 
 ---
 
@@ -353,6 +401,24 @@ FROM project_groups
 JOIN projects ON projects.id = project_groups.project_id
 JOIN classes ON classes.id = project_groups.class_id
 ORDER BY classes.name, projects.name;
+```
+
+### Veure assets per projecte
+
+```sql
+SELECT
+    projects.name AS projecte,
+    project_assets.name AS asset,
+    project_assets.asset_type,
+    project_assets.logo_path,
+    project_assets.website_url,
+    project_asset_links.display_order
+FROM project_asset_links
+JOIN projects ON projects.id = project_asset_links.project_id
+JOIN project_assets ON project_assets.id = project_asset_links.asset_id
+WHERE project_asset_links.is_visible = 1
+  AND project_assets.is_active = 1
+ORDER BY projects.name, project_asset_links.display_order, project_assets.name;
 ```
 
 ---

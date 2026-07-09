@@ -7,6 +7,7 @@ require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
+require_once dirname(__DIR__) . '/app/Services/ProjectAssetService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
 require_once dirname(__DIR__) . '/app/Services/AssessmentService.php';

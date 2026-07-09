@@ -28,7 +28,9 @@ class ProjectService
         );
         $stmt->execute(['language_code' => $languageCode]);
 
-        return $stmt->fetchAll();
+        $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->attachAssetsToProjects($projects);
     }
 
     public function findActiveBySlug(string $slug, string $languageCode = 'ca'): ?array
@@ -59,9 +61,15 @@ class ProjectService
             'slug' => $slug,
         ]);
 
-        $project = $stmt->fetch();
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $project === false ? null : $project;
+        if ($project === false) {
+            return null;
+        }
+
+        $project['assets'] = (new ProjectAssetService())->assetsByProjectId((int) $project['id']);
+
+        return $project;
     }
 
     private function pdo(): PDO
@@ -102,5 +110,18 @@ class ProjectService
              END
              WHERE display_order = 0"
         );
+    }
+
+    private function attachAssetsToProjects(array $projects): array
+    {
+        $projectIds = array_map(static fn (array $project): int => (int) $project['id'], $projects);
+        $assetsByProject = (new ProjectAssetService())->assetsByProjectIds($projectIds);
+
+        foreach ($projects as &$project) {
+            $project['assets'] = $assetsByProject[(int) $project['id']] ?? [];
+        }
+        unset($project);
+
+        return $projects;
     }
 }

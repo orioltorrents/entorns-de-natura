@@ -14,16 +14,30 @@ ob_start();
 <?php else: ?>
     <div class="public-projects__grid">
         <?php foreach ($projects as $project): ?>
+            <?php $projectAsset = $project['assets'][0] ?? null; ?>
             <article class="public-project-card">
-                <div class="public-project-card__header">
-                    <h2 class="public-project-card__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h2>
-                    <span class="public-project-card__status status">actiu</span>
-                </div>
-                <?php if (!empty($project['description'])): ?>
-                    <p class="public-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if (!empty($projectAsset['logo_path'])): ?>
+                    <div class="public-project-card__media">
+                        <?php if (!empty($projectAsset['website_url'])): ?>
+                            <a href="<?= htmlspecialchars((string) $projectAsset['website_url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                <img class="public-project-card__logo" src="<?= url((string) $projectAsset['logo_path']) ?>" alt="<?= htmlspecialchars((string) $projectAsset['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                            </a>
+                        <?php else: ?>
+                            <img class="public-project-card__logo" src="<?= url((string) $projectAsset['logo_path']) ?>" alt="<?= htmlspecialchars((string) $projectAsset['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-                <div class="public-project-card__actions">
-                    <a class="button public-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                <div class="public-project-card__body">
+                    <div class="public-project-card__header">
+                        <h2 class="public-project-card__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        <span class="public-project-card__status status">actiu</span>
+                    </div>
+                    <?php if (!empty($project['description'])): ?>
+                        <p class="public-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
+                    <div class="public-project-card__actions">
+                        <a class="button public-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                    </div>
                 </div>
             </article>
         <?php endforeach; ?>

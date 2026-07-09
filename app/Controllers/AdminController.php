@@ -45,8 +45,12 @@ class AdminController
         );
         $projects = $projectsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $projectAssetService = new ProjectAssetService();
+        $assetsByProject = $projectAssetService->assetsByProjectIds(array_map(static fn (array $project): int => (int) $project['id'], $projects));
+
         foreach ($projects as &$project) {
             $project['description'] = 'Projecte disponible al portal';
+            $project['assets'] = $assetsByProject[(int) $project['id']] ?? [];
         }
         unset($project);
 
@@ -80,6 +84,15 @@ class AdminController
              ORDER BY cm.user_id, c.name'
         );
         $classMemberships = $classMembershipsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $classTeachersStmt = $pdo->query(
+            'SELECT ct.class_id, ct.user_id, c.name AS class_name, u.name, u.surname
+             FROM class_teachers ct
+             INNER JOIN classes c ON c.id = ct.class_id
+             INNER JOIN users u ON u.id = ct.user_id
+             ORDER BY c.name, u.name, u.surname'
+        );
+        $classTeachers = $classTeachersStmt->fetchAll(PDO::FETCH_ASSOC);
         $assessmentStructure = $this->assessmentStructure($pdo);
 
         $roleMap = [];
@@ -99,8 +112,29 @@ class AdminController
         }
         unset($user);
 
+        $teacherUsers = array_values(array_filter(
+            $users,
+            static fn (array $user): bool => in_array('teacher', $user['roles'], true)
+        ));
+
+        $classTeachersMap = [];
+        $teacherClassMap = [];
+        foreach ($classTeachers as $teacherAssignment) {
+            $classId = (int) $teacherAssignment['class_id'];
+            $teacherId = (int) $teacherAssignment['user_id'];
+            $classTeachersMap[$classId][] = [
+                'id' => $teacherId,
+                'name' => trim((string) $teacherAssignment['name'] . ' ' . (string) $teacherAssignment['surname']),
+            ];
+            $teacherClassMap[$teacherId][] = [
+                'id' => $classId,
+                'name' => (string) $teacherAssignment['class_name'],
+            ];
+        }
+
         $analyticsService = new AnalyticsService();
         $analytics = $analyticsService->getDashboardStats($pdo);
+        $geoMapPoints = $this->buildGeoMapPoints($analytics['geo_stats'] ?? []);
 
         $message = $_SESSION['admin_message'] ?? null;
         $messageType = $_SESSION['admin_message_type'] ?? 'success';
@@ -115,10 +149,14 @@ class AdminController
             'roles' => $roles,
             'projects' => $projects,
             'classes' => $classes,
+            'teacherUsers' => $teacherUsers,
+            'classTeachersMap' => $classTeachersMap,
+            'teacherClassMap' => $teacherClassMap,
             'projectAssignments' => $projectAssignments,
             'assessmentStructure' => $assessmentStructure,
             'roleMap' => $roleMap,
             'analytics' => $analytics,
+            'geoMapPoints' => $geoMapPoints,
             'message' => $message,
             'messageType' => $messageType,
         ]);
@@ -155,6 +193,11 @@ class AdminController
 
         if ($action === 'assign_project_to_class') {
             $this->assignProjectToClass($pdo);
+            return;
+        }
+
+        if ($action === 'sync_class_teachers') {
+            $this->syncClassTeachers($pdo);
             return;
         }
 
@@ -760,10 +803,136 @@ class AdminController
         $this->setMessage('Assignació eliminada correctament.', 'success');
     }
 
+    private function syncClassTeachers(PDO $pdo): void
+    {
+        $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
+        $teacherIds = $_POST['teacher_ids'] ?? [];
+
+        if ($classId === null || $classId === false) {
+            $this->setMessage('Classe no vàlida.', 'error');
+            return;
+        }
+
+        if (!is_array($teacherIds)) {
+            $teacherIds = [];
+        }
+
+        $teacherIds = array_values(array_unique(array_filter(array_map(
+            static fn ($teacherId): int => (int) $teacherId,
+            $teacherIds
+        ), static fn (int $teacherId): bool => $teacherId > 0)));
+
+        $classStmt = $pdo->prepare('SELECT id, name FROM classes WHERE id = :id LIMIT 1');
+        $classStmt->execute(['id' => (int) $classId]);
+        $class = $classStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($class === false) {
+            $this->setMessage('No s’ha trobat la classe.', 'error');
+            return;
+        }
+
+        $validTeacherIds = [];
+        if ($teacherIds !== []) {
+            $placeholders = implode(',', array_fill(0, count($teacherIds), '?'));
+            $stmt = $pdo->prepare(
+                "SELECT DISTINCT u.id
+                 FROM users u
+                 INNER JOIN user_roles ur ON ur.user_id = u.id
+                 INNER JOIN roles r ON r.id = ur.role_id
+                 WHERE r.name = 'teacher'
+                   AND u.id IN ($placeholders)"
+            );
+            $stmt->execute($teacherIds);
+            $validTeacherIds = array_map(static fn (array $row): int => (int) $row['id'], $stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        $pdo->beginTransaction();
+
+        try {
+            $deleteStmt = $pdo->prepare('DELETE FROM class_teachers WHERE class_id = :class_id');
+            $deleteStmt->execute(['class_id' => (int) $classId]);
+
+            if ($validTeacherIds !== []) {
+                $insertStmt = $pdo->prepare('INSERT INTO class_teachers (class_id, user_id) VALUES (:class_id, :user_id)');
+                foreach ($validTeacherIds as $teacherId) {
+                    $insertStmt->execute([
+                        'class_id' => (int) $classId,
+                        'user_id' => $teacherId,
+                    ]);
+                }
+            }
+
+            $pdo->commit();
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            $this->setMessage('No s’ha pogut actualitzar el professorat de la classe.', 'error');
+            return;
+        }
+
+        $this->setMessage('Professorat actualitzat per a ' . (string) $class['name'] . '.', 'success');
+    }
+
     private function setMessage(string $message, string $type): void
     {
         $_SESSION['admin_message'] = $message;
         $_SESSION['admin_message_type'] = $type;
+    }
+
+    private function buildGeoMapPoints(array $geoStats): array
+    {
+        $points = [];
+        $countryCoordinates = [
+            'ES' => [40.4168, -3.7038],
+            'PT' => [38.7223, -9.1393],
+            'FR' => [48.8566, 2.3522],
+            'GB' => [51.5072, -0.1276],
+            'DE' => [52.52, 13.405],
+            'IT' => [41.9028, 12.4964],
+            'BE' => [50.8503, 4.3517],
+            'NL' => [52.3676, 4.9041],
+            'CH' => [46.948, 7.4474],
+            'US' => [38.9072, -77.0369],
+            'CA' => [45.4215, -75.6972],
+            'MX' => [19.4326, -99.1332],
+            'BR' => [-15.7939, -47.8828],
+            'AR' => [-34.6037, -58.3816],
+            'CL' => [-33.4489, -70.6693],
+            'PE' => [-12.0464, -77.0428],
+            'CO' => [4.711, -74.0721],
+        ];
+
+        foreach ($geoStats as $row) {
+            $countryCode = strtoupper(trim((string) ($row['country_code'] ?? '')));
+            if ($countryCode === '') {
+                continue;
+            }
+
+            $coordinates = $countryCoordinates[$countryCode] ?? null;
+            if ($coordinates === null) {
+                continue;
+            }
+
+            $region = trim((string) ($row['region'] ?? ''));
+            if ($countryCode === 'ES') {
+                $regionLower = function_exists('mb_strtolower') ? mb_strtolower($region) : strtolower($region);
+                if ($regionLower !== '' && preg_match('/catal|barcel|girona|lleida|tarragon/i', $regionLower) === 1) {
+                    $coordinates = [41.3874, 2.1686];
+                }
+            }
+
+            $points[] = [
+                'country_code' => $countryCode,
+                'region' => $region !== '' ? $region : 'Desconegut',
+                'total' => (int) ($row['total'] ?? 0),
+                'lat' => $coordinates[0],
+                'lng' => $coordinates[1],
+            ];
+        }
+
+        return $points;
     }
 
     private function userHasRole(PDO $pdo, int $userId, string $roleName): bool

@@ -134,6 +134,20 @@ projects.php       → llistat de projectes
 project-detail.php → detall genèric d’un projecte
 ```
 
+## Model recomanat de visibilitat
+
+La vista de projecte hauria de ser única i mostrar seccions diferents segons el context d'accés.
+
+Orientació recomanada:
+
+- visitant: només informació pública i organitzativa;
+- alumnat: tasques assignades, bastides, ajudes i dades d'aula quan toqui;
+- professorat visitant: programacions i visió general, però no dades sensibles ni deadlines;
+- professorat que imparteix: contingut complet del projecte;
+- administració: tot.
+
+Si cal mostrar més o menys informació, és preferible condicionar blocs dins la mateixa vista abans que crear fitxers separats per rol.
+
 ---
 
 ## Vistes d’autenticació

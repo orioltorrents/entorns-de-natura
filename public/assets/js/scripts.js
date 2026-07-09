@@ -20,6 +20,64 @@ document.addEventListener('DOMContentLoaded', () => {
         return (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('ca');
     };
 
+    const geoMapEl = document.querySelector('[data-geo-map]');
+    let geoMap = null;
+
+    const initGeoMap = () => {
+        if (!geoMapEl || geoMap || !window.L) return;
+
+        let points = [];
+        try {
+            points = JSON.parse(geoMapEl.getAttribute('data-geo-points') || '[]');
+        } catch (error) {
+            points = [];
+        }
+
+        geoMap = window.L.map(geoMapEl, {
+            scrollWheelZoom: false,
+        });
+
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(geoMap);
+
+        const bounds = [];
+        points.forEach((point) => {
+            const lat = Number(point.lat);
+            const lng = Number(point.lng);
+            const total = Number(point.total) || 0;
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+            const radius = Math.max(8, Math.min(22, 8 + Math.sqrt(total) * 2));
+            const marker = window.L.circleMarker([lat, lng], {
+                color: '#2f5d3a',
+                fillColor: '#5f8e69',
+                fillOpacity: 0.55,
+                radius,
+                weight: 2,
+            }).addTo(geoMap);
+
+            marker.bindPopup(`<strong>${point.country_code || ''}</strong><br>${point.region || 'Desconegut'}<br>${total} visites`);
+            bounds.push([lat, lng]);
+        });
+
+        if (bounds.length > 0) {
+            geoMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 4 });
+        } else {
+            geoMap.setView([20, 0], 2);
+        }
+    };
+
+    const refreshGeoMap = () => {
+        if (!geoMapEl) return;
+        initGeoMap();
+        if (!geoMap) return;
+
+        window.requestAnimationFrame(() => {
+            geoMap.invalidateSize();
+        });
+    };
+
     document.querySelectorAll('form[data-confirm]').forEach((form) => {
         form.addEventListener('submit', (event) => {
             const message = form.getAttribute('data-confirm') || 'Confirmes aquesta acció?';
@@ -46,17 +104,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.querySelectorAll('[data-nav-group-toggle]').forEach((toggle) => {
+        const targetId = toggle.getAttribute('data-nav-group-toggle');
+        const submenu = targetId ? document.getElementById(targetId) : null;
+        if (!submenu) return;
+
+        toggle.addEventListener('click', () => {
+            const isHidden = submenu.hasAttribute('hidden');
+            if (isHidden) {
+                submenu.removeAttribute('hidden');
+            } else {
+                submenu.setAttribute('hidden', '');
+            }
+            toggle.setAttribute('aria-expanded', String(isHidden));
+        });
+    });
+
     document.querySelectorAll('.collapse-toggle').forEach((collapseBtn) => {
         const targetId = collapseBtn.getAttribute('data-collapse');
         const collapsibleContent = targetId ? document.getElementById(targetId) : null;
-        const collapsibleCard = collapseBtn.closest('.collapsible-card');
+        const collapsibleCard = collapseBtn.closest('.admin-collapsible, .collapsible-card');
         if (!collapsibleCard || !collapsibleContent) return;
 
-        collapseBtn.addEventListener('click', () => {
-            collapsibleCard.classList.toggle('is-collapsed');
+        const syncButtonLabel = () => {
             collapseBtn.textContent = collapsibleCard.classList.contains('is-collapsed') ? 'Mostrar' : 'Amagar';
+        };
+
+        syncButtonLabel();
+
+        collapseBtn.addEventListener('click', () => {
+            const willOpen = collapsibleCard.classList.contains('is-collapsed');
+            collapsibleCard.classList.toggle('is-collapsed');
+            syncButtonLabel();
+
+            if (willOpen && targetId === 'analytics-content') {
+                window.setTimeout(refreshGeoMap, 420);
+            }
         });
     });
+
+    const backToTop = document.querySelector('.admin-back-to-top');
+    if (backToTop) {
+        const updateBackToTop = () => {
+            backToTop.classList.toggle('is-visible', window.scrollY > 520);
+        };
+
+        updateBackToTop();
+        window.addEventListener('scroll', updateBackToTop, { passive: true });
+        backToTop.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
     document.querySelectorAll('[data-sortable-table]').forEach((tbl) => {
         const thead = tbl.querySelector('thead');
@@ -117,25 +216,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!table) return;
 
         bar.addEventListener('click', (event) => {
-            const chip = event.target.closest('.filter-chip');
+            const chip = event.target.closest('.admin-filters__chip, .filter-chip');
             if (!chip || !bar.contains(chip)) return;
 
-            const chips = Array.from(bar.querySelectorAll('.filter-chip'));
+            const chips = Array.from(bar.querySelectorAll('.admin-filters__chip, .filter-chip'));
             const value = chip.getAttribute('data-value');
 
             if (value === 'all') {
-                chips.forEach((item) => item.classList.toggle('checked', item === chip));
+                chips.forEach((item) => item.classList.toggle('is-active', item === chip));
             } else {
-                chip.classList.toggle('checked');
+                chip.classList.toggle('is-active');
                 const hasActiveClass = chips.some((item) => {
-                    return item.getAttribute('data-value') !== 'all' && item.classList.contains('checked');
+                    return item.getAttribute('data-value') !== 'all' && item.classList.contains('is-active');
                 });
-                const allChip = bar.querySelector('.filter-chip[data-value="all"]');
-                if (allChip) allChip.classList.toggle('checked', !hasActiveClass);
+                const allChip = bar.querySelector('.admin-filters__chip[data-value="all"], .filter-chip[data-value="all"]');
+                if (allChip) allChip.classList.toggle('is-active', !hasActiveClass);
             }
 
             const activeClasses = chips
-                .filter((item) => item.getAttribute('data-value') !== 'all' && item.classList.contains('checked'))
+                .filter((item) => item.getAttribute('data-value') !== 'all' && item.classList.contains('is-active'))
                 .map((item) => normalizeFilterValue(item.getAttribute('data-value')));
             const showAll = activeClasses.length === 0;
 

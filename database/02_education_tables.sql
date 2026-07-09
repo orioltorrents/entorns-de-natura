@@ -216,6 +216,46 @@ CREATE TABLE IF NOT EXISTS project_groups (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS project_assets (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    slug VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    asset_type VARCHAR(50) NOT NULL DEFAULT 'software',
+    logo_path VARCHAR(500) NULL,
+    website_url VARCHAR(500) NULL,
+    description VARCHAR(255) NULL,
+    display_order INT UNSIGNED NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_project_assets_slug (slug),
+    KEY idx_project_assets_type (asset_type),
+    KEY idx_project_assets_display_order (display_order),
+    KEY idx_project_assets_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS project_asset_links (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    project_id INT UNSIGNED NOT NULL,
+    asset_id BIGINT UNSIGNED NOT NULL,
+    display_order INT UNSIGNED NOT NULL DEFAULT 0,
+    is_visible TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_project_asset_links (project_id, asset_id),
+    KEY idx_project_asset_links_project_id (project_id),
+    KEY idx_project_asset_links_asset_id (asset_id),
+    CONSTRAINT fk_project_asset_links_project
+        FOREIGN KEY (project_id) REFERENCES projects (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_project_asset_links_asset
+        FOREIGN KEY (asset_id) REFERENCES project_assets (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS settings (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `key` VARCHAR(100) NOT NULL,

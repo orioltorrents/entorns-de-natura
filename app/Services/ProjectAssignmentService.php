@@ -53,7 +53,7 @@ class ProjectAssignmentService
             'user_id' => $userId,
         ]);
 
-        return $this->groupRowsByClass($stmt->fetchAll());
+        return $this->groupRowsByClass($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     private function groupRowsByClass(array $rows): array
@@ -82,7 +82,25 @@ class ProjectAssignmentService
             ];
         }
 
-        return array_values($classes);
+        $classes = array_values($classes);
+        $projectIds = [];
+        foreach ($classes as $class) {
+            foreach ($class['projects'] as $project) {
+                $projectIds[] = (int) $project['id'];
+            }
+        }
+
+        $assetsByProject = (new ProjectAssetService())->assetsByProjectIds($projectIds);
+
+        foreach ($classes as &$class) {
+            foreach ($class['projects'] as &$project) {
+                $project['assets'] = $assetsByProject[(int) $project['id']] ?? [];
+            }
+            unset($project);
+        }
+        unset($class);
+
+        return $classes;
     }
 
     private function pdo(): PDO

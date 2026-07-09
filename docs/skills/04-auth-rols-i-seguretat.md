@@ -27,6 +27,20 @@ coordinator
 admin
 ```
 
+## Model de visibilitat recomanat
+
+Per al futur, convé distingir entre rol d'accés i context de visualització.
+
+Proposta de criteri:
+
+- visitant: accés públic sense sessió, només contingut general;
+- student: veu tasques, bastides, ajudes i contingut d'aula autoritzat;
+- teacher visitor: veu programacions i informació general del projecte, sense contingut sensible;
+- teacher assigned: veu el contingut complet, incloent deadlines i materials interns;
+- admin: veu tota la informació.
+
+La implementació recomanada és una sola vista per projecte amb blocs condicionats per context, no pantalles duplicades per perfil.
+
 ---
 
 ## Jerarquia conceptual
@@ -180,6 +194,8 @@ No exposar públicament:
 - logs;
 - configuració;
 - informació de Google Sources privada.
+- programacions internes si no correspon al context;
+- deadlines i materials docents si el rol no ho permet.
 
 ---
 

@@ -9,8 +9,19 @@ ob_start();
         </div>
         <nav class="admin-layout__nav">
             <a class="active" href="#panell">Panell</a>
-            <a href="#analytics">Analítica</a>
-            <a href="#usuaris">Usuaris</a>
+            <a href="#analytics">Visites</a>
+            <div class="admin-layout__nav-group">
+                <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="usuaris-submenu" aria-expanded="false">
+                    Usuaris
+                </button>
+                <div class="admin-layout__submenu" id="usuaris-submenu" hidden>
+                    <a href="#crear-usuari">Crear usuari</a>
+                    <a href="#importar-usuaris">Importar CSV</a>
+                    <a href="#alumnes-seccio">Alumnes</a>
+                    <a href="#professors-seccio">Professors</a>
+                </div>
+            </div>
+            <a href="#classes">Classes</a>
             <a href="#projectes-lista">Projectes</a>
             <a href="#avaluacio">Fases i tasques</a>
             <a href="#sincronitzacions">Google Sync</a>
@@ -18,7 +29,7 @@ ob_start();
         </nav>
     </aside>
 
-    <div class="admin-layout__content">
+    <div class="admin-layout__content" id="panell">
         <?php if (!empty($message)): ?>
             <div class="flash-message <?= htmlspecialchars((string) $messageType, ENT_QUOTES, 'UTF-8') ?>">
                 <?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') ?>
@@ -67,12 +78,16 @@ ob_start();
             </div>
         </div>
 
-        <div id="analytics" class="card admin-panel">
+        <div id="analytics" class="card admin-panel admin-collapsible is-collapsed">
             <div class="admin-panel__header">
-                <h2>Analítica web completa</h2>
-                <span class="status">Visites, dispositius, geografia i classes</span>
+                <h2>Visites</h2>
+                <div class="admin-actions">
+                    <span class="status">Visites, dispositius, geografia i classes</span>
+                    <button class="collapse-toggle" type="button" data-collapse="analytics-content">Mostrar</button>
+                </div>
             </div>
 
+            <div id="analytics-content" class="admin-collapsible__content">
             <div class="admin-metrics">
                 <div class="admin-metrics__card">
                     <div class="admin-metrics__icon">📈</div>
@@ -128,37 +143,82 @@ ob_start();
                 </section>
 
                 <section class="card admin-panel admin-panel--chart">
-                    <h3>Dispositius i SO</h3>
+                    <div class="admin-panel__header">
+                        <h3>Dispositius i Sistemes operatius</h3>
+                        <span class="status">Dispositius i sistemes operatius</span>
+                    </div>
                     <?php
                     $maxDevice = max(array_column($analytics['device_stats'] ?? [['total' => 0]], 'total'));
                     $maxOS = max(array_column($analytics['os_stats'] ?? [['total' => 0]], 'total'));
                     ?>
-                    <div class="bar-chart-group">
-                        <div>
+                    <div class="admin-chart-grid">
+                        <article class="admin-chart-panel">
                             <h4>Dispositius</h4>
-                            <div class="bar-chart">
+                            <div class="admin-chart-list">
                                 <?php foreach (($analytics['device_stats'] ?? []) as $device): ?>
-                                    <div class="bar-row">
-                                        <span class="bar-label"><?= htmlspecialchars(ucfirst((string) ($device['device_type'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <div class="bar-track"><div class="bar-fill" style="width:<?= $maxDevice > 0 ? round(((int) $device['total'] / $maxDevice) * 100) : 0 ?>%"></div></div>
-                                        <span class="bar-value"><?= (int) ($device['total'] ?? 0) ?></span>
+                                    <?php $deviceTotal = (int) ($device['total'] ?? 0); ?>
+                                    <div class="admin-chart-row">
+                                        <div class="admin-chart-row__meta">
+                                            <span class="admin-chart-row__label"><?= htmlspecialchars(ucfirst((string) ($device['device_type'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-chart-row__value"><?= $deviceTotal ?></span>
+                                        </div>
+                                        <div class="admin-chart-track">
+                                            <div class="admin-chart-fill" style="width:<?= $maxDevice > 0 ? round(($deviceTotal / $maxDevice) * 100) : 0 ?>%"></div>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                        </div>
-                        <div>
+                        </article>
+                        <article class="admin-chart-panel">
                             <h4>Sistemes operatius</h4>
-                            <div class="bar-chart">
+                            <div class="admin-chart-list">
                                 <?php foreach (($analytics['os_stats'] ?? []) as $os): ?>
-                                    <div class="bar-row">
-                                        <span class="bar-label"><?= htmlspecialchars(ucfirst((string) ($os['os_family'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <div class="bar-track"><div class="bar-fill bar-fill-os" style="width:<?= $maxOS > 0 ? round(((int) $os['total'] / $maxOS) * 100) : 0 ?>%"></div></div>
-                                        <span class="bar-value"><?= (int) ($os['total'] ?? 0) ?></span>
+                                    <?php $osTotal = (int) ($os['total'] ?? 0); ?>
+                                    <div class="admin-chart-row">
+                                        <div class="admin-chart-row__meta">
+                                            <span class="admin-chart-row__label"><?= htmlspecialchars(ucfirst((string) ($os['os_family'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="admin-chart-row__value"><?= $osTotal ?></span>
+                                        </div>
+                                        <div class="admin-chart-track admin-chart-track--os">
+                                            <div class="admin-chart-fill admin-chart-fill--os" style="width:<?= $maxOS > 0 ? round(($osTotal / $maxOS) * 100) : 0 ?>%"></div>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="card admin-panel admin-panel--map">
+                    <div class="admin-panel__header">
+                        <h3>Mapa de visites</h3>
+                        <span class="status">Leaflet + punts geogràfics</span>
+                    </div>
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+                    <div class="admin-geo-map-layout">
+                        <div class="admin-geo-map" data-geo-map data-geo-points="<?= htmlspecialchars(json_encode($geoMapPoints ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?>"></div>
+                        <div class="admin-geo-legend">
+                            <h4>Resum geogràfic</h4>
+                            <p class="muted">Els punts es mostren amb coordenades aproximades segons el país capturat.</p>
+                            <div class="admin-geo-legend__stats">
+                                <span class="admin-geo-legend__pill">Països: <?= count($analytics['geo_stats'] ?? []) ?></span>
+                                <span class="admin-geo-legend__pill">Punts al mapa: <?= count($geoMapPoints ?? []) ?></span>
+                            </div>
+                            <ul class="admin-geo-legend__list">
+                                <?php foreach (array_slice($analytics['geo_stats'] ?? [], 0, 8) as $geo): ?>
+                                    <?php
+                                    $code = strtoupper((string) ($geo['country_code'] ?? ''));
+                                    $flag = strlen($code) === 2 ? mb_chr(0x1F1E6 + ord($code[0]) - 65) . mb_chr(0x1F1E6 + ord($code[1]) - 65) : '🌍';
+                                    ?>
+                                    <li>
+                                        <span><?= $flag ?> <?= htmlspecialchars($code ?: '??', ENT_QUOTES, 'UTF-8') ?></span>
+                                        <strong><?= (int) ($geo['total'] ?? 0) ?></strong>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                     </div>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
                 </section>
             </div>
 
@@ -219,63 +279,7 @@ ob_start();
                     </table>
                 </div>
             </section>
-        </div>
-
-        <div id="usuaris" class="admin-panels">
-            <section class="card admin-panel admin-panel--users">
-                <h2>Crear usuari</h2>
-                <form class="admin-form admin-form--users" method="post" action="<?= url('admin') ?>">
-                    <input type="hidden" name="action" value="create_user">
-                    <div class="form__grid">
-                        <label>
-                            Nom
-                            <input type="text" name="name" required>
-                        </label>
-                        <label>
-                            Cognoms
-                            <input type="text" name="surname">
-                        </label>
-                        <label>
-                            Email
-                            <input type="email" name="email" required>
-                        </label>
-                        <label>
-                            Contrasenya
-                            <input type="password" name="password" required>
-                        </label>
-                    </div>
-                    <label class="form__check">
-                        <input type="checkbox" name="is_active" value="1" checked>
-                        Usuari actiu
-                    </label>
-                    <div class="form__group">
-                        <label>Assignar rols</label>
-                        <div class="form__choices">
-                            <?php foreach ($roles as $role): ?>
-                                <label class="form__choice">
-                                    <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>">
-                                    <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <button class="button" type="submit">Crear usuari</button>
-                </form>
-            </section>
-
-        </div>
-
-        <div class="card admin-panel admin-panel--import">
-            <h2>Importar alumnes CSV</h2>
-            <p>Importa fitxers amb columnes com <strong>name</strong>, <strong>surname</strong>, <strong>email</strong>, <strong>password</strong>, <strong>class</strong>, <strong>roles</strong> i <strong>trimester</strong>. La proposta més robusta és tenir una sola base d’usuaris i assignar classe/rols per relació, perquè un alumne pot canviar de grup sense duplicar el registre.</p>
-            <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
-                <input type="hidden" name="action" value="import_students">
-                <label>
-                    Fitxer CSV
-                    <input type="file" name="students_file" accept=".csv,text/csv" required>
-                </label>
-                <button class="button" type="submit">Importar alumnes</button>
-            </form>
+            </div>
         </div>
 
         <?php
@@ -286,189 +290,440 @@ ob_start();
         }
         ksort($classGroups);
         ?>
-        <div id="projectes-section" class="card admin-panel admin-panel--students admin-collapsible">
+
+        <div id="usuaris-seccio" class="card admin-panel admin-panel--users admin-collapsible is-collapsed">
             <div class="admin-panel__header">
-                <h2>Alumnes</h2>
-                <span class="status" id="alumnes-count"><?= count($users) ?> usuaris</span>
-                <button class="collapse-toggle" type="button" data-collapse="projectes-table-wrap">Amagar</button>
+                <h2>Usuaris</h2>
+                <div class="admin-actions">
+                    <span class="status">Taula, creació i importació</span>
+                    <button class="collapse-toggle" type="button" data-collapse="usuaris-content">Mostrar</button>
+                </div>
             </div>
-            <div class="admin-filters" id="alumnes-filter" data-filter-table="alumnes-table">
-                <span class="admin-filters__label">Classe:</span>
-                <button class="admin-filters__chip is-active" type="button" data-value="all">Totes</button>
-                <?php foreach ($classGroups as $group => $_): ?>
-                    <button class="admin-filters__chip" type="button" data-value="<?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?></button>
-                <?php endforeach; ?>
+
+            <div id="usuaris-content" class="admin-collapsible__content">
+                <section id="crear-usuari" class="card admin-panel admin-panel--users">
+                    <h2>Crear usuari</h2>
+                    <form class="admin-form admin-form--users" method="post" action="<?= url('admin') ?>">
+                        <input type="hidden" name="action" value="create_user">
+                        <div class="form__grid">
+                            <label>
+                                Nom
+                                <input type="text" name="name" required>
+                            </label>
+                            <label>
+                                Cognoms
+                                <input type="text" name="surname">
+                            </label>
+                            <label>
+                                Email
+                                <input type="email" name="email" required>
+                            </label>
+                            <label>
+                                Contrasenya
+                                <input type="password" name="password" required>
+                            </label>
+                        </div>
+                        <label class="form__check">
+                            <input type="checkbox" name="is_active" value="1" checked>
+                            Usuari actiu
+                        </label>
+                        <div class="form__group">
+                            <label>Assignar rols</label>
+                            <div class="form__choices">
+                                <?php foreach ($roles as $role): ?>
+                                    <label class="form__choice">
+                                        <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>">
+                                        <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <button class="button" type="submit">Crear usuari</button>
+                    </form>
+                </section>
+
+                <div id="importar-usuaris" class="card admin-panel admin-panel--import">
+                    <h2>Importar alumnes CSV</h2>
+                    <p>Importa fitxers amb columnes com <strong>name</strong>, <strong>surname</strong>, <strong>email</strong>, <strong>password</strong>, <strong>class</strong>, <strong>roles</strong> i <strong>trimester</strong>. La proposta més robusta és tenir una sola base d’usuaris i assignar classe/rols per relació, perquè un alumne pot canviar de grup sense duplicar el registre.</p>
+                    <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
+                        <input type="hidden" name="action" value="import_students">
+                        <label>
+                            Fitxer CSV
+                            <input type="file" name="students_file" accept=".csv,text/csv" required>
+                        </label>
+                        <button class="button" type="submit">Importar alumnes</button>
+                    </form>
+                </div>
+
+                <section id="alumnes-seccio" class="card admin-panel admin-panel--students admin-collapsible is-collapsed">
+                    <div class="admin-panel__header">
+                        <h2>Alumnes</h2>
+                        <div class="admin-actions">
+                            <span class="status" id="alumnes-count"><?= count($users) ?> usuaris</span>
+                            <button class="collapse-toggle" type="button" data-collapse="alumnes-content">Mostrar</button>
+                        </div>
+                    </div>
+                    <div class="admin-filters" id="alumnes-filter" data-filter-table="alumnes-table">
+                        <span class="admin-filters__label">Classe:</span>
+                        <button class="admin-filters__chip is-active" type="button" data-value="all">Totes</button>
+                        <?php foreach ($classGroups as $group => $_): ?>
+                            <button class="admin-filters__chip" type="button" data-value="<?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <div id="alumnes-content" class="admin-collapsible__content">
+                        <div class="admin-table__wrapper">
+                            <table class="admin-table" id="alumnes-table" data-sortable-table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-sort-type="text">Usuari</th>
+                                        <th scope="col" data-sort-type="text">Email</th>
+                                        <th scope="col" data-sort-type="text" class="th-class">Classe</th>
+                                        <th scope="col" data-sort-type="text">Projecte</th>
+                                        <th scope="col" data-sort-type="text">Equip / grup</th>
+                                        <th scope="col" data-sort-type="text">iNaturalist</th>
+                                        <th scope="col" data-sort-type="number">Visites</th>
+                                        <th scope="col" data-sort-type="text">Rols</th>
+                                        <th scope="col" data-sort-type="text">Estat</th>
+                                        <th scope="col">Accions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($users as $user): ?>
+                                        <?php $userClass = !empty($user['class_group']) ? $user['class_group'] : 'Sense classe'; ?>
+                                        <?php $isAdminUser = in_array('admin', $user['roles'], true); ?>
+                                        <tr data-class="<?= htmlspecialchars((string) $userClass, ENT_QUOTES, 'UTF-8') ?>">
+                                            <td><?= htmlspecialchars(trim(($user['name'] ?? '') . ' ' . ($user['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td><?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td>
+                                                <?php if (!empty($user['class_group'])): ?>
+                                                    <?= htmlspecialchars((string) $user['class_group'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php else: ?>
+                                                    <span class="muted">Sense classe</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($user['project'])): ?>
+                                                    <?= htmlspecialchars((string) $user['project'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php else: ?>
+                                                    <span class="muted">Sense projecte</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="admin-table__meta">
+                                                    <?php if (!empty($user['team_number'])): ?>
+                                                        <span class="admin-table__meta-item">Equip <?= htmlspecialchars((string) $user['team_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($user['group_number'])): ?>
+                                                        <span class="admin-table__meta-item">Grup <?= htmlspecialchars((string) $user['group_number'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($user['group_code_1t'])): ?>
+                                                        <span class="admin-table__meta-item"><?= htmlspecialchars((string) $user['group_code_1t'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
+                                                    <?php if (empty($user['team_number']) && empty($user['group_number']) && empty($user['group_code_1t'])): ?>
+                                                        <span class="admin-table__meta-item muted">Sense grup</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($user['inaturalist_user_login'])): ?>
+                                                    <?= htmlspecialchars((string) $user['inaturalist_user_login'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php else: ?>
+                                                    <span class="muted">No informat</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><?= (int) ($user['visit_count'] ?? 0) ?></td>
+                                            <td>
+                                                <?php if (!empty($user['roles'])): ?>
+                                                    <?php foreach ($user['roles'] as $role): ?>
+                                                        <span class="admin-table__tag"><?= htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <span class="muted">Sense rols</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><span class="status"><?= htmlspecialchars((string) $user['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                                            <td>
+                                                <div class="admin-actions">
+                                                    <?php if (!$isAdminUser): ?>
+                                                        <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
+                                                            <input type="hidden" name="action" value="toggle_user">
+                                                            <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
+                                                            <button class="button button--secondary" type="submit">
+                                                                <?= ((int) $user['is_active'] === 1) ? 'Desactivar' : 'Activar' ?>
+                                                            </button>
+                                                        </form>
+                                                    <?php else: ?>
+                                                        <span class="status">Admin protegit</span>
+                                                    <?php endif; ?>
+                                                    <button class="button" type="button" data-target="student-<?= (int) $user['id'] ?>">Editar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="student-<?= (int) $user['id'] ?>" class="student-editor-row">
+                                            <td colspan="10">
+                                                <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
+                                                    <input type="hidden" name="action" value="update_student">
+                                                    <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
+                                                    <div class="form__grid form__grid--compact">
+                                                        <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
+                                                        <label>Cognoms<input type="text" name="surname" value="<?= htmlspecialchars((string) ($user['surname'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Email<input type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
+                                                        <label>Classe
+                                                            <select name="class_id">
+                                                                <option value="">Sense classe</option>
+                                                                <?php foreach ($classes as $class): ?>
+                                                                    <option value="<?= (int) $class['id'] ?>" <?= ((int) ($user['class_id'] ?? 0) === (int) $class['id']) ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </label>
+                                                        <label>Rol acadèmic<input type="text" name="academic_role" value="<?= htmlspecialchars((string) ($user['academic_role'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Gènere<input type="text" name="gender" value="<?= htmlspecialchars((string) ($user['gender'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Article<input type="text" name="article" value="<?= htmlspecialchars((string) ($user['article'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Inaturalist<input type="text" name="inaturalist_user_login" value="<?= htmlspecialchars((string) ($user['inaturalist_user_login'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Projecte<input type="text" name="project" value="<?= htmlspecialchars((string) ($user['project'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Equip<input type="number" name="team_number" value="<?= htmlspecialchars((string) ($user['team_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Grup<input type="number" name="group_number" value="<?= htmlspecialchars((string) ($user['group_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Codi grup 1T<input type="text" name="group_code_1t" value="<?= htmlspecialchars((string) ($user['group_code_1t'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Membres<input type="number" name="members_count" value="<?= htmlspecialchars((string) ($user['members_count'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>External ID<input type="text" name="external_id" value="<?= htmlspecialchars((string) ($user['external_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Trimestre<input type="text" name="trimester" value="<?= htmlspecialchars((string) ($user['trimester'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label>Rols</label>
+                                                        <div class="form__choices">
+                                                            <?php foreach ($roles as $role): ?>
+                                                                <label class="form__choice">
+                                                                    <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>" <?= in_array((string) $role['name'], $user['roles'], true) ? 'checked' : '' ?>>
+                                                                    <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
+                                                                </label>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    </div>
+                                                    <?php if ($isAdminUser): ?>
+                                                        <input type="hidden" name="is_active" value="1">
+                                                        <p class="muted">Aquest usuari té rol admin i es manté actiu per protegir l’accés al panell.</p>
+                                                    <?php else: ?>
+                                                        <label class="form__check">
+                                                            <input type="checkbox" name="is_active" value="1" <?= ((int) $user['is_active'] === 1) ? 'checked' : '' ?>>
+                                                            Usuari actiu
+                                                        </label>
+                                                    <?php endif; ?>
+                                                    <button class="button" type="submit">Guardar canvis</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="professors-seccio" class="card admin-panel admin-panel--teachers admin-collapsible is-collapsed">
+                    <div class="admin-panel__header">
+                        <h2>Professors</h2>
+                        <div class="admin-actions">
+                            <span class="status"><?= count($teacherUsers) ?> professors</span>
+                            <button class="collapse-toggle" type="button" data-collapse="professors-content">Mostrar</button>
+                        </div>
+                    </div>
+
+                    <div id="professors-content" class="admin-collapsible__content">
+                        <div class="admin-table__wrapper">
+                            <table class="admin-table" data-sortable-table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-sort-type="text">Professor</th>
+                                        <th scope="col" data-sort-type="text">Email</th>
+                                        <th scope="col" data-sort-type="text">Classes</th>
+                                        <th scope="col" data-sort-type="text">Rols</th>
+                                        <th scope="col" data-sort-type="text">Estat</th>
+                                        <th scope="col">Accions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($teacherUsers as $teacher): ?>
+                                        <?php $teacherId = (int) $teacher['id']; ?>
+                                        <?php $teacherClasses = $teacherClassMap[$teacherId] ?? []; ?>
+                                        <tr data-class="teacher">
+                                            <td><?= htmlspecialchars(trim((string) ($teacher['name'] ?? '') . ' ' . (string) ($teacher['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td><?= htmlspecialchars((string) ($teacher['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                            <td>
+                                                <?php if (!empty($teacherClasses)): ?>
+                                                    <div class="admin-table__meta">
+                                                        <?php foreach ($teacherClasses as $teacherClass): ?>
+                                                            <span class="admin-table__meta-item"><?= htmlspecialchars((string) $teacherClass['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span class="muted">Sense classes assignades</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($teacher['roles'])): ?>
+                                                    <?php foreach ($teacher['roles'] as $role): ?>
+                                                        <span class="admin-table__tag"><?= htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    <span class="muted">Sense rols</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><span class="status"><?= htmlspecialchars((string) $teacher['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                                            <td>
+                                                <div class="admin-actions">
+                                                    <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
+                                                        <input type="hidden" name="action" value="toggle_user">
+                                                        <input type="hidden" name="user_id" value="<?= $teacherId ?>">
+                                                        <button class="button button--secondary" type="submit">
+                                                            <?= ((int) $teacher['is_active'] === 1) ? 'Desactivar' : 'Activar' ?>
+                                                        </button>
+                                                    </form>
+                                                    <button class="button" type="button" data-target="teacher-<?= $teacherId ?>">Editar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="teacher-<?= $teacherId ?>" class="student-editor-row">
+                                            <td colspan="6">
+                                                <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
+                                                    <input type="hidden" name="action" value="update_student">
+                                                    <input type="hidden" name="student_id" value="<?= $teacherId ?>">
+                                                    <div class="form__grid form__grid--compact">
+                                                        <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($teacher['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
+                                                        <label>Cognoms<input type="text" name="surname" value="<?= htmlspecialchars((string) ($teacher['surname'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Email<input type="email" name="email" value="<?= htmlspecialchars((string) ($teacher['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
+                                                        <label>Classe
+                                                            <select name="class_id">
+                                                                <option value="">Sense classe</option>
+                                                                <?php foreach ($classes as $class): ?>
+                                                                    <option value="<?= (int) $class['id'] ?>" <?= ((int) ($teacher['class_id'] ?? 0) === (int) $class['id']) ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </label>
+                                                        <label>Rol acadèmic<input type="text" name="academic_role" value="<?= htmlspecialchars((string) ($teacher['academic_role'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Gènere<input type="text" name="gender" value="<?= htmlspecialchars((string) ($teacher['gender'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Article<input type="text" name="article" value="<?= htmlspecialchars((string) ($teacher['article'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Inaturalist<input type="text" name="inaturalist_user_login" value="<?= htmlspecialchars((string) ($teacher['inaturalist_user_login'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Projecte<input type="text" name="project" value="<?= htmlspecialchars((string) ($teacher['project'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Equip<input type="number" name="team_number" value="<?= htmlspecialchars((string) ($teacher['team_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Grup<input type="number" name="group_number" value="<?= htmlspecialchars((string) ($teacher['group_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Codi grup 1T<input type="text" name="group_code_1t" value="<?= htmlspecialchars((string) ($teacher['group_code_1t'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Membres<input type="number" name="members_count" value="<?= htmlspecialchars((string) ($teacher['members_count'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>External ID<input type="text" name="external_id" value="<?= htmlspecialchars((string) ($teacher['external_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                        <label>Trimestre<input type="text" name="trimester" value="<?= htmlspecialchars((string) ($teacher['trimester'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label>Rols</label>
+                                                        <div class="form__choices">
+                                                            <?php foreach ($roles as $role): ?>
+                                                                <label class="form__choice">
+                                                                    <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>" <?= in_array((string) $role['name'], $teacher['roles'], true) ? 'checked' : '' ?>>
+                                                                    <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
+                                                                </label>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    </div>
+                                                    <?php if ((int) $teacher['is_active'] === 1): ?>
+                                                        <input type="hidden" name="is_active" value="1">
+                                                    <?php else: ?>
+                                                        <label class="form__check">
+                                                            <input type="checkbox" name="is_active" value="1">
+                                                            Usuari actiu
+                                                        </label>
+                                                    <?php endif; ?>
+                                                    <button class="button" type="submit">Guardar canvis</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div id="projectes-table-wrap" class="admin-collapsible__content">
+        </div>
+
+        <div id="classes" class="card admin-panel admin-panel--teachers admin-collapsible is-collapsed">
+            <div class="admin-panel__header">
+                <h2>Classes</h2>
+                <div class="admin-actions">
+                    <span class="status">Controla `class_teachers`</span>
+                    <button class="collapse-toggle" type="button" data-collapse="classes-content">Mostrar</button>
+                </div>
+            </div>
+
+            <div id="classes-content" class="admin-collapsible__content">
+                <p>Marca el professorat assignat a cada classe. Aquestes relacions alimenten el dashboard de professorat.</p>
+
                 <div class="admin-table__wrapper">
-                    <table class="admin-table" id="alumnes-table" data-sortable-table>
+                    <table class="admin-table admin-table--compact">
                         <thead>
                             <tr>
-                                <th scope="col" data-sort-type="text">Usuari</th>
-                                <th scope="col" data-sort-type="text">Email</th>
-                                <th scope="col" data-sort-type="text" class="th-class">Classe</th>
-                                <th scope="col" data-sort-type="text">Projecte</th>
-                                <th scope="col" data-sort-type="text">Equip / grup</th>
-                                <th scope="col" data-sort-type="text">iNaturalist</th>
-                                <th scope="col" data-sort-type="number">Visites</th>
-                                <th scope="col" data-sort-type="text">Rols</th>
-                                <th scope="col" data-sort-type="text">Estat</th>
-                                <th scope="col">Accions</th>
+                                <th scope="col">Classe</th>
+                                <th scope="col">Professorat assignat</th>
+                                <th scope="col">Modificar</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($users as $user): ?>
-                            <?php $userClass = !empty($user['class_group']) ? $user['class_group'] : 'Sense classe'; ?>
-                            <?php $isAdminUser = in_array('admin', $user['roles'], true); ?>
-                            <tr data-class="<?= htmlspecialchars((string) $userClass, ENT_QUOTES, 'UTF-8') ?>">
-                                <td><?= htmlspecialchars(trim(($user['name'] ?? '') . ' ' . ($user['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td><?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td>
-                                    <?php if (!empty($user['class_group'])): ?>
-                                        <?= htmlspecialchars((string) $user['class_group'], ENT_QUOTES, 'UTF-8') ?>
-                                    <?php else: ?>
-                                        <span class="muted">Sense classe</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($user['project'])): ?>
-                                        <?= htmlspecialchars((string) $user['project'], ENT_QUOTES, 'UTF-8') ?>
-                                    <?php else: ?>
-                                        <span class="muted">Sense projecte</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                        <div class="admin-table__meta">
-                                        <?php if (!empty($user['team_number'])): ?>
-                                            <span class="admin-table__meta-item">Equip <?= htmlspecialchars((string) $user['team_number'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($user['group_number'])): ?>
-                                            <span class="admin-table__meta-item">Grup <?= htmlspecialchars((string) $user['group_number'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($user['group_code_1t'])): ?>
-                                            <span class="admin-table__meta-item"><?= htmlspecialchars((string) $user['group_code_1t'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                        <?php if (empty($user['team_number']) && empty($user['group_number']) && empty($user['group_code_1t'])): ?>
-                                            <span class="admin-table__meta-item muted">Sense grup</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <?php if (!empty($user['inaturalist_user_login'])): ?>
-                                        <?= htmlspecialchars((string) $user['inaturalist_user_login'], ENT_QUOTES, 'UTF-8') ?>
-                                    <?php else: ?>
-                                        <span class="muted">No informat</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= (int) ($user['visit_count'] ?? 0) ?></td>
-                                <td>
-                                    <?php if (!empty($user['roles'])): ?>
-                                        <?php foreach ($user['roles'] as $role): ?>
-                                            <span class="admin-table__tag"><?= htmlspecialchars((string) $role, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <span class="muted">Sense rols</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><span class="status"><?= htmlspecialchars((string) $user['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
-                                <td>
-                                    <div class="admin-actions">
-                                        <?php if (!$isAdminUser): ?>
-                                            <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
-                                                <input type="hidden" name="action" value="toggle_user">
-                                                <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
-                                                <button class="button button--secondary" type="submit">
-                                                    <?= ((int) $user['is_active'] === 1) ? 'Desactivar' : 'Activar' ?>
-                                                </button>
-                                            </form>
+                            <?php foreach ($classes as $class): ?>
+                                <?php
+                                $classId = (int) $class['id'];
+                                $assignedTeachers = $classTeachersMap[$classId] ?? [];
+                                $assignedTeacherIds = array_map(static fn (array $teacher): int => (int) $teacher['id'], $assignedTeachers);
+                                ?>
+                                <tr>
+                                    <td>
+                                        <strong><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                        <span class="muted"><?= htmlspecialchars((string) $class['code'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($assignedTeachers)): ?>
+                                            <div class="admin-table__meta">
+                                                <?php foreach ($assignedTeachers as $teacher): ?>
+                                                    <span class="admin-table__tag"><?= htmlspecialchars((string) $teacher['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
                                         <?php else: ?>
-                                            <span class="status">Admin protegit</span>
+                                            <span class="muted">Sense professorat assignat</span>
                                         <?php endif; ?>
-                                        <button class="button" type="button" data-target="student-<?= (int) $user['id'] ?>">Editar</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr id="student-<?= (int) $user['id'] ?>" class="student-editor-row">
-                                <td colspan="10">
-                                    <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
-                                        <input type="hidden" name="action" value="update_student">
-                                        <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
-                                        <div class="form__grid form__grid--compact">
-                                            <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
-                                            <label>Cognoms<input type="text" name="surname" value="<?= htmlspecialchars((string) ($user['surname'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Email<input type="email" name="email" value="<?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
-                                            <label>Classe
-                                                <select name="class_id">
-                                                    <option value="">Sense classe</option>
-                                                    <?php foreach ($classes as $class): ?>
-                                                        <option value="<?= (int) $class['id'] ?>" <?= ((int) ($user['class_id'] ?? 0) === (int) $class['id']) ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </label>
-                                            <label>Rol acadèmic<input type="text" name="academic_role" value="<?= htmlspecialchars((string) ($user['academic_role'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Gènere<input type="text" name="gender" value="<?= htmlspecialchars((string) ($user['gender'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Article<input type="text" name="article" value="<?= htmlspecialchars((string) ($user['article'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Inaturalist<input type="text" name="inaturalist_user_login" value="<?= htmlspecialchars((string) ($user['inaturalist_user_login'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Projecte<input type="text" name="project" value="<?= htmlspecialchars((string) ($user['project'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Equip<input type="number" name="team_number" value="<?= htmlspecialchars((string) ($user['team_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Grup<input type="number" name="group_number" value="<?= htmlspecialchars((string) ($user['group_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Codi grup 1T<input type="text" name="group_code_1t" value="<?= htmlspecialchars((string) ($user['group_code_1t'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Membres<input type="number" name="members_count" value="<?= htmlspecialchars((string) ($user['members_count'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>External ID<input type="text" name="external_id" value="<?= htmlspecialchars((string) ($user['external_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                            <label>Trimestre<input type="text" name="trimester" value="<?= htmlspecialchars((string) ($user['trimester'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
-                                        </div>
-                                            <div class="form__group">
-                                            <label>Rols</label>
+                                    </td>
+                                    <td>
+                                        <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>#classes">
+                                            <input type="hidden" name="action" value="sync_class_teachers">
+                                            <input type="hidden" name="class_id" value="<?= $classId ?>">
                                             <div class="form__choices">
-                                                <?php foreach ($roles as $role): ?>
+                                                <?php foreach ($teacherUsers as $teacher): ?>
+                                                    <?php $teacherId = (int) $teacher['id']; ?>
                                                     <label class="form__choice">
-                                                        <input type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>" <?= in_array((string) $role['name'], $user['roles'], true) ? 'checked' : '' ?>>
-                                                        <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
+                                                        <input type="checkbox" name="teacher_ids[]" value="<?= $teacherId ?>" <?= in_array($teacherId, $assignedTeacherIds, true) ? 'checked' : '' ?>>
+                                                        <?= htmlspecialchars(trim((string) ($teacher['name'] ?? '') . ' ' . (string) ($teacher['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
-                                        </div>
-                                        <?php if ($isAdminUser): ?>
-                                            <input type="hidden" name="is_active" value="1">
-                                            <p class="muted">Aquest usuari té rol admin i es manté actiu per protegir l’accés al panell.</p>
-                                        <?php else: ?>
-                                            <label class="form__check">
-                                                <input type="checkbox" name="is_active" value="1" <?= ((int) $user['is_active'] === 1) ? 'checked' : '' ?>>
-                                                Usuari actiu
-                                            </label>
-                                        <?php endif; ?>
-                                        <button class="button" type="submit">Guardar canvis</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                            <button class="button" type="submit">Guardar professorat</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+
 
         <?php
         $projectAssignmentsByProject = [];
         foreach ($projectAssignments as $assignment) {
             $projectAssignmentsByProject[(int) $assignment['project_id']][] = $assignment;
         }
-
-        $projectLogoMap = [
-            'projecte-rius' => 'Logotip_AssociacioHabitats.png',
-            'mat-penedes' => 'adf-agrupacio-defensa-forestal.png',
-            'agroparc' => 'Ajuntament-SantSadurni.png',
-            'projecte-orenetes' => 'Logotip_ICO.png',
-            'liquencity' => 'CREAF_logo_A4.png',
-            'vespa-velutina' => 'Logotip_EXOCAT.png',
-        ];
         ?>
-        <div id="projectes-lista" class="card admin-panel admin-panel--projects admin-collapsible">
+        <div id="projectes-lista" class="card admin-panel admin-panel--projects admin-collapsible is-collapsed">
             <div class="admin-panel__header">
                 <h2>Projectes</h2>
                 <div class="admin-actions">
                     <span class="status">Ordre, estat i assignacions</span>
-                    <button class="collapse-toggle" type="button" data-collapse="projectes-content">Amagar</button>
+                    <button class="collapse-toggle" type="button" data-collapse="projectes-content">Mostrar</button>
                 </div>
             </div>
 
@@ -482,12 +737,16 @@ ob_start();
                             $projectId = (int) $project['id'];
                             $projectSlug = (string) ($project['slug'] ?? '');
                             $projectAssignmentsForCard = $projectAssignmentsByProject[$projectId] ?? [];
-                            $projectLogo = $projectLogoMap[$projectSlug] ?? 'entorns_Sense-fons-quadrat-215px.png';
+                            $projectAsset = $project['assets'][0] ?? null;
                         ?>
                         <article class="project-admin-card">
                             <div class="project-admin-card__header">
                                 <div class="project-admin-card__logo">
-                                    <img src="<?= url('assets/logos/' . $projectLogo) ?>" alt="" loading="lazy">
+                                    <?php if (!empty($projectAsset['logo_path'])): ?>
+                                        <img src="<?= url((string) $projectAsset['logo_path']) ?>" alt="<?= htmlspecialchars((string) $projectAsset['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                                    <?php else: ?>
+                                        <img src="<?= url('assets/logos/entorns/entorns_Sense-fons-quadrat-215px.png') ?>" alt="Entorns de Natura" loading="lazy">
+                                    <?php endif; ?>
                                 </div>
                                 <div class="project-admin-card__title">
                                     <strong><?= htmlspecialchars((string) ($project['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
@@ -592,12 +851,12 @@ ob_start();
             </div>
         </div>
 
-        <div id="avaluacio" class="card admin-panel admin-panel--assessment admin-collapsible">
+        <div id="avaluacio" class="card admin-panel admin-panel--assessment admin-collapsible is-collapsed">
             <div class="admin-panel__header">
                 <h2>Fases i tasques</h2>
                 <div class="admin-actions">
                     <span class="status">Estructura d’avaluació</span>
-                    <button class="collapse-toggle" type="button" data-collapse="avaluacio-content">Amagar</button>
+                    <button class="collapse-toggle" type="button" data-collapse="avaluacio-content">Mostrar</button>
                 </div>
             </div>
             <div id="avaluacio-content" class="admin-collapsible__content">
@@ -721,6 +980,8 @@ ob_start();
             <h2>Logs i auditoria</h2>
             <p>En properes versions es mostraran aquí les accions d’admin i els errors del sistema.</p>
         </div>
+
+        <a class="admin-back-to-top" href="#panell" aria-label="Tornar a dalt">↑</a>
 
     </div>
 </div>

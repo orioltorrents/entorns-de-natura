@@ -30,6 +30,8 @@ Google és l’espai d’edició del professorat.
 
 La base de dades és l’espai controlat des d’on la web mostra informació.
 
+Quan un contingut tingui diferents nivells de visibilitat, la recomanació és classificar-lo per context i no publicar directament el document original sense control.
+
 ---
 
 ## Google Docs
@@ -42,6 +44,24 @@ La base de dades és l’espai controlat des d’on la web mostra informació.
 - materials d’alumnes;
 - materials de professorat;
 - documents multilingües.
+
+Nivells de visibilitat recomanats:
+
+```text
+public
+students
+teachers
+assigned_teachers
+admin
+```
+
+Exemples:
+
+- `public`: presentació i organització general;
+- `students`: bastides, ajudes i materials d'alumnat;
+- `teachers`: programacions i visió general;
+- `assigned_teachers`: programacions completes, deadlines i materials interns;
+- `admin`: contingut i control total.
 
 Opcions:
 
@@ -110,6 +130,8 @@ documents per projecte i idioma
 - dades científiques;
 - dades agregades;
 - importacions d’alumnes o grups.
+
+Per a dades d'aula i avaluació, la regla és més estricta: el Sheet pot ser font d'entrada, però la publicació final ha de passar per la base de dades i pels permisos del sistema.
 
 ---
 

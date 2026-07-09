@@ -654,6 +654,19 @@ Abans de modificar fitxers importants:
 6. Actualitzar el README quan hi hagi canvis importants.
 7. No fer canvis destructius sense confirmació explícita.
 
+## Model recomanat de visibilitat
+
+Quan es treballi en projectes, rutes o vistes que mostrin contingut educatiu, el criteri recomanat és:
+
+- una sola vista per projecte;
+- seccions condicionades pel context d'accés;
+- no duplicar plantilles per cada perfil;
+- no mostrar dades sensibles a visitants ni alumnat si no toca;
+- reservar programacions completes, deadlines i informació interna per al professorat que imparteix;
+- deixar la porta oberta a un mode de visitant amb informació pública i organitzativa.
+
+Si un canvi implica separar massa la informació en fitxers o rutes diferents, cal aturar-se i valorar una solució més centralitzada.
+
 ---
 
 ## Canvis destructius
