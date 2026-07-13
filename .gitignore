@@ -3,3 +3,4 @@
 /storage/logs/*
 /storage/cache/*
 /storage/imports/notes/*.csv
+.DS_Store

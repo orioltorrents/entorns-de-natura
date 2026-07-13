@@ -8,6 +8,23 @@ Google Docs i Google Sheets poden funcionar com a espai de treball del professor
 
 La web ha de mostrar aquesta informació de manera controlada, segura i estructurada.
 
+## Estat actual
+
+### Implementat
+
+- configuració base a `config/google.php`;
+- servei `GoogleSyncService` present, encara molt inicial;
+- estructura de base preparada per a sincronització i importació;
+- model de dades per a projectes, assets i avaluació ja existent.
+
+### Encara previst
+
+- integració real amb API de Google;
+- taules de fonts i execucions de sincronització;
+- importació robusta de Docs i Sheets;
+- validació, logs i reprocessament d'errors;
+- definició del flux entre document origen, BD i vista final.
+
 ---
 
 ## Flux general previst

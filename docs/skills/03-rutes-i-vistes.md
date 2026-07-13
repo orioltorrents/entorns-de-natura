@@ -6,6 +6,22 @@ Organitzar les rutes i les vistes del projecte **Entorns de Natura** sense crear
 
 El projecte ha de funcionar com una aplicació PHP modular.
 
+## Estat actual
+
+### Implementat
+
+- entrada única a `public/index.php`;
+- rutes públiques per portada, llistat de projectes, detall de projecte i login;
+- rutes privades per a alumnat, professorat i administració;
+- vistes ja creades a `resources/views/public`, `auth`, `students`, `teachers` i `admin`;
+- layout compartit a `resources/views/layouts/app.php`.
+
+### Encara previst
+
+- un router més net i declaratiu;
+- ampliar l'idioma més enllà de `ca` quan toqui;
+- afinar la vista de projecte per més contextos d'accés sense duplicar fitxers.
+
 ---
 
 ## Punt d’entrada
@@ -33,6 +49,26 @@ Totes les peticions principals han de passar per aquest fitxer.
 /ca/projectes/liquencity
 /ca/projectes/vespa-velutina
 ```
+
+## Rutes actuals
+
+```text
+/
+/ca
+/projectes
+/ca/projectes
+/es/projectes
+/en/projectes
+/ca/projectes/{slug}
+/login
+/logout
+/dashboard
+/alumne
+/professor
+/admin
+```
+
+La ruta de detall de projecte ja funciona amb `slug` i retorna 404 si no existeix.
 
 ---
 
@@ -86,6 +122,13 @@ resources/views/
 ```
 
 ---
+
+## Distinció d'estat
+
+- `previstes` són les rutes o vistes que el projecte encara vol incorporar o millorar.
+- `actuals` són les que ja es poden veure i mantenir al codi.
+
+Quan un fitxer ja existeix, s'ha de documentar com a realitat del projecte, no com a pla.
 
 ## Layouts
 

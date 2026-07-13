@@ -12,6 +12,21 @@ Aquesta skill s'ha d'utilitzar quan calgui:
 - activar o desactivar un asset sense perdre la relació;
 - mostrar els mateixos assets a la web publica, alumnat, professorat i administracio.
 
+## Estat actual
+
+### Implementat
+
+- carpeta real d'assets a `public/assets/logos/`;
+- logos de projectes, col·laboradors i eines ja presents al repositori;
+- `project_assets` i `project_asset_links` com a catàleg i relació;
+- assets recuperats als llistats públics, als dashboards i a la fitxa de projecte.
+
+### Encara previst
+
+- ampliar l'ús dels assets a més contextos interns;
+- afinar el criteri de selecció del logo principal quan un projecte tingui diversos assets;
+- reutilitzar aquest catàleg també per a recursos de tasques quan toqui.
+
 Quan un projecte tingui logo, la targeta l'ha de mostrar dins la caixa, alineat a l'esquerra, amb el contingut textual a la dreta. En pantalles petites, la targeta pot apilar-se en columna i reduir el logo de forma automàtica.
 
 ---

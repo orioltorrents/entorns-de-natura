@@ -6,6 +6,25 @@ Preparar el sistema d’accés, sessions, permisos i seguretat del projecte **En
 
 El projecte gestionarà dades d’alumnat i professorat, per tant la seguretat és una prioritat.
 
+## Estat actual
+
+### Implementat
+
+- login bàsic amb email i contrasenya;
+- sessió activa amb `user_id`, `email` i `roles`;
+- regeneració d'identificador de sessió en iniciar sessió;
+- token CSRF al formulari de login;
+- comprovació de rols amb `AuthService::requireRole()`;
+- logout i comprovació d'usuari actiu;
+- fitxa pública de projecte amb bloc contextual de notes per alumnat autenticat.
+
+### Encara previst
+
+- login amb Google;
+- refinament del context de visibilitat per professorat assignat vs visitant;
+- control més fi de seccions privades dins de la fitxa de projecte;
+- reforç progressiu de la capa d'auditoria i permisos.
+
 ---
 
 ## Taules principals

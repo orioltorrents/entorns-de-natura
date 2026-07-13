@@ -102,9 +102,8 @@ entorns-de-natura/
 │   └── assets/
 │       ├── css/
 │       ├── js/
-│       ├── img/
-│       ├── icons/
-│       └── uploads/
+│       ├── logos/
+│       └── img/
 │
 ├── resources/
 │   ├── views/
@@ -231,6 +230,8 @@ database/schema.sql
 ```
 
 La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
+
+`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06` i `07` formen l'esquema actual.
 
 Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
 

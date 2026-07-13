@@ -13,6 +13,22 @@ Aquest skill s’ha de consultar abans de:
 - canviar classes, noms de components o estructura visual;
 - revisar responsive, focus, hover o accessibilitat.
 
+## Estat actual
+
+### Implementat
+
+- el CSS actiu és `public/assets/css/styles.css`;
+- el layout ja fa cache-busting de CSS i JS;
+- les vistes ja utilitzen una nomenclatura BEM força coherent;
+- hi ha estils reals per a portada, projectes, dashboards i fitxa de projecte.
+
+### Encara previst
+
+- seguir reduint duplicació d'estils;
+- consolidar millor les variables globals;
+- refinar responsive i accessibilitat on calgui;
+- evitar regressions quan es toquin vistes o components nous.
+
 ---
 
 ## Fitxer principal

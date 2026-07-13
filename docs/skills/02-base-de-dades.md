@@ -18,6 +18,22 @@ La base de dades ha de permetre gestionar:
 - futura sincronització amb Google;
 - futures rúbriques i notes.
 
+## Estat actual
+
+### Implementat
+
+- connexió amb PDO des de `config/database.php`;
+- esquema educatiu base amb usuaris, rols, classes, projectes, idiomes i assignacions;
+- taules d'avaluació i estructura de fases i tasques;
+- catàleg d'assets de projecte i relacions amb projectes;
+- taula d'analítica de visites `site_visits`.
+
+### Encara previst
+
+- taules específiques per a Google Workspace;
+- taules de rúbriques i notes definitives;
+- possibles extensions de visibilitat i historial si calen més endavant.
+
 ---
 
 ## Base de dades local
@@ -100,6 +116,8 @@ student_profiles
 users
 user_roles
 ```
+
+La taula `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 
 ## Ordre recomanat de càrrega
 

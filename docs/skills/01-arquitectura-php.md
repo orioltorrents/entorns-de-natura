@@ -14,6 +14,23 @@ El projecte és una aplicació PHP pròpia, sense frameworks grans, preparada pe
 - futura sincronització amb Google Docs i Google Sheets;
 - futura gestió de rúbriques i notes.
 
+## Estat actual
+
+### Implementat
+
+- `public/index.php` és el punt d'entrada real;
+- hi ha controladors per a `PublicController`, `AuthController`, `StudentController`, `TeacherController` i `AdminController`;
+- hi ha serveis per a autenticació, projectes, assets, assignacions, analítica i avaluació;
+- hi ha helpers per a `env`, `route`, `view`, `lang` i `session`;
+- hi ha vistes públiques, d'autenticació, d'alumnat, de professorat i d'administració;
+- el layout comú ja està centralitzat.
+
+### Encara previst
+
+- un router més formal i extensible;
+- més serveis i models a mesura que creixi la funcionalitat;
+- reduir la lògica condicional dispersa en alguns punts del codi.
+
 ---
 
 ## Estructura principal
