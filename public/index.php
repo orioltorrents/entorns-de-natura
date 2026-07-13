@@ -13,22 +13,28 @@ require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
 require_once dirname(__DIR__) . '/app/Services/AssessmentService.php';
 require_once dirname(__DIR__) . '/app/Services/AssessmentStructureImportService.php';
 require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
+require_once dirname(__DIR__) . '/app/Services/DocumentImportService.php';
+require_once dirname(__DIR__) . '/app/Services/DocumentService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
 require_once dirname(__DIR__) . '/app/Controllers/TeacherController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
+require_once dirname(__DIR__) . '/app/Controllers/DocumentSyncController.php';
 
 $authService = new AuthService();
 $projectAssignmentService = new ProjectAssignmentService();
 $projectService = new ProjectService();
 $assessmentService = new AssessmentService();
 $analyticsService = new AnalyticsService();
-$controller = new PublicController($projectService, $authService, $assessmentService);
+$documentImportService = new DocumentImportService();
+$documentService = new DocumentService();
+$controller = new PublicController($projectService, $authService, $assessmentService, $documentService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);
 $adminController = new AdminController();
+$documentSyncController = new DocumentSyncController($authService, $documentImportService);
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $basePath = appBasePath();
@@ -86,7 +92,21 @@ switch ($requestUri) {
         echo $adminController->dashboard();
         break;
 
+    case '/admin/sync-documents':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            echo $documentSyncController->store();
+            break;
+        }
+
+        echo $documentSyncController->index();
+        break;
+
     default:
+        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/documents$#', $requestUri, $matches) === 1) {
+            echo $controller->projectDocuments($matches[2]);
+            break;
+        }
+
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)$#', $requestUri, $matches) === 1) {
             echo $controller->projectDetail($matches[2]);
             break;

@@ -227,11 +227,14 @@ database/schema.sql
   -> 04_assessment_structure_tables.sql
   -> 06_project_assets.sql
   -> 07_task_resources.sql
+  -> 08_document_tables.sql
 ```
 
 La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
 
-`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06` i `07` formen l'esquema actual.
+`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07` i `08` formen l'esquema actual.
+
+Si la base ja existia abans de la capa de documents, cal aplicar també `database/09_document_tables_fix.sql` com a ajust no destructiu.
 
 Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
 

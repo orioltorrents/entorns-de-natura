@@ -7,7 +7,8 @@ class PublicController
     public function __construct(
         private ProjectService $projectService,
         private AuthService $authService,
-        private AssessmentService $assessmentService
+        private AssessmentService $assessmentService,
+        private DocumentService $documentService
     ) {
     }
 
@@ -51,6 +52,32 @@ class PublicController
             'project' => $project,
             'currentUser' => $currentUser,
             'studentGrades' => $studentGrades,
+        ]);
+    }
+
+    public function projectDocuments(string $slug): string
+    {
+        $project = $this->projectService->findActiveBySlug($slug, getLanguage());
+
+        if ($project === null) {
+            http_response_code(404);
+
+            return view('public.project-documents', [
+                'title' => 'Documents no trobats',
+                'project' => null,
+                'documents' => [],
+                'context' => [],
+            ]);
+        }
+
+        $currentUser = $this->authService->user();
+        $documentsData = $this->documentService->projectDocuments($slug, $currentUser);
+
+        return view('public.project-documents', [
+            'title' => 'Documents de ' . (string) $project['title'],
+            'project' => $documentsData['project'] ?? $project,
+            'documents' => $documentsData['documents'] ?? [],
+            'context' => $documentsData['context'] ?? [],
         ]);
     }
 }

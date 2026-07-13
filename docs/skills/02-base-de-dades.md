@@ -80,13 +80,14 @@ DB_CHARSET=utf8mb4
 
 ## Taules actuals
 
-La base de dades actual té 24 taules en total. Es reparteixen entre:
+La base de dades actual té 28 taules en total. Es reparteixen entre:
 
 - `database/02_education_tables.sql`;
 - `database/03_assessment_tables.sql`;
 - `database/04_assessment_structure_tables.sql`;
 - `database/06_project_assets.sql`.
 - `database/07_task_resources.sql`.
+- `database/08_document_tables.sql`.
 
 Llistat actual:
 
@@ -109,6 +110,10 @@ assessment_phases
 assessment_tasks
 assessment_supports
 assessment_task_resources
+documents
+document_sources
+document_fragments
+document_visibility_rules
 roles
 settings
 site_visits

@@ -31,6 +31,9 @@ $gradeAchievementClass = static function (array $grade): string {
                 <?php endif; ?>
                 <p class="public-project-detail__eyebrow">Fitxa de projecte</p>
                 <h1 class="public-project-detail__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+                <div class="actions" style="margin-top: 1rem;">
+                    <a class="button button--secondary" href="<?= url(getLanguage() . '/projectes/' . $project['slug'] . '/documents') ?>">Veure documents</a>
+                </div>
             </div>
             <span class="public-project-detail__status status">actiu</span>
         </div>

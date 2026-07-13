@@ -52,6 +52,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `academic_years`, `classes`, `class_members`, `class_teachers`;
 - `projects`, `project_translations`, `project_groups`;
 - `project_assets`, `project_asset_links`;
+- `documents`, `document_sources`, `document_fragments`, `document_visibility_rules`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `assessment_supports`, `assessment_task_resources`;
 - `settings`;
@@ -61,6 +62,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 
 - `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 - `database/schema.sql` és el mestre de reconstrucció i apunta a les parts actuals de l'esquema.
+- si la base ja existia abans d'aquesta capa, també cal aplicar `database/09_document_tables_fix.sql`.
 
 ### Encara previst
 

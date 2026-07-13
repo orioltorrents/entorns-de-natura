@@ -24,7 +24,7 @@ ob_start();
             <a href="#classes">Classes</a>
             <a href="#projectes-lista">Projectes</a>
             <a href="#avaluacio">Fases i tasques</a>
-            <a href="#sincronitzacions">Google Sync</a>
+            <a href="<?= url('admin/sync-documents') ?>">Google Sync</a>
             <a href="#logs">Logs</a>
         </nav>
     </aside>
