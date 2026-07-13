@@ -55,11 +55,52 @@ class ProjectAssetService
         return $assetsByProject;
     }
 
+    public function logoAssetByProjectIds(array $projectIds): array
+    {
+        $assetsByProject = $this->assetsByProjectIds($projectIds);
+        $logoAssets = [];
+
+        foreach ($assetsByProject as $projectId => $assets) {
+            $logoAssets[$projectId] = $this->pickLogoAsset($assets);
+        }
+
+        return $logoAssets;
+    }
+
     public function assetsByProjectId(int $projectId): array
     {
         $assetsByProject = $this->assetsByProjectIds([$projectId]);
 
         return $assetsByProject[$projectId] ?? [];
+    }
+
+    public function logoAssetByProjectId(int $projectId): ?array
+    {
+        $logoAssets = $this->logoAssetByProjectIds([$projectId]);
+
+        return $logoAssets[$projectId] ?? null;
+    }
+
+    private function pickLogoAsset(array $assets): ?array
+    {
+        $fallback = null;
+        $fallbackWithLogo = null;
+
+        foreach ($assets as $asset) {
+            if ($fallback === null) {
+                $fallback = $asset;
+            }
+
+            if ($fallbackWithLogo === null && !empty($asset['logo_path'])) {
+                $fallbackWithLogo = $asset;
+            }
+
+            if (($asset['asset_type'] ?? '') === 'project' && !empty($asset['logo_path'])) {
+                return $asset;
+            }
+        }
+
+        return $fallbackWithLogo ?? $fallback;
     }
 
     private function pdo(): PDO

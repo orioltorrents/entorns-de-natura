@@ -72,6 +72,8 @@ Per a la implementacio, el mes net seria reutilitzar una sola vista de projecte 
 - `public/assets/css/styles.css` es el CSS actiu de l'app.
 - `index.html` i `css/styles.css` son la maqueta estatica i la referencia visual.
 - `database/06_project_assets.sql` afegeix la relacio entre projectes i assets/logos d'entitats, softwares i apps.
+- `database/07_task_resources.sql` afegeix bastides, ajudes i recursos lligats a les tasques.
+- `database/schema.sql` actua com a fitxer mestre per carregar la base de dades en una reconstruccio neta.
 - `docs/skills/07-assets-projectes.md` explica com afegir logos i assets a projectes.
 
 ## Entorn local

@@ -67,7 +67,9 @@ class ProjectService
             return null;
         }
 
-        $project['assets'] = (new ProjectAssetService())->assetsByProjectId((int) $project['id']);
+        $projectAssetService = new ProjectAssetService();
+        $project['assets'] = $projectAssetService->assetsByProjectId((int) $project['id']);
+        $project['logo_asset'] = $projectAssetService->logoAssetByProjectId((int) $project['id']);
 
         return $project;
     }

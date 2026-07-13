@@ -175,3 +175,15 @@ Si la targeta de projecte es veu en columna, revisar que el bloc de media i el b
 
 - `docs/skills/02-base-de-dades.md` per l'esquema i les consultes SQL.
 - `docs/skills/06-css-i-ui.md` per la presentacio visual dels logos.
+
+## Extensio prevista per a tasques
+
+Si més endavant cal mostrar apps, softwares o eines dins de les tasques, la recomanació és no crear un catàleg nou, sinó reutilitzar `project_assets` i afegir una taula de relació específica, `assessment_task_resources`.
+
+Per a les bastides o ajudes associades, el catàleg recomanat és `assessment_supports`.
+
+La idea és que un mateix asset pugui aparèixer:
+
+- en un projecte com a logo o recurs;
+- en una tasca com a eina recomanada o recurs associat.
+- amb una bastida o ajuda concreta vinculada al recurs.

@@ -2,6 +2,13 @@
 -- Entorns de Natura - Esquema actual de base de dades
 -- Utilitzar com a referència oficial per recrear o revisar
 -- l’estructura del projecte.
+--
+-- Taules totals del projecte: 24
+-- Aquest fitxer conté les taules base (16).
+-- Les taules d'avaluació i assets complementaris viuen a:
+-- - database/03_assessment_tables.sql
+-- - database/04_assessment_structure_tables.sql
+-- - database/06_project_assets.sql
 -- --------------------------------------------------------
 
 SET NAMES utf8mb4;

@@ -14,7 +14,7 @@ ob_start();
 <?php else: ?>
     <div class="public-projects__grid">
         <?php foreach ($projects as $project): ?>
-            <?php $projectAsset = $project['assets'][0] ?? null; ?>
+            <?php $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null); ?>
             <article class="public-project-card">
                 <?php if (!empty($projectAsset['logo_path'])): ?>
                     <div class="public-project-card__media">

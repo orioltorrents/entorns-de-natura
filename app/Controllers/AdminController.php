@@ -39,18 +39,22 @@ class AdminController
         $roles = $rolesStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $projectsStmt = $pdo->query(
-            'SELECT id, name, slug, display_order, is_active, created_at
-             FROM projects
-             ORDER BY display_order, name'
+            'SELECT p.id, p.name, p.slug, p.display_order, p.is_active, p.created_at,
+                    COALESCE(pt.description, "") AS description
+              FROM projects p
+             LEFT JOIN languages l ON l.code = "ca"
+             LEFT JOIN project_translations pt ON pt.project_id = p.id AND pt.language_id = l.id
+             ORDER BY p.display_order, p.name'
         );
         $projects = $projectsStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $projectAssetService = new ProjectAssetService();
         $assetsByProject = $projectAssetService->assetsByProjectIds(array_map(static fn (array $project): int => (int) $project['id'], $projects));
+        $logoAssetsByProject = $projectAssetService->logoAssetByProjectIds(array_map(static fn (array $project): int => (int) $project['id'], $projects));
 
         foreach ($projects as &$project) {
-            $project['description'] = 'Projecte disponible al portal';
             $project['assets'] = $assetsByProject[(int) $project['id']] ?? [];
+            $project['logo_asset'] = $logoAssetsByProject[(int) $project['id']] ?? null;
         }
         unset($project);
 

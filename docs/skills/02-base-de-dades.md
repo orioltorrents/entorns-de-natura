@@ -64,7 +64,15 @@ DB_CHARSET=utf8mb4
 
 ## Taules actuals
 
-La base de dades actual té aquestes taules:
+La base de dades actual té 24 taules en total. Es reparteixen entre:
+
+- `database/02_education_tables.sql`;
+- `database/03_assessment_tables.sql`;
+- `database/04_assessment_structure_tables.sql`;
+- `database/06_project_assets.sql`.
+- `database/07_task_resources.sql`.
+
+Llistat actual:
 
 ```text
 academic_years
@@ -72,14 +80,41 @@ classes
 class_members
 class_teachers
 languages
+project_assets
+project_asset_links
 projects
 project_translations
 project_groups
+assessment_sources
+assessment_import_runs
+assessment_records
+assessment_import_errors
+assessment_phases
+assessment_tasks
+assessment_supports
+assessment_task_resources
 roles
 settings
+site_visits
+student_profiles
 users
 user_roles
 ```
+
+## Ordre recomanat de càrrega
+
+Per reconstruir una base de dades neta, el millor és fer servir un `schema.sql` mestre amb aquest ordre:
+
+```text
+database/schema.sql
+  -> 02_education_tables.sql
+  -> 03_assessment_tables.sql
+  -> 04_assessment_structure_tables.sql
+  -> 06_project_assets.sql
+  -> 07_task_resources.sql
+```
+
+La migració `05_project_display_order.sql` es manté només per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja existeix a la base.
 
 ---
 
@@ -305,6 +340,23 @@ Criteris:
 Veure també:
 
 - `docs/skills/07-assets-projectes.md`
+
+### Recursos de tasques
+
+Per al futur, si cal lligar eines, apps o softwares concrets a una tasca d'avaluació, és preferible una taula de relació separada, `assessment_task_resources`, i una taula de catàleg de bastides/ajudes com `assessment_supports`.
+
+Idea de camps:
+
+```text
+assessment_task_id
+project_asset_id
+support_id
+display_order
+is_visible
+notes
+```
+
+Això permet reutilitzar `project_assets` com a catàleg, vincular una bastida a cada recurs i mostrar els recursos exactes que es fan servir a cada tasca sense duplicar dades.
 
 ---
 

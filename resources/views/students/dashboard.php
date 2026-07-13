@@ -23,7 +23,7 @@ ob_start();
                 </div>
                 <div class="student-dashboard__projects">
                 <?php foreach ($class['projects'] as $project): ?>
-                    <?php $projectAsset = $project['assets'][0] ?? null; ?>
+                    <?php $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null); ?>
                     <article class="student-project-card">
                         <?php if (!empty($projectAsset['logo_path'])): ?>
                             <div class="student-project-card__media">

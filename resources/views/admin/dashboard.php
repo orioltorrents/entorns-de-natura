@@ -737,7 +737,7 @@ ob_start();
                             $projectId = (int) $project['id'];
                             $projectSlug = (string) ($project['slug'] ?? '');
                             $projectAssignmentsForCard = $projectAssignmentsByProject[$projectId] ?? [];
-                            $projectAsset = $project['assets'][0] ?? null;
+                            $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null);
                         ?>
                         <article class="project-admin-card">
                             <div class="project-admin-card__header">

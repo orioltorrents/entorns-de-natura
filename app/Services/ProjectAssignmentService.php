@@ -95,12 +95,30 @@ class ProjectAssignmentService
         foreach ($classes as &$class) {
             foreach ($class['projects'] as &$project) {
                 $project['assets'] = $assetsByProject[(int) $project['id']] ?? [];
+                $project['logo_asset'] = $this->pickLogoAsset($project['assets']);
             }
             unset($project);
         }
         unset($class);
 
         return $classes;
+    }
+
+    private function pickLogoAsset(array $assets): ?array
+    {
+        $fallback = null;
+
+        foreach ($assets as $asset) {
+            if ($fallback === null) {
+                $fallback = $asset;
+            }
+
+            if (($asset['asset_type'] ?? '') === 'project' && !empty($asset['logo_path'])) {
+                return $asset;
+            }
+        }
+
+        return $fallback;
     }
 
     private function pdo(): PDO

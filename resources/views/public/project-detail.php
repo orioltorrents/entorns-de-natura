@@ -23,7 +23,7 @@ $gradeAchievementClass = static function (array $grade): string {
 <?php else: ?>
     <article class="public-project-detail">
         <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
-        <?php $projectAsset = $project['assets'][0] ?? null; ?>
+        <?php $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null); ?>
         <div class="public-project-detail__hero">
             <div>
                 <?php if (!empty($projectAsset['logo_path'])): ?>

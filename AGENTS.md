@@ -198,14 +198,41 @@ classes
 class_members
 class_teachers
 languages
+project_assets
+project_asset_links
 projects
 project_translations
 project_groups
+assessment_sources
+assessment_import_runs
+assessment_records
+assessment_import_errors
+assessment_phases
+assessment_tasks
+assessment_supports
+assessment_task_resources
 roles
 settings
+site_visits
+student_profiles
 users
 user_roles
 ```
+
+Ordre recomanat de càrrega per reconstruir la base de dades:
+
+```text
+database/schema.sql
+  -> 02_education_tables.sql
+  -> 03_assessment_tables.sql
+  -> 04_assessment_structure_tables.sql
+  -> 06_project_assets.sql
+  -> 07_task_resources.sql
+```
+
+La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
+
+Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
 
 ---
 
