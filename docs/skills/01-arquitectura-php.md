@@ -262,8 +262,15 @@ Taules:
 ```text
 projects
 project_translations
-project_groups
+project_class_assignments
+project_academic_years
 ```
+
+Norma clau:
+
+- `projects` és el catàleg base;
+- `project_academic_years` és la unitat real quan la dada depèn del curs o de l'edició;
+- documents, imports i notes han de resoldre l'edició abans de llegir o escriure dades sensibles.
 
 Vista genèrica:
 

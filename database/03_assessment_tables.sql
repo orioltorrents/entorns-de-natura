@@ -53,7 +53,6 @@ CREATE TABLE IF NOT EXISTS assessment_import_runs (
 
 CREATE TABLE IF NOT EXISTS assessment_records (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_id INT UNSIGNED NOT NULL,
     user_id INT UNSIGNED NOT NULL,
     source_id BIGINT UNSIGNED NULL,
     import_run_id BIGINT UNSIGNED NULL,
@@ -70,15 +69,10 @@ CREATE TABLE IF NOT EXISTS assessment_records (
     display_order INT UNSIGNED NOT NULL DEFAULT 0,
     imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_assessment_records_student_project (user_id, project_id),
-    KEY idx_assessment_records_project_user (project_id, user_id),
+    KEY idx_assessment_records_user_source (user_id, source_id),
     KEY idx_assessment_records_source_id (source_id),
     KEY idx_assessment_records_import_run_id (import_run_id),
     KEY idx_assessment_records_student_email (student_email),
-    CONSTRAINT fk_assessment_records_project
-        FOREIGN KEY (project_id) REFERENCES projects (id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
     CONSTRAINT fk_assessment_records_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE

@@ -7,13 +7,13 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
-$projectSlug = trim((string) ($argv[1] ?? ''));
+$projectAcademicYearId = (int) ($argv[1] ?? 0);
 $csvPath = (string) ($argv[2] ?? '');
 $sourceName = trim((string) ($argv[3] ?? ''));
 
-if ($projectSlug === '' || $csvPath === '') {
-    fwrite(STDERR, "Us: php scripts/import-assessments.php <project-slug> <fitxer.csv> [nom-font]\n");
-    fwrite(STDERR, "Exemple: php scripts/import-assessments.php projecte-rius storage/imports/notes/projecte-rius.csv \"Projecte Rius\"\n");
+if ($projectAcademicYearId <= 0 || $csvPath === '') {
+    fwrite(STDERR, "Us: php scripts/import-assessments.php <project-academic-year-id> <fitxer.csv> [nom-font]\n");
+    fwrite(STDERR, "Exemple: php scripts/import-assessments.php 12 storage/imports/notes/projecte-rius-2025-2026.csv \"Projecte Rius\"\n");
     exit(1);
 }
 
@@ -46,33 +46,44 @@ try {
         throw new RuntimeException("No s'ha trobat cap columna email al CSV.");
     }
 
-    $project = findProject($pdo, $projectSlug);
-    if ($project === null) {
-        throw new RuntimeException("No s'ha trobat el projecte amb slug '{$projectSlug}'.");
+    $projectAcademicYear = findProjectAcademicYear($pdo, $projectAcademicYearId);
+    if ($projectAcademicYear === null) {
+        throw new RuntimeException("No s'ha trobat l'edició de projecte amb id {$projectAcademicYearId}.");
     }
 
     $metadataIndexes = detectMetadataIndexes($headers);
 
     $pdo->beginTransaction();
 
-    $sourceId = upsertSource($pdo, (int) $project['id'], $sourceName, $csvPath, $headers[$emailIndex]);
-    $runId = createImportRun($pdo, (int) $project['id'], $sourceId, $csvPath, count($rows));
+    $sourceId = upsertSource(
+        $pdo,
+        (int) $projectAcademicYear['project_academic_year_id'],
+        $sourceName,
+        $csvPath,
+        $headers[$emailIndex]
+    );
+    $runId = createImportRun(
+        $pdo,
+        (int) $projectAcademicYear['project_academic_year_id'],
+        $sourceId,
+        $csvPath,
+        count($rows)
+    );
 
     $deleteStmt = $pdo->prepare(
         'DELETE FROM assessment_records
-         WHERE project_id = :project_id AND source_id = :source_id'
+         WHERE source_id = :source_id'
     );
     $deleteStmt->execute([
-        'project_id' => (int) $project['id'],
         'source_id' => $sourceId,
     ]);
 
     $insertRecordStmt = $pdo->prepare(
         'INSERT INTO assessment_records
-            (project_id, user_id, source_id, import_run_id, student_email, label, source_column, value,
+            (user_id, source_id, import_run_id, student_email, label, source_column, value,
              value_type, numeric_value, achievement_value, group_name, team_code, role_name, display_order, imported_at)
          VALUES
-            (:project_id, :user_id, :source_id, :import_run_id, :student_email, :label, :source_column, :value,
+            (:user_id, :source_id, :import_run_id, :student_email, :label, :source_column, :value,
              :value_type, :numeric_value, :achievement_value, :group_name, :team_code, :role_name, :display_order, NOW())'
     );
 
@@ -117,7 +128,6 @@ try {
             $typedValue = classifyValue($value);
 
             $insertRecordStmt->execute([
-                'project_id' => (int) $project['id'],
                 'user_id' => (int) $user['id'],
                 'source_id' => $sourceId,
                 'import_run_id' => $runId,
@@ -159,7 +169,9 @@ try {
     $pdo->commit();
 
     print "Importacio finalitzada.\n";
-    print "Projecte: {$project['slug']}\n";
+    print "Projecte: {$projectAcademicYear['project_slug']}\n";
+    print "Curs: {$projectAcademicYear['academic_year_name']}\n";
+    print "Edicio: {$projectAcademicYear['project_academic_year_id']}\n";
     print "Font: {$sourceName}\n";
     print "Files totals: " . count($rows) . "\n";
     print "Files importades: {$rowsImported}\n";
@@ -364,13 +376,26 @@ function classifyValue(string $value): array
     return ['type' => 'text', 'numeric' => null, 'achievement' => null];
 }
 
-function findProject(PDO $pdo, string $slug): ?array
+function findProjectAcademicYear(PDO $pdo, int $projectAcademicYearId): ?array
 {
-    $stmt = $pdo->prepare('SELECT id, slug, name FROM projects WHERE slug = :slug LIMIT 1');
-    $stmt->execute(['slug' => $slug]);
-    $project = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare(
+        'SELECT
+             pay.id AS project_academic_year_id,
+             pay.project_id,
+             p.slug AS project_slug,
+             p.name AS project_name,
+             pay.academic_year_id,
+             ay.name AS academic_year_name
+         FROM project_academic_years pay
+         INNER JOIN projects p ON p.id = pay.project_id
+         INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+         WHERE pay.id = :id
+         LIMIT 1'
+    );
+    $stmt->execute(['id' => $projectAcademicYearId]);
+    $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    return $project === false ? null : $project;
+    return $projectAcademicYear === false ? null : $projectAcademicYear;
 }
 
 function findUserByEmail(PDO $pdo, string $email): ?array
@@ -382,39 +407,39 @@ function findUserByEmail(PDO $pdo, string $email): ?array
     return $user === false ? null : $user;
 }
 
-function upsertSource(PDO $pdo, int $projectId, string $name, string $csvPath, string $emailColumn): int
+function upsertSource(PDO $pdo, int $projectAcademicYearId, string $name, string $csvPath, string $emailColumn): int
 {
     $stmt = $pdo->prepare(
-        'INSERT INTO assessment_sources (project_id, name, source_type, source_reference, email_column)
-         VALUES (:project_id, :name, :source_type, :source_reference, :email_column)
+        'INSERT INTO assessment_sources (project_academic_year_id, name, source_type, source_reference, email_column)
+         VALUES (:project_academic_year_id, :name, :source_type, :source_reference, :email_column)
          ON DUPLICATE KEY UPDATE
-             source_reference = VALUES(source_reference),
-             email_column = VALUES(email_column),
-             is_active = 1,
-             updated_at = CURRENT_TIMESTAMP'
+              source_reference = VALUES(source_reference),
+              email_column = VALUES(email_column),
+              is_active = 1,
+              updated_at = CURRENT_TIMESTAMP'
     );
     $stmt->execute([
-        'project_id' => $projectId,
+        'project_academic_year_id' => $projectAcademicYearId,
         'name' => $name,
         'source_type' => 'csv',
         'source_reference' => $csvPath,
         'email_column' => $emailColumn,
     ]);
 
-    $select = $pdo->prepare('SELECT id FROM assessment_sources WHERE project_id = :project_id AND name = :name LIMIT 1');
-    $select->execute(['project_id' => $projectId, 'name' => $name]);
+    $select = $pdo->prepare('SELECT id FROM assessment_sources WHERE project_academic_year_id = :project_academic_year_id AND name = :name LIMIT 1');
+    $select->execute(['project_academic_year_id' => $projectAcademicYearId, 'name' => $name]);
 
     return (int) $select->fetchColumn();
 }
 
-function createImportRun(PDO $pdo, int $projectId, int $sourceId, string $filename, int $rowsTotal): int
+function createImportRun(PDO $pdo, int $projectAcademicYearId, int $sourceId, string $filename, int $rowsTotal): int
 {
     $stmt = $pdo->prepare(
-        'INSERT INTO assessment_import_runs (project_id, source_id, filename, status, rows_total, started_at)
-         VALUES (:project_id, :source_id, :filename, :status, :rows_total, NOW())'
+        'INSERT INTO assessment_import_runs (project_academic_year_id, source_id, filename, status, rows_total, started_at)
+         VALUES (:project_academic_year_id, :source_id, :filename, :status, :rows_total, NOW())'
     );
     $stmt->execute([
-        'project_id' => $projectId,
+        'project_academic_year_id' => $projectAcademicYearId,
         'source_id' => $sourceId,
         'filename' => $filename,
         'status' => 'running',

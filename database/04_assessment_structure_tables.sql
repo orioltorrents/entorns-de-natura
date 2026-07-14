@@ -1,5 +1,10 @@
 -- --------------------------------------------------------
 -- Entorns de Natura - Estructura visible d'avaluacio
+--
+-- Aquestes taules defineixen les plantilles de fases i tasques.
+-- Les assignacions a cada edicio de projecte viuen a:
+-- - database/24_assessment_project_year_phases.sql
+-- - database/25_assessment_project_year_phase_tasks.sql
 -- --------------------------------------------------------
 
 SET NAMES utf8mb4;

@@ -59,12 +59,20 @@ CREATE TABLE IF NOT EXISTS student_profiles (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE IF NOT EXISTS web_roles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_roles_name (name)
+    UNIQUE KEY uq_web_roles_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS project_roles (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_project_roles_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS site_visits (
@@ -86,19 +94,19 @@ CREATE TABLE IF NOT EXISTS site_visits (
     KEY idx_site_visits_session_id (session_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS user_roles (
+CREATE TABLE IF NOT EXISTS user_web_roles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id INT UNSIGNED NOT NULL,
     role_id INT UNSIGNED NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_user_roles (user_id, role_id),
-    CONSTRAINT fk_user_roles_user
+    UNIQUE KEY uq_user_web_roles (user_id, role_id),
+    CONSTRAINT fk_user_web_roles_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT fk_user_roles_role
-        FOREIGN KEY (role_id) REFERENCES roles (id)
+    CONSTRAINT fk_user_web_roles_role
+        FOREIGN KEY (role_id) REFERENCES web_roles (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -203,24 +211,25 @@ CREATE TABLE IF NOT EXISTS project_translations (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS project_groups (
+CREATE TABLE IF NOT EXISTS project_class_assignments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    project_academic_year_id BIGINT UNSIGNED NOT NULL,
     class_id INT UNSIGNED NOT NULL,
-    project_id INT UNSIGNED NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'actiu',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_project_groups (class_id, project_id),
-    KEY idx_project_groups_class_id (class_id),
-    KEY idx_project_groups_project_id (project_id),
-    CONSTRAINT fk_project_groups_class
+    UNIQUE KEY uq_project_class_assignments (project_academic_year_id, class_id),
+    KEY idx_project_class_assignments_project_academic_year_id (project_academic_year_id),
+    KEY idx_project_class_assignments_class_id (class_id),
+    CONSTRAINT fk_project_class_assignments_project_academic_year
+        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_project_class_assignments_class
         FOREIGN KEY (class_id) REFERENCES classes (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT fk_project_groups_project
-        FOREIGN KEY (project_id) REFERENCES projects (id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS project_assets (

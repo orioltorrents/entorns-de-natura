@@ -24,9 +24,12 @@ La base de dades ha de permetre gestionar:
 
 - connexió amb PDO des de `config/database.php`;
 - esquema educatiu base amb usuaris, rols, classes, projectes, idiomes i assignacions;
+- `project_academic_years` com a unitat funcional per a dades d'edició;
 - taules d'avaluació i estructura de fases i tasques;
 - catàleg d'assets de projecte i relacions amb projectes;
 - capa de documents, fragments i visibilitat;
+- documents lligats a `project_academic_years`;
+- notes i imports d'avaluació lligats a `project_academic_year_id`;
 - seccions de projecte i permisos per rol;
 - taula d'analítica de visites `site_visits`.
 
@@ -82,7 +85,7 @@ DB_CHARSET=utf8mb4
 
 ## Taules actuals
 
-La base de dades actual té 28 taules en total. Es reparteixen entre:
+La base de dades actual inclou diverses taules repartides entre:
 
 - `database/02_education_tables.sql`;
 - `database/03_assessment_tables.sql`;
@@ -103,19 +106,23 @@ project_assets
 project_asset_links
 projects
 project_translations
-project_groups
+project_class_assignments
+project_class_assignments
 assessment_sources
 assessment_import_runs
 assessment_records
 assessment_import_errors
 assessment_phases
 assessment_tasks
+project_academic_year_phases
+project_academic_year_phase_tasks
 assessment_supports
 assessment_task_resources
 documents
 document_sources
 document_fragments
 document_visibility_rules
+project_academic_years
 project_sections
 project_section_roles
 roles
@@ -277,7 +284,7 @@ Taules:
 ```text
 projects
 project_translations
-project_groups
+project_class_assignments
 project_assets
 project_asset_links
 ```
@@ -287,7 +294,7 @@ Funció:
 ```text
 projects              → dades bàsiques del projecte
 project_translations  → títol i descripció per idioma
-project_groups        → assignació de projectes a classes
+project_class_assignments → assignació de cada edició a classes
 project_assets        → catàleg de logos, softwares i apps
 project_asset_links   → relació d’assets amb projectes
 ```
@@ -312,6 +319,63 @@ Agroparc           → 4ESOB
 Projecte Orenetes  → 4ESOA
 Liquencity         → 4ESOB
 ```
+
+## Documents
+
+Taules:
+
+```text
+documents
+document_sources
+document_fragments
+document_visibility_rules
+```
+
+Funció:
+
+```text
+documents                → documents d'una edició concreta de projecte
+document_sources         → fonts d'origen del document
+document_fragments       → fragments o blocs reutilitzables
+document_visibility_rules → regles de visibilitat per rol, grup o fragment
+```
+
+Norma clau:
+
+- `projects` és el catàleg base del projecte;
+- `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
+- la clau recomanada és `project_academic_year_id + slug`;
+- evita dependre del projecte base per determinar la unitat del document.
+
+## Avaluació
+
+Taules:
+
+```text
+assessment_sources
+assessment_import_runs
+assessment_records
+assessment_import_errors
+assessment_phases
+assessment_tasks
+project_academic_year_phases
+project_academic_year_phase_tasks
+```
+
+Norma clau:
+
+- `assessment_records` depèn de `assessment_sources`;
+- la font i el run han de portar `project_academic_year_id`;
+- repetir només `project_id` per filtrar notes és massa ampli si el projecte té diverses edicions;
+- el filtratge de notes i imports s'ha de fer per edició, a través de `assessment_sources`;
+- les fases i tasques es defineixen una sola vegada i després s'assignen a cada edició de projecte amb les taules pont;
+- així no copies la mateixa estructura cada curs.
+
+### Regla de model
+
+- `projects` és el catàleg base del projecte;
+- `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
+- si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
 
 ---
 
@@ -475,12 +539,34 @@ SELECT
     classes.name AS classe,
     projects.name AS projecte,
     projects.slug,
-    project_groups.status
-FROM project_groups
-JOIN projects ON projects.id = project_groups.project_id
-JOIN classes ON classes.id = project_groups.class_id
+    project_class_assignments.status
+FROM project_class_assignments
+JOIN classes ON classes.id = project_class_assignments.class_id
+JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+JOIN projects ON projects.id = project_academic_years.project_id
 ORDER BY classes.name, projects.name;
 ```
+
+### Documents per edició de projecte
+
+```sql
+SELECT
+    projects.name AS projecte,
+    academic_years.name AS curs,
+    documents.slug,
+    documents.title
+FROM documents
+JOIN project_academic_years ON project_academic_years.id = documents.project_academic_year_id
+JOIN projects ON projects.id = project_academic_years.project_id
+JOIN academic_years ON academic_years.id = project_academic_years.academic_year_id
+ORDER BY projects.name, academic_years.name, documents.display_order;
+```
+
+Norma:
+
+- cada document pertany a una edició concreta del projecte;
+- evita basar la lògica de documents en el projecte base;
+- usa `project_academic_years` per saber quin curs i quin projecte defineixen el document.
 
 ### Veure assets per projecte
 

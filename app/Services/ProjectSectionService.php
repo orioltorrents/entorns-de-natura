@@ -166,10 +166,10 @@ class ProjectSectionService
         $placeholders = implode(',', array_fill(0, count($sectionIds), '?'));
         $stmt = $this->pdo()->prepare(
             "SELECT psr.project_section_id, r.id AS role_id, r.name
-             FROM project_section_roles psr
-             INNER JOIN roles r ON r.id = psr.role_id
-             WHERE psr.project_section_id IN ({$placeholders}) AND psr.allow_view = 1
-             ORDER BY r.name"
+              FROM project_section_roles psr
+              INNER JOIN web_roles r ON r.id = psr.role_id
+              WHERE psr.project_section_id IN ({$placeholders}) AND psr.allow_view = 1
+              ORDER BY r.name"
         );
         $stmt->execute($sectionIds);
 
@@ -214,7 +214,12 @@ class ProjectSectionService
 
     private function projectClassIds(int $projectId): array
     {
-        $stmt = $this->pdo()->prepare('SELECT class_id FROM project_groups WHERE project_id = :project_id');
+        $stmt = $this->pdo()->prepare(
+            'SELECT project_class_assignments.class_id
+             FROM project_class_assignments
+             INNER JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+             WHERE project_academic_years.project_id = :project_id'
+        );
         $stmt->execute(['project_id' => $projectId]);
 
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));

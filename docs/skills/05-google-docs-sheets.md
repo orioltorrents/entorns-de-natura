@@ -15,7 +15,8 @@ La web ha de mostrar aquesta informació de manera controlada, segura i estructu
 - configuració base a `config/google.php`;
 - servei `GoogleSyncService` present, encara molt inicial;
 - estructura de base preparada per a sincronització i importació;
-- model de dades per a projectes, assets i avaluació ja existent.
+- model de dades per a projectes, assets i avaluació ja existent;
+- quan el contingut és d'una edició concreta, la unitat funcional és `project_academic_years`.
 
 ### Encara previst
 
@@ -77,7 +78,7 @@ Exemples:
 - `public`: presentació i organització general;
 - `students`: bastides, ajudes i materials d'alumnat;
 - `teachers`: programacions i visió general;
-- `assigned_teachers`: programacions completes, deadlines i materials interns;
+- `assigned_teachers`: programacions completes, terminis i materials interns;
 - `admin`: contingut i control total.
 
 Opcions:
@@ -214,13 +215,14 @@ google_sync_errors
 
 ## `google_sources`
 
-Registra documents o fulls de Google vinculats al projecte.
+Registra documents o fulls de Google vinculats al projecte o a una edició concreta de projecte.
 
 Camps previstos:
 
 ```text
 id
 project_id
+project_academic_year_id
 source_type
 google_file_id
 google_file_url
@@ -285,6 +287,7 @@ Camps previstos:
 id
 google_source_id
 project_id
+project_academic_year_id
 language_code
 title
 content_html
@@ -292,6 +295,8 @@ plain_text
 version_hash
 synced_at
 ```
+
+Si el document correspon a una edició concreta, millor persistir també `project_academic_year_id` i fer servir aquesta clau per mostrar-lo.
 
 ---
 

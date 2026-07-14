@@ -48,7 +48,7 @@ ob_start();
             <div class="admin-summary__card">
                 <div class="admin-summary__icon">🛡️</div>
                 <div class="admin-summary__body">
-                    <span class="admin-summary__label">Rols</span>
+                    <span class="admin-summary__label">Rols web</span>
                     <span class="admin-summary__value"><?= count($roles) ?></span>
                     <div class="admin-summary__roles">
                         <?php foreach ($roles as $role): ?>
@@ -344,7 +344,7 @@ ob_start();
 
                 <div id="importar-usuaris" class="card admin-panel admin-panel--import">
                     <h2>Importar alumnes CSV</h2>
-                    <p>Importa fitxers amb columnes com <strong>name</strong>, <strong>surname</strong>, <strong>email</strong>, <strong>password</strong>, <strong>class</strong>, <strong>roles</strong> i <strong>trimester</strong>. La proposta més robusta és tenir una sola base d’usuaris i assignar classe/rols per relació, perquè un alumne pot canviar de grup sense duplicar el registre.</p>
+                    <p>Importa fitxers amb columnes com <strong>name</strong>, <strong>surname</strong>, <strong>email</strong>, <strong>password</strong>, <strong>class</strong>, <strong>roles</strong> i <strong>trimester</strong>. Els rols importats es guarden com a rols web; els rols acadèmics del projecte es gestionaran a part.</p>
                     <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                         <input type="hidden" name="action" value="import_students">
                         <label>
@@ -818,6 +818,9 @@ ob_start();
                                             <div class="project-admin-card__assignment">
                                                 <div class="project-admin-card__assignment-main">
                                                     <strong><?= htmlspecialchars((string) ($assignment['class_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                                    <?php if (!empty($assignment['academic_year_name'])): ?>
+                                                        <span><?= htmlspecialchars((string) $assignment['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
                                                     <span><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                                 </div>
                                                 <div class="project-admin-card__assignment-actions">
@@ -860,7 +863,7 @@ ob_start();
                 </div>
             </div>
             <div id="avaluacio-content" class="admin-collapsible__content">
-            <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. La importació actualitza fases i tasques existents fent servir <code>project_slug</code>, <code>phase_key</code> i <code>source_column</code>.</p>
+            <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. La importació actualitza les plantilles i les assignacions per edició fent servir <code>project_slug</code>, <code>phase_key</code> i <code>source_column</code>.</p>
             <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                 <input type="hidden" name="action" value="import_assessment_structure">
                 <div class="form__grid">
@@ -893,7 +896,7 @@ ob_start();
                         <section class="admin-assessment__project">
                             <div class="admin-assessment__project-header">
                                 <div>
-                                    <h4 class="admin-assessment__project-title"><?= htmlspecialchars((string) $assessmentProject['name'], ENT_QUOTES, 'UTF-8') ?></h4>
+                                    <h4 class="admin-assessment__project-title"><?= htmlspecialchars((string) $assessmentProject['name'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) $assessmentProject['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></h4>
                                     <p class="admin-assessment__project-slug"><?= htmlspecialchars((string) $assessmentProject['slug'], ENT_QUOTES, 'UTF-8') ?></p>
                                 </div>
                                 <span class="status"><?= count($assessmentProject['phases']) ?> fases</span>
@@ -912,7 +915,7 @@ ob_start();
                                         </div>
                                         <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                             <input type="hidden" name="action" value="toggle_assessment_phase">
-                                            <input type="hidden" name="phase_id" value="<?= (int) $phase['id'] ?>">
+                                            <input type="hidden" name="project_academic_year_phase_id" value="<?= (int) $phase['project_academic_year_phase_id'] ?>">
                                             <button class="button button--secondary" type="submit">
                                                 <?= ((int) $phase['is_active'] === 1) ? 'Desactivar fase' : 'Activar fase' ?>
                                             </button>
@@ -950,7 +953,7 @@ ob_start();
                                                             <td>
                                                                  <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                                                     <input type="hidden" name="action" value="toggle_assessment_task">
-                                                                    <input type="hidden" name="task_id" value="<?= (int) $task['id'] ?>">
+                                                                    <input type="hidden" name="project_academic_year_phase_task_id" value="<?= (int) $task['project_academic_year_phase_task_id'] ?>">
                                                                     <button class="button button--secondary" type="submit">
                                                                         <?= ((int) $task['is_visible'] === 1) ? 'Amagar' : 'Mostrar' ?>
                                                                     </button>

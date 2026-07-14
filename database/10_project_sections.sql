@@ -20,10 +20,7 @@ CREATE TABLE IF NOT EXISTS project_sections (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_project_sections_project_key (project_id, section_key),
-    KEY idx_project_sections_project_id (project_id),
-    KEY idx_project_sections_display_order (display_order),
-    KEY idx_project_sections_visibility_type (visibility_type),
-    KEY idx_project_sections_is_active (is_active),
+    KEY idx_project_sections_project_active_order (project_id, is_active, display_order, title),
     KEY idx_project_sections_role_id (role_id),
     KEY idx_project_sections_class_id (class_id),
     CONSTRAINT fk_project_sections_project
@@ -31,7 +28,7 @@ CREATE TABLE IF NOT EXISTS project_sections (
         ON DELETE CASCADE
         ON UPDATE CASCADE
     ,CONSTRAINT fk_project_sections_role
-        FOREIGN KEY (role_id) REFERENCES roles (id)
+        FOREIGN KEY (role_id) REFERENCES web_roles (id)
         ON DELETE SET NULL
         ON UPDATE CASCADE
     ,CONSTRAINT fk_project_sections_class
@@ -49,14 +46,13 @@ CREATE TABLE IF NOT EXISTS project_section_roles (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_project_section_roles (project_section_id, role_id),
-    KEY idx_project_section_roles_section_id (project_section_id),
     KEY idx_project_section_roles_role_id (role_id),
     CONSTRAINT fk_project_section_roles_section
         FOREIGN KEY (project_section_id) REFERENCES project_sections (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT fk_project_section_roles_role
-        FOREIGN KEY (role_id) REFERENCES roles (id)
+        FOREIGN KEY (role_id) REFERENCES web_roles (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -139,7 +135,7 @@ INSERT INTO project_section_roles (project_section_id, role_id, allow_view, allo
 SELECT ps.id, r.id, 1, 0
 FROM project_sections ps
 JOIN projects p ON p.id = ps.project_id
-JOIN roles r ON r.name IN ('student', 'teacher', 'admin')
+JOIN web_roles r ON r.name IN ('student', 'teacher', 'admin')
 WHERE p.is_active = 1
   AND ps.section_key IN ('planificacio', 'tasques', 'bastides', 'notes', 'observacions_aula')
   AND NOT EXISTS (

@@ -40,14 +40,19 @@ project_assets
 project_asset_links
 ```
 
-Funcio:
+Funció:
 
 ```text
-project_assets      -> cataleg reutilitzable de logos i recursos
-project_asset_links -> relacio entre projectes i assets
+project_assets      -> catàleg reutilitzable de logos i recursos
+project_asset_links -> relació entre projectes i assets
 ```
 
-Campos clau:
+Nota:
+
+- aquesta relació és de catàleg de projecte, no d'edició per curs;
+- aquí `project_id` és la clau correcta perquè els assets pertanyen al projecte base.
+
+Camps clau:
 
 ```text
 project_assets.slug
@@ -93,20 +98,20 @@ No posar assets visuals importants fora de `public/assets/`.
 3. Crear l'enllaç a `project_asset_links`.
 4. Verificar que el servei PHP el recupera.
 5. Confirmar que apareix a:
-   - web publica;
+   - web pública;
    - fitxa de projecte;
    - dashboard d'alumnes;
    - dashboard de professorat;
-   - dashboard d'administracio.
+   - dashboard d'administració.
 
 ---
 
 ## Regles
 
-- No mapar logos manualment a les vistes si ja existeix la relacio a la base de dades.
+- No mapar logos manualment a les vistes si ja existeix la relació a la base de dades.
 - Reutilitzar el mateix asset en diversos projectes sempre que calgui.
 - Guardar la ruta dins `logo_path` com a ruta relativa dins de `public/`.
-- Si el logo ha d'enllacar a una web externa, omplir `website_url`.
+- Si el logo ha d'enllaçar a una web externa, omplir `website_url`.
 - Fer servir `display_order` per controlar l'ordre de sortida.
 - Fer servir `is_active` i `is_visible` per ocultar sense esborrar.
 
@@ -172,9 +177,9 @@ WHERE p.slug = 'agroparc'
 
 ---
 
-## Verificacio
+## Verificació
 
-Despres d'afegir o canviar assets:
+Després d'afegir o canviar assets:
 
 1. Comprovar que el fitxer existeix a `public/assets/logos/`.
 2. Revisar que `project_assets` i `project_asset_links` tenen les files correctes.
@@ -182,16 +187,16 @@ Despres d'afegir o canviar assets:
 4. Revisar la portada, la fitxa de projecte i els dashboards.
 5. Fer refresh fort del navegador si cal.
 
-Si la targeta de projecte es veu en columna, revisar que el bloc de media i el bloc de contingut usin el patró horitzontal BEM.
+Si la targeta de projecte es veu en columna, revisar que el bloc de mitjans i el bloc de contingut facin servir el patró horitzontal BEM.
 
 ---
 
-## Relacio amb altres skills
+## Relació amb altres skills
 
 - `docs/skills/02-base-de-dades.md` per l'esquema i les consultes SQL.
-- `docs/skills/06-css-i-ui.md` per la presentacio visual dels logos.
+- `docs/skills/06-css-i-ui.md` per la presentació visual dels logos.
 
-## Extensio prevista per a tasques
+## Extensió prevista per a tasques
 
 Si més endavant cal mostrar apps, softwares o eines dins de les tasques, la recomanació és no crear un catàleg nou, sinó reutilitzar `project_assets` i afegir una taula de relació específica, `assessment_task_resources`.
 

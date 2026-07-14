@@ -50,7 +50,8 @@ class DocumentImportService
                     $documentId,
                     null,
                     $this->visibilityTypeFromVisibilityValue($documentVisibility),
-                    $this->resolveRoleIdFromVisibilityValue($documentVisibility),
+                    $this->resolveWebRoleIdFromVisibilityValue($documentVisibility),
+                    $this->resolveProjectRoleIdFromVisibilityValue($documentVisibility),
                     $this->resolveClassId($documentVisibility),
                     1,
                     0,
@@ -107,7 +108,8 @@ class DocumentImportService
                         $documentId,
                         $fragmentId,
                         $visibilityType,
-                        $this->resolveRoleIdFromVisibilityValue($visibilityValue),
+                        $this->resolveWebRoleIdFromVisibilityValue($visibilityValue),
+                        $this->resolveProjectRoleIdFromVisibilityValue($visibilityValue),
                         $this->resolveClassId($visibilityValue),
                         1,
                         0,
@@ -137,9 +139,10 @@ class DocumentImportService
         }
 
         $projectId = $this->projectIdBySlug($projectSlug);
-        $existingId = $this->documentIdByProjectAndSlug($projectId, $slug);
+        $projectAcademicYearId = $this->projectAcademicYearIdByProjectId($projectId);
+        $existingId = $this->documentIdByProjectAcademicYearAndSlug($projectAcademicYearId, $slug);
         $params = [
-            'project_id' => $projectId,
+            'project_academic_year_id' => $projectAcademicYearId,
             'slug' => $slug,
             'title' => $title,
             'doc_type' => $this->nonEmptyString($row['doc_type'] ?? 'markdown') ?? 'markdown',
@@ -175,8 +178,8 @@ class DocumentImportService
         }
 
         $stmt = $this->pdo()->prepare(
-            'INSERT INTO documents (project_id, slug, title, doc_type, default_visibility, notes, is_active, display_order)
-             VALUES (:project_id, :slug, :title, :doc_type, :default_visibility, :notes, :is_active, :display_order)'
+            'INSERT INTO documents (project_academic_year_id, slug, title, doc_type, default_visibility, notes, is_active, display_order)
+             VALUES (:project_academic_year_id, :slug, :title, :doc_type, :default_visibility, :notes, :is_active, :display_order)'
         );
         $stmt->execute($params);
 
@@ -299,13 +302,14 @@ class DocumentImportService
         return (int) $this->pdo()->lastInsertId();
     }
 
-    private function upsertDocumentRule(int $documentId, ?int $fragmentId, string $visibilityType, ?int $roleId, ?int $classId, int $allowView, int $allowEdit, int $priority): void
+    private function upsertDocumentRule(int $documentId, ?int $fragmentId, string $visibilityType, ?int $webRoleId, ?int $projectRoleId, ?int $classId, int $allowView, int $allowEdit, int $priority): void
     {
         $ruleFingerprint = sha1(implode('|', [
             (string) $documentId,
             (string) ($fragmentId ?? 0),
             $visibilityType,
-            (string) ($roleId ?? 0),
+            (string) ($webRoleId ?? 0),
+            (string) ($projectRoleId ?? 0),
             (string) ($classId ?? 0),
             (string) $allowView,
             (string) $allowEdit,
@@ -318,7 +322,8 @@ class DocumentImportService
             'fragment_id' => $fragmentId,
             'rule_fingerprint' => $ruleFingerprint,
             'visibility_type' => $visibilityType,
-            'role_id' => $roleId,
+            'role_id' => $webRoleId,
+            'project_role_id' => $projectRoleId,
             'class_id' => $classId,
             'allow_view' => $allowView,
             'allow_edit' => $allowEdit,
@@ -329,11 +334,12 @@ class DocumentImportService
             $stmt = $this->pdo()->prepare(
                 'UPDATE document_visibility_rules
                  SET fragment_id = :fragment_id,
-                     visibility_type = :visibility_type,
-                     role_id = :role_id,
-                     class_id = :class_id,
-                     allow_view = :allow_view,
-                     allow_edit = :allow_edit,
+                      visibility_type = :visibility_type,
+                      role_id = :role_id,
+                      project_role_id = :project_role_id,
+                      class_id = :class_id,
+                      allow_view = :allow_view,
+                      allow_edit = :allow_edit,
                      priority = :priority,
                      updated_at = CURRENT_TIMESTAMP
                  WHERE id = :id'
@@ -342,6 +348,7 @@ class DocumentImportService
                 'fragment_id' => $params['fragment_id'],
                 'visibility_type' => $params['visibility_type'],
                 'role_id' => $params['role_id'],
+                'project_role_id' => $params['project_role_id'],
                 'class_id' => $params['class_id'],
                 'allow_view' => $params['allow_view'],
                 'allow_edit' => $params['allow_edit'],
@@ -353,9 +360,9 @@ class DocumentImportService
 
         $stmt = $this->pdo()->prepare(
             'INSERT INTO document_visibility_rules
-                (document_id, fragment_id, rule_fingerprint, visibility_type, role_id, class_id, allow_view, allow_edit, priority)
-             VALUES
-                (:document_id, :fragment_id, :rule_fingerprint, :visibility_type, :role_id, :class_id, :allow_view, :allow_edit, :priority)'
+                (document_id, fragment_id, rule_fingerprint, visibility_type, role_id, project_role_id, class_id, allow_view, allow_edit, priority)
+              VALUES
+                (:document_id, :fragment_id, :rule_fingerprint, :visibility_type, :role_id, :project_role_id, :class_id, :allow_view, :allow_edit, :priority)'
         );
         $stmt->execute($params);
     }
@@ -373,13 +380,33 @@ class DocumentImportService
         return (int) $projectId;
     }
 
-    private function documentIdByProjectAndSlug(int $projectId, string $slug): ?int
+    private function documentIdByProjectAcademicYearAndSlug(int $projectAcademicYearId, string $slug): ?int
     {
-        $stmt = $this->pdo()->prepare('SELECT id FROM documents WHERE project_id = :project_id AND slug = :slug LIMIT 1');
-        $stmt->execute(['project_id' => $projectId, 'slug' => $slug]);
+        $stmt = $this->pdo()->prepare('SELECT id FROM documents WHERE project_academic_year_id = :project_academic_year_id AND slug = :slug LIMIT 1');
+        $stmt->execute(['project_academic_year_id' => $projectAcademicYearId, 'slug' => $slug]);
         $documentId = $stmt->fetchColumn();
 
         return $documentId === false ? null : (int) $documentId;
+    }
+
+    private function projectAcademicYearIdByProjectId(int $projectId): int
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT pay.id
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+             ORDER BY ay.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['project_id' => $projectId]);
+        $projectAcademicYearId = $stmt->fetchColumn();
+
+        if ($projectAcademicYearId === false) {
+            throw new RuntimeException('No hi ha cap edició acadèmica per al projecte amb id ' . $projectId . '.');
+        }
+
+        return (int) $projectAcademicYearId;
     }
 
     private function documentSourceIdByFingerprint(int $documentId, string $fingerprint): ?int
@@ -409,7 +436,7 @@ class DocumentImportService
         return $id === false ? null : (int) $id;
     }
 
-    private function resolveRoleIdFromVisibilityValue(string $value): ?int
+    private function resolveWebRoleIdFromVisibilityValue(string $value): ?int
     {
         $value = strtolower(trim($value));
 
@@ -417,11 +444,46 @@ class DocumentImportService
             return null;
         }
 
-        $stmt = $this->pdo()->prepare('SELECT id FROM roles WHERE LOWER(name) = :name LIMIT 1');
+        $stmt = $this->pdo()->prepare('SELECT id FROM web_roles WHERE LOWER(name) = :name LIMIT 1');
         $stmt->execute(['name' => $value]);
         $roleId = $stmt->fetchColumn();
 
         return $roleId === false ? null : (int) $roleId;
+    }
+
+    private function resolveProjectRoleIdFromVisibilityValue(string $value): ?int
+    {
+        $value = strtolower(trim($value));
+
+        if (str_starts_with($value, 'project_role:')) {
+            $value = substr($value, strlen('project_role:'));
+        } elseif (str_starts_with($value, 'project:')) {
+            $value = substr($value, strlen('project:'));
+        } elseif (str_starts_with($value, 'academic_role:')) {
+            $value = substr($value, strlen('academic_role:'));
+        } elseif (str_starts_with($value, 'academic:')) {
+            $value = substr($value, strlen('academic:'));
+        } else {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $stmt = $this->pdo()->prepare('SELECT id FROM project_roles WHERE LOWER(name) = :name LIMIT 1');
+        $stmt->execute(['name' => $value]);
+        $roleId = $stmt->fetchColumn();
+
+        if ($roleId !== false) {
+            return (int) $roleId;
+        }
+
+        $insertStmt = $this->pdo()->prepare('INSERT INTO project_roles (name, created_at) VALUES (:name, NOW())');
+        $insertStmt->execute(['name' => $value]);
+
+        return (int) $this->pdo()->lastInsertId();
     }
 
     private function resolveClassId(mixed $value): ?int
@@ -455,6 +517,10 @@ class DocumentImportService
             return 'public';
         }
 
+        if (str_starts_with($value, 'project_role:') || str_starts_with($value, 'project:') || str_starts_with($value, 'academic_role:') || str_starts_with($value, 'academic:')) {
+            return $value;
+        }
+
         if (in_array($value, ['student', 'teacher', 'admin', 'assigned_teacher'], true)) {
             return $value;
         }
@@ -468,6 +534,10 @@ class DocumentImportService
 
         if ($value === 'public' || $value === '') {
             return 'public';
+        }
+
+        if (str_starts_with($value, 'project_role:') || str_starts_with($value, 'project:') || str_starts_with($value, 'academic_role:') || str_starts_with($value, 'academic:')) {
+            return 'project_role';
         }
 
         if (in_array($value, ['student', 'teacher', 'admin'], true)) {

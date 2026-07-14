@@ -32,7 +32,6 @@ $gradeAchievementClass = static function (array $grade): string {
             <?php endif; ?>
             <div class="public-project-detail__hero-content">
                 <p class="public-project-detail__eyebrow">Fitxa de projecte</p>
-                <p class="public-project-detail__subtitle">Programa d'educació ambiental al Penedès</p>
                 <h1 class="public-project-detail__title"><?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
                 <?php if (!empty($project['description'])): ?>
                     <p class="lead public-project-detail__lead public-project-detail__lead--hero"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>

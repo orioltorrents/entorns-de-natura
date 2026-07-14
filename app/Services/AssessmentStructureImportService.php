@@ -87,6 +87,26 @@ class AssessmentStructureImportService
             'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
             'is_active' => $this->toBooleanInt($row['is_active'] ?? 1),
         ]);
+
+        $phaseId = $this->phaseIdByProjectAndKey($projectId, $phaseKey);
+        foreach ($this->projectAcademicYearIdsByProjectId($projectId) as $projectAcademicYearId) {
+            $bridgeStmt = $this->pdo->prepare(
+                'INSERT INTO project_academic_year_phases
+                    (project_academic_year_id, assessment_phase_id, display_order, is_active)
+                 VALUES
+                    (:project_academic_year_id, :assessment_phase_id, :display_order, :is_active)
+                 ON DUPLICATE KEY UPDATE
+                    display_order = VALUES(display_order),
+                    is_active = VALUES(is_active),
+                    updated_at = CURRENT_TIMESTAMP'
+            );
+            $bridgeStmt->execute([
+                'project_academic_year_id' => $projectAcademicYearId,
+                'assessment_phase_id' => $phaseId,
+                'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
+                'is_active' => $this->toBooleanInt($row['is_active'] ?? 1),
+            ]);
+        }
     }
 
     private function importTaskRow(array $row): void
@@ -127,6 +147,26 @@ class AssessmentStructureImportService
             'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
             'is_visible' => $this->toBooleanInt($row['is_visible'] ?? 1),
         ]);
+
+        foreach ($this->projectAcademicYearIdsByProjectId($projectId) as $projectAcademicYearId) {
+            $projectAcademicYearPhaseId = $this->projectAcademicYearPhaseId($projectAcademicYearId, $phaseId);
+            $bridgeStmt = $this->pdo->prepare(
+                'INSERT INTO project_academic_year_phase_tasks
+                    (project_academic_year_phase_id, assessment_task_id, display_order, is_visible)
+                 VALUES
+                    (:project_academic_year_phase_id, :assessment_task_id, :display_order, :is_visible)
+                 ON DUPLICATE KEY UPDATE
+                    display_order = VALUES(display_order),
+                    is_visible = VALUES(is_visible),
+                    updated_at = CURRENT_TIMESTAMP'
+            );
+            $bridgeStmt->execute([
+                'project_academic_year_phase_id' => $projectAcademicYearPhaseId,
+                'assessment_task_id' => $this->taskIdByPhaseAndSourceColumn($phaseId, $sourceColumn),
+                'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
+                'is_visible' => $this->toBooleanInt($row['is_visible'] ?? 1),
+            ]);
+        }
     }
 
     private function readCsvWithHeaders(string $path): array
@@ -213,6 +253,56 @@ class AssessmentStructureImportService
         }
 
         return (int) $phaseId;
+    }
+
+    private function taskIdByPhaseAndSourceColumn(int $phaseId, string $sourceColumn): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM assessment_tasks WHERE phase_id = :phase_id AND source_column = :source_column LIMIT 1'
+        );
+        $stmt->execute(['phase_id' => $phaseId, 'source_column' => $sourceColumn]);
+        $taskId = $stmt->fetchColumn();
+
+        if ($taskId === false) {
+            throw new RuntimeException('No existeix la tasca ' . $sourceColumn . '.');
+        }
+
+        return (int) $taskId;
+    }
+
+    private function projectAcademicYearIdsByProjectId(int $projectId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id
+             FROM project_academic_years
+             WHERE project_id = :project_id
+             ORDER BY academic_year_id'
+        );
+        $stmt->execute(['project_id' => $projectId]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private function projectAcademicYearPhaseId(int $projectAcademicYearId, int $phaseId): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id
+             FROM project_academic_year_phases
+             WHERE project_academic_year_id = :project_academic_year_id
+               AND assessment_phase_id = :assessment_phase_id
+             LIMIT 1'
+        );
+        $stmt->execute([
+            'project_academic_year_id' => $projectAcademicYearId,
+            'assessment_phase_id' => $phaseId,
+        ]);
+
+        $bridgeId = $stmt->fetchColumn();
+        if ($bridgeId === false) {
+            throw new RuntimeException('No existeix la fase assignada a la edició acadèmica.');
+        }
+
+        return (int) $bridgeId;
     }
 
     private function normalizeSectionType(string $sectionType): string

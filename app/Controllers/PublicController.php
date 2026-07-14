@@ -131,6 +131,7 @@ class PublicController
             return view('public.project-documents', [
                 'title' => 'Documents no trobats',
                 'project' => null,
+                'projectAcademicYear' => null,
                 'documents' => [],
                 'context' => [],
             ]);
@@ -142,6 +143,7 @@ class PublicController
         return view('public.project-documents', [
             'title' => 'Documents de ' . (string) $project['title'],
             'project' => $documentsData['project'] ?? $project,
+            'projectAcademicYear' => $documentsData['projectAcademicYear'] ?? null,
             'documents' => $documentsData['documents'] ?? [],
             'context' => $documentsData['context'] ?? [],
         ]);

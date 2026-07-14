@@ -6,6 +6,9 @@ $languagePrefix = getLanguage();
     <?php if (!empty($project['slug'])): ?>
         <p class="breadcrumb"><a href="<?= url($languagePrefix . '/projectes/' . $project['slug']) ?>">Torna al projecte</a></p>
         <h1>Documents de <?= htmlspecialchars((string) $project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+        <?php if (!empty($projectAcademicYear['academic_year_name'])): ?>
+            <p class="status">Curs: <?= htmlspecialchars((string) $projectAcademicYear['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
     <?php else: ?>
         <h1>Documents no trobats</h1>
     <?php endif; ?>

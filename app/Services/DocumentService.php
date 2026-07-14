@@ -12,13 +12,15 @@ class DocumentService
         if ($project === null) {
             return [
                 'project' => null,
+                'projectAcademicYear' => null,
                 'documents' => [],
                 'context' => $this->buildContext($currentUser, null, [], []),
             ];
         }
 
         $projectId = (int) $project['id'];
-        $documents = $this->fetchDocuments($projectId);
+        $projectAcademicYear = $this->projectAcademicYearForProject($projectId);
+        $documents = $this->fetchDocuments((int) $projectAcademicYear['id']);
         $documentIds = array_map(static fn (array $document): int => (int) $document['id'], $documents);
         $sourcesByDocument = $this->groupRowsByDocumentId($this->fetchSources($documentIds));
         $fragmentsByDocument = $this->groupRowsByDocumentId($this->fetchFragments($documentIds));
@@ -48,6 +50,7 @@ class DocumentService
 
         return [
             'project' => $project,
+            'projectAcademicYear' => $projectAcademicYear,
             'documents' => $documents,
             'context' => $context,
         ];
@@ -58,6 +61,7 @@ class DocumentService
         $context = [
             'user' => $currentUser,
             'roles' => [],
+            'project_roles' => [],
             'class_ids' => [],
             'teacher_class_ids' => [],
             'project_class_ids' => [],
@@ -72,6 +76,7 @@ class DocumentService
         }
 
         $context['roles'] = array_values(array_map('strval', $currentUser['roles'] ?? []));
+        $context['project_roles'] = array_values(array_map('strval', $currentUser['project_roles'] ?? []));
         $context['is_admin'] = in_array('admin', $context['roles'], true);
         $context['is_teacher'] = in_array('teacher', $context['roles'], true);
         $context['is_student'] = in_array('student', $context['roles'], true);
@@ -128,6 +133,12 @@ class DocumentService
             return $roleName !== '' && in_array($roleName, $context['roles'], true);
         }
 
+        if ($visibilityType === 'project_role') {
+            $roleName = (string) ($rule['project_role_name'] ?? '');
+
+            return $roleName !== '' && in_array($roleName, $context['project_roles'], true);
+        }
+
         if ($visibilityType === 'class') {
             $classId = (int) ($rule['class_id'] ?? 0);
 
@@ -182,15 +193,15 @@ class DocumentService
         return $rules[0];
     }
 
-    private function fetchDocuments(int $projectId): array
+    private function fetchDocuments(int $projectAcademicYearId): array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT id, project_id, slug, title, doc_type, default_visibility, notes, is_active, display_order
-             FROM documents
-             WHERE project_id = :project_id AND is_active = 1
-             ORDER BY display_order, title'
+            'SELECT id, project_academic_year_id, slug, title, doc_type, default_visibility, notes, is_active, display_order
+              FROM documents
+              WHERE project_academic_year_id = :project_academic_year_id AND is_active = 1
+              ORDER BY display_order, title'
         );
-        $stmt->execute(['project_id' => $projectId]);
+        $stmt->execute(['project_academic_year_id' => $projectAcademicYearId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -239,12 +250,13 @@ class DocumentService
 
         $placeholders = implode(',', array_fill(0, count($documentIds), '?'));
         $stmt = $this->pdo()->prepare(
-            "SELECT dvr.id, dvr.document_id, dvr.fragment_id, dvr.rule_fingerprint, dvr.visibility_type, dvr.role_id, r.name AS role_name, dvr.class_id, c.name AS class_name, dvr.allow_view, dvr.allow_edit, dvr.priority, dvr.is_active
-             FROM document_visibility_rules dvr
-             LEFT JOIN roles r ON r.id = dvr.role_id
-             LEFT JOIN classes c ON c.id = dvr.class_id
-             WHERE dvr.document_id IN ({$placeholders}) AND dvr.is_active = 1
-             ORDER BY dvr.document_id, dvr.priority, dvr.id"
+             "SELECT dvr.id, dvr.document_id, dvr.fragment_id, dvr.rule_fingerprint, dvr.visibility_type, dvr.role_id, wr.name AS role_name, dvr.project_role_id, pr.name AS project_role_name, dvr.class_id, c.name AS class_name, dvr.allow_view, dvr.allow_edit, dvr.priority, dvr.is_active
+              FROM document_visibility_rules dvr
+              LEFT JOIN web_roles wr ON wr.id = dvr.role_id
+              LEFT JOIN project_roles pr ON pr.id = dvr.project_role_id
+              LEFT JOIN classes c ON c.id = dvr.class_id
+              WHERE dvr.document_id IN ({$placeholders}) AND dvr.is_active = 1
+              ORDER BY dvr.document_id, dvr.priority, dvr.id"
         );
         $stmt->execute($documentIds);
 
@@ -294,10 +306,35 @@ class DocumentService
 
     private function projectClassIds(int $projectId): array
     {
-        $stmt = $this->pdo()->prepare('SELECT class_id FROM project_groups WHERE project_id = :project_id');
+        $stmt = $this->pdo()->prepare(
+            'SELECT project_class_assignments.class_id
+             FROM project_class_assignments
+             INNER JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+             WHERE project_academic_years.project_id = :project_id'
+        );
         $stmt->execute(['project_id' => $projectId]);
 
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private function projectAcademicYearForProject(int $projectId): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT pay.id, pay.project_id, pay.academic_year_id, ay.name AS academic_year_name
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+             ORDER BY ay.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['project_id' => $projectId]);
+        $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($projectAcademicYear === false) {
+            throw new RuntimeException('No hi ha cap edició acadèmica per al projecte amb id ' . $projectId . '.');
+        }
+
+        return $projectAcademicYear;
     }
 
     private function pdo(): PDO

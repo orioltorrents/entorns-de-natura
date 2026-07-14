@@ -22,6 +22,14 @@ El projecte ha de funcionar com una aplicació PHP modular.
 - ampliar l'idioma més enllà de `ca` quan toqui;
 - afinar la vista de projecte per més contextos d'accés sense duplicar fitxers.
 
+## Criteri d'edició
+
+Quan una vista mostri documents, notes o materials que depenen del curs concret del projecte, la unitat funcional ha de ser `project_academic_years`.
+
+- `projects` identifica el projecte base;
+- `project_academic_years` identifica l'edició activa;
+- les vistes públiques han de resoldre l'edició abans de pintar dades sensibles o contextuals.
+
 ---
 
 ## Punt d’entrada

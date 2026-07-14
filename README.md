@@ -50,12 +50,12 @@ Aquest document separa el que ja està implementat del que encara és previst.
 
 - `users`, `roles`, `user_roles`;
 - `academic_years`, `classes`, `class_members`, `class_teachers`;
-- `projects`, `project_translations`, `project_groups`;
+- `projects`, `project_translations`, `project_groups`, `project_academic_years`, `project_class_assignments`;
 - `project_assets`, `project_asset_links`;
 - `documents`, `document_sources`, `document_fragments`, `document_visibility_rules`;
 - `project_sections`, `project_section_roles`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
-- `assessment_phases`, `assessment_tasks`, `assessment_supports`, `assessment_task_resources`;
+- `assessment_phases`, `assessment_tasks`, `project_academic_year_phases`, `project_academic_year_phase_tasks`, `assessment_supports`, `assessment_task_resources`;
 - `settings`;
 - `site_visits`.
 
@@ -64,6 +64,30 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 - `database/schema.sql` és el mestre de reconstrucció i apunta a les parts actuals de l'esquema.
 - si la base ja existia abans d'aquesta capa, també cal aplicar `database/09_document_tables_fix.sql`.
+- per deixar els documents completament lligats a l'edició, també cal aplicar `database/17_documents_project_id_cleanup.sql` si la base ve d'una versió anterior.
+- si la base ve d'una versió anterior, `assessment_records.project_id` també s'ha d'eliminar amb `database/18_assessment_records_project_id_cleanup.sql`.
+
+### Documents
+
+- els documents van lligats a `project_academic_years`, no directament a `projects`;
+- la clau funcional recomanada és `project_academic_year_id + slug`;
+- `project_id` es considera herència històrica i s'està eliminant del model.
+
+### Avaluació
+
+- `assessment_phases` i `assessment_tasks` defineixen la plantilla reutilitzable;
+- `project_academic_year_phases` activa o desactiva fases per edició de projecte;
+- `project_academic_year_phase_tasks` activa o desactiva tasques per edició de projecte;
+- així una fase o tasca pot reutilitzar-se en diferents anys sense copiar la definició.
+- `assessment_sources` i `assessment_import_runs` treballen per `project_academic_year_id`;
+- les notes i imports s'aïllen per edició, no només per projecte;
+- `assessment_records` es llegeix a través de `assessment_sources`.
+
+### Regla del model
+
+- `projects` és el catàleg base del projecte;
+- `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
+- si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
 
 ### Encara previst
 

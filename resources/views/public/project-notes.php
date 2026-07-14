@@ -27,11 +27,12 @@ $gradeAchievementClass = static function (array $grade): string {
         <a class="button" href="<?= url(getLanguage() . '/projectes/' . $project['slug']) ?>">Torna al projecte</a>
     </section>
 <?php else: ?>
+    <?php $projectAcademicYear = $notes['projectAcademicYear'] ?? null; ?>
     <article class="public-project-detail">
         <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) ?>">Torna al projecte</a></p>
         <div class="public-project-detail__hero">
             <div>
-                <p class="public-project-detail__eyebrow">Projecte</p>
+                <p class="public-project-detail__eyebrow">Projecte<?php if (!empty($projectAcademicYear['academic_year_name'])): ?> · <?= htmlspecialchars((string) $projectAcademicYear['academic_year_name'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
                 <h1 class="public-project-detail__title">Notes de <?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
                 <p class="lead public-project-detail__lead">Consulta les notes i l'estat d'assoliment del projecte.</p>
             </div>

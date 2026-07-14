@@ -18,11 +18,13 @@ class AssessmentService
 
         $contextRoles = array_values(array_map('strval', $currentUser['roles'] ?? []));
         $showAll = in_array('admin', $contextRoles, true) || in_array('teacher', $contextRoles, true);
-        $structure = $this->assessmentStructureForProject((int) $project['id']);
+        $projectAcademicYear = $this->projectAcademicYearForProject((int) $project['id']);
+        $structure = $this->assessmentStructureForProjectAcademicYear((int) $projectAcademicYear['id']);
 
         if ($structure === []) {
             return [
                 'project' => $project,
+                'projectAcademicYear' => $projectAcademicYear,
                 'sections' => [],
                 'context' => [
                     'roles' => $contextRoles,
@@ -63,6 +65,7 @@ class AssessmentService
 
         return [
             'project' => $project,
+            'projectAcademicYear' => $projectAcademicYear,
             'sections' => $sections,
             'context' => [
                 'roles' => $contextRoles,
@@ -74,38 +77,56 @@ class AssessmentService
     public function projectNotesOverview(string $projectSlug): array
     {
         $project = $this->findProjectBySlug($projectSlug);
+        $projectAcademicYear = $this->projectAcademicYearForProjectSlug($projectSlug);
 
         if ($project === null) {
             return [
                 'project' => null,
+                'projectAcademicYear' => null,
                 'summary' => [],
+                'labels' => [],
+            ];
+        }
+
+        if ($projectAcademicYear === null) {
+            return [
+                'project' => $project,
+                'projectAcademicYear' => null,
+                'summary' => [
+                    'total_records' => 0,
+                    'total_students' => 0,
+                    'latest_imported_at' => null,
+                ],
                 'labels' => [],
             ];
         }
 
         $stmt = $this->pdo()->prepare(
             'SELECT
-                COUNT(*) AS total_records,
-                COUNT(DISTINCT user_id) AS total_students,
-                MAX(imported_at) AS latest_imported_at
-             FROM assessment_records
-             WHERE project_id = :project_id'
+                 COUNT(*) AS total_records,
+                 COUNT(DISTINCT user_id) AS total_students,
+                 MAX(imported_at) AS latest_imported_at
+              FROM assessment_records ar
+              INNER JOIN assessment_sources s ON s.id = ar.source_id
+              WHERE s.project_academic_year_id = :project_academic_year_id'
         );
-        $stmt->execute(['project_id' => (int) $project['id']]);
+        $stmt->execute(['project_academic_year_id' => (int) $projectAcademicYear['id']]);
         $summary = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $labelsStmt = $this->pdo()->prepare(
             'SELECT label, COUNT(*) AS total
-             FROM assessment_records
-             WHERE project_id = :project_id
+             FROM assessment_records ar
+             INNER JOIN assessment_sources s ON s.id = ar.source_id
+             WHERE s.project_academic_year_id = :project_academic_year_id
              GROUP BY label
              ORDER BY total DESC, label
              LIMIT 8'
         );
-        $labelsStmt->execute(['project_id' => (int) $project['id']]);
+        $labelsStmt->execute(['project_academic_year_id' => (int) $projectAcademicYear['id']]);
 
         return [
             'project' => $project,
+            'projectAcademicYear' => $projectAcademicYear,
             'summary' => [
                 'total_records' => (int) ($summary['total_records'] ?? 0),
                 'total_students' => (int) ($summary['total_students'] ?? 0),
@@ -118,10 +139,12 @@ class AssessmentService
     public function gradesForStudentProject(int $userId, string $projectSlug): array
     {
         $project = $this->findProjectBySlug($projectSlug);
+        $projectAcademicYear = $this->projectAcademicYearForProjectSlug($projectSlug);
 
-        if ($project === null || !$this->studentHasProjectAccess($userId, (int) $project['id'])) {
+        if ($project === null || $projectAcademicYear === null || !$this->studentHasProjectAcademicYearAccess($userId, (int) $projectAcademicYear['id'])) {
             return [
                 'project' => $project,
+                'projectAcademicYear' => $projectAcademicYear,
                 'summary' => [],
                 'grades' => [],
                 'comments' => [],
@@ -132,21 +155,22 @@ class AssessmentService
 
         $stmt = $this->pdo()->prepare(
             'SELECT label, value, value_type, numeric_value, achievement_value, group_name, team_code, role_name, imported_at
-             FROM assessment_records
+             FROM assessment_records ar
+             INNER JOIN assessment_sources s ON s.id = ar.source_id
              WHERE user_id = :user_id
-                AND project_id = :project_id
-             ORDER BY display_order, id'
+                AND s.project_academic_year_id = :project_academic_year_id
+              ORDER BY ar.display_order, ar.id'
         );
         $stmt->execute([
             'user_id' => $userId,
-            'project_id' => (int) $project['id'],
+            'project_academic_year_id' => (int) $projectAcademicYear['id'],
         ]);
 
         $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $profileMetadata = $this->studentProfileMetadata($userId);
 
-        $configuredGrades = $this->groupConfiguredRecords($project, $records, $profileMetadata);
+        $configuredGrades = $this->groupConfiguredRecords($project, $projectAcademicYear, $records, $profileMetadata);
         if ($configuredGrades !== null) {
             return $configuredGrades;
         }
@@ -154,9 +178,9 @@ class AssessmentService
         return $this->groupRecords($project, $records, $profileMetadata);
     }
 
-    private function groupConfiguredRecords(array $project, array $records, array $profileMetadata = []): ?array
+    private function groupConfiguredRecords(array $project, array $projectAcademicYear, array $records, array $profileMetadata = []): ?array
     {
-        $structure = $this->assessmentStructureForProject((int) $project['id']);
+        $structure = $this->assessmentStructureForProjectAcademicYear((int) $projectAcademicYear['id']);
         if ($structure === []) {
             return null;
         }
@@ -238,6 +262,7 @@ class AssessmentService
 
         return [
             'project' => $project,
+            'projectAcademicYear' => $projectAcademicYear,
             'summary' => [],
             'grades' => [],
             'comments' => $comments,
@@ -248,28 +273,34 @@ class AssessmentService
         ];
     }
 
-    private function assessmentStructureForProject(int $projectId): array
+    private function assessmentStructureForProjectAcademicYear(int $projectAcademicYearId): array
     {
         $stmt = $this->pdo()->prepare(
             'SELECT
-                assessment_phases.id AS phase_id,
-                assessment_phases.phase_key,
-                assessment_phases.title AS phase_title,
-                assessment_phases.description AS phase_description,
-                assessment_phases.section_type,
-                assessment_tasks.source_column,
-                assessment_tasks.title AS task_title,
-                assessment_tasks.description AS task_description,
-                assessment_tasks.weight_label,
-                assessment_tasks.role_filter
-             FROM assessment_phases
-             INNER JOIN assessment_tasks ON assessment_tasks.phase_id = assessment_phases.id
-             WHERE assessment_phases.project_id = :project_id
-                AND assessment_phases.is_active = 1
-                AND assessment_tasks.is_visible = 1
-             ORDER BY assessment_phases.display_order, assessment_phases.id, assessment_tasks.display_order, assessment_tasks.id'
+                ap.id AS phase_id,
+                ap.phase_key,
+                ap.title AS phase_title,
+                ap.description AS phase_description,
+                ap.section_type,
+                payp.display_order AS phase_order,
+                at.id AS task_id,
+                at.source_column,
+                at.title AS task_title,
+                at.description AS task_description,
+                at.weight_label,
+                at.role_filter,
+                paypt.display_order AS task_order,
+                paypt.is_visible
+             FROM project_academic_year_phases payp
+             INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
+             INNER JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
+             INNER JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
+             WHERE payp.project_academic_year_id = :project_academic_year_id
+                AND payp.is_active = 1
+                AND paypt.is_visible = 1
+             ORDER BY payp.display_order, ap.id, paypt.display_order, at.id'
         );
-        $stmt->execute(['project_id' => $projectId]);
+         $stmt->execute(['project_academic_year_id' => $projectAcademicYearId]);
 
         $phases = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -281,20 +312,43 @@ class AssessmentService
                     'title' => (string) $row['phase_title'],
                     'description' => $row['phase_description'],
                     'section_type' => (string) $row['section_type'],
+                    'display_order' => (int) $row['phase_order'],
                     'tasks' => [],
                 ];
             }
 
             $phases[$phaseId]['tasks'][] = [
+                'id' => (int) $row['task_id'],
                 'source_column' => (string) $row['source_column'],
                 'title' => (string) $row['task_title'],
                 'description' => $row['task_description'],
                 'weight_label' => $row['weight_label'],
                 'role_filter' => $row['role_filter'],
+                'display_order' => (int) $row['task_order'],
             ];
         }
 
         return array_values($phases);
+    }
+
+    private function projectAcademicYearForProject(int $projectId): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT pay.id, pay.project_id, pay.academic_year_id, ay.name AS academic_year_name
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+             ORDER BY ay.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['project_id' => $projectId]);
+        $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($projectAcademicYear === false) {
+            throw new RuntimeException('No hi ha cap edició acadèmica per al projecte amb id ' . $projectId . '.');
+        }
+
+        return $projectAcademicYear;
     }
 
     private function taskMatchesRole(string $roleFilter, string $studentRole): bool
@@ -432,24 +486,36 @@ class AssessmentService
             || str_contains($normalized, 'mitjana');
     }
 
-    private function studentHasProjectAccess(int $userId, int $projectId): bool
+    private function studentHasProjectAcademicYearAccess(int $userId, int $projectAcademicYearId): bool
     {
         $stmt = $this->pdo()->prepare(
             'SELECT 1
-             FROM class_members
-             INNER JOIN project_groups ON project_groups.class_id = class_members.class_id
-             INNER JOIN projects ON projects.id = project_groups.project_id
-             WHERE class_members.user_id = :user_id
-                AND project_groups.project_id = :project_id
-                AND projects.is_active = 1
-             LIMIT 1'
+              FROM class_members
+              INNER JOIN project_class_assignments ON project_class_assignments.class_id = class_members.class_id
+              WHERE class_members.user_id = :user_id
+                 AND project_class_assignments.project_academic_year_id = :project_academic_year_id
+              LIMIT 1'
         );
         $stmt->execute([
             'user_id' => $userId,
-            'project_id' => $projectId,
+            'project_academic_year_id' => $projectAcademicYearId,
         ]);
 
         return $stmt->fetchColumn() !== false;
+    }
+
+    public function projectAcademicYearForProjectSlug(string $projectSlug): ?array
+    {
+        $project = $this->findProjectBySlug($projectSlug);
+        if ($project === null) {
+            return null;
+        }
+
+        try {
+            return $this->projectAcademicYearForProject((int) $project['id']);
+        } catch (RuntimeException) {
+            return null;
+        }
     }
 
     private function findProjectBySlug(string $slug): ?array

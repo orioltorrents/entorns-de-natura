@@ -5,7 +5,7 @@ class AdminController
     public function dashboard(): string
     {
         $pdo = $this->pdo();
-        $this->ensureProjectGroupsTable($pdo);
+        $this->ensureProjectClassAssignmentsTable($pdo);
         $this->ensureProjectsDisplayOrderColumn($pdo);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -31,8 +31,8 @@ class AdminController
 
         $rolesStmt = $pdo->query(
             'SELECT r.id, r.name, COUNT(ur.user_id) AS user_count
-             FROM roles r
-             LEFT JOIN user_roles ur ON ur.role_id = r.id
+             FROM web_roles r
+             LEFT JOIN user_web_roles ur ON ur.role_id = r.id
              GROUP BY r.id, r.name
              ORDER BY r.name'
         );
@@ -60,8 +60,8 @@ class AdminController
 
         $userRolesStmt = $pdo->query(
             'SELECT ur.user_id, r.name AS role_name
-             FROM user_roles ur
-             INNER JOIN roles r ON r.id = ur.role_id
+             FROM user_web_roles ur
+             INNER JOIN web_roles r ON r.id = ur.role_id
              ORDER BY ur.user_id, r.name'
         );
         $userRoles = $userRolesStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -70,14 +70,16 @@ class AdminController
         $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $projectAssignmentsStmt = $pdo->query(
-            'SELECT pg.id, pg.class_id, pg.project_id, pg.status, pg.created_at,
+            'SELECT pg.id, pg.class_id, p.id AS project_id, ay.name AS academic_year_name, pg.status, pg.created_at,
                     c.name AS class_name,
                     p.name AS project_name,
                     p.slug AS project_slug
-             FROM project_groups pg
-             INNER JOIN classes c ON c.id = pg.class_id
-             INNER JOIN projects p ON p.id = pg.project_id
-             ORDER BY c.name, p.display_order, p.name'
+              FROM project_class_assignments pg
+              INNER JOIN classes c ON c.id = pg.class_id
+              INNER JOIN project_academic_years pay ON pay.id = pg.project_academic_year_id
+              INNER JOIN projects p ON p.id = pay.project_id
+              INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+              ORDER BY c.name, ay.id, p.display_order, p.name'
         );
         $projectAssignments = $projectAssignmentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -239,45 +241,56 @@ class AdminController
     {
         $stmt = $pdo->query(
             'SELECT
+                pay.id AS project_academic_year_id,
                 p.id AS project_id,
                 p.name AS project_name,
                 p.slug AS project_slug,
+                ay.name AS academic_year_name,
                 ap.id AS phase_id,
                 ap.phase_key,
                 ap.title AS phase_title,
                 ap.section_type,
-                ap.display_order AS phase_order,
-                ap.is_active,
+                payp.display_order AS phase_order,
+                payp.is_active,
+                payp.id AS project_academic_year_phase_id,
                 at.id AS task_id,
                 at.source_column,
                 at.title AS task_title,
                 at.weight_label,
                 at.role_filter,
-                at.display_order AS task_order,
-                at.is_visible
-             FROM assessment_phases ap
-             INNER JOIN projects p ON p.id = ap.project_id
-             LEFT JOIN assessment_tasks at ON at.phase_id = ap.id
-             ORDER BY p.display_order, p.name, ap.display_order, ap.id, at.display_order, at.id'
+                paypt.display_order AS task_order,
+                paypt.is_visible,
+                paypt.id AS project_academic_year_phase_task_id
+             FROM project_academic_year_phases payp
+             INNER JOIN project_academic_years pay ON pay.id = payp.project_academic_year_id
+             INNER JOIN projects p ON p.id = pay.project_id
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
+             LEFT JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
+             LEFT JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
+             ORDER BY p.display_order, p.name, ay.id, payp.display_order, ap.id, paypt.display_order, at.id'
         );
 
         $projects = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $projectId = (int) $row['project_id'];
+            $projectAcademicYearId = (int) $row['project_academic_year_id'];
             $phaseId = (int) $row['phase_id'];
 
-            if (!isset($projects[$projectId])) {
-                $projects[$projectId] = [
-                    'id' => $projectId,
+            if (!isset($projects[$projectAcademicYearId])) {
+                $projects[$projectAcademicYearId] = [
+                    'id' => $projectAcademicYearId,
+                    'project_id' => (int) $row['project_id'],
                     'name' => (string) $row['project_name'],
                     'slug' => (string) $row['project_slug'],
+                    'academic_year_name' => (string) $row['academic_year_name'],
                     'phases' => [],
                 ];
             }
 
-            if (!isset($projects[$projectId]['phases'][$phaseId])) {
-                $projects[$projectId]['phases'][$phaseId] = [
+            if (!isset($projects[$projectAcademicYearId]['phases'][$phaseId])) {
+                $projects[$projectAcademicYearId]['phases'][$phaseId] = [
                     'id' => $phaseId,
+                    'project_academic_year_phase_id' => (int) $row['project_academic_year_phase_id'],
                     'phase_key' => (string) $row['phase_key'],
                     'title' => (string) $row['phase_title'],
                     'section_type' => (string) $row['section_type'],
@@ -288,8 +301,9 @@ class AdminController
             }
 
             if ($row['task_id'] !== null) {
-                $projects[$projectId]['phases'][$phaseId]['tasks'][] = [
+                $projects[$projectAcademicYearId]['phases'][$phaseId]['tasks'][] = [
                     'id' => (int) $row['task_id'],
+                    'project_academic_year_phase_task_id' => (int) $row['project_academic_year_phase_task_id'],
                     'source_column' => (string) $row['source_column'],
                     'title' => (string) $row['task_title'],
                     'weight_label' => $row['weight_label'] !== null ? (string) $row['weight_label'] : '',
@@ -310,14 +324,14 @@ class AdminController
 
     private function toggleAssessmentPhase(PDO $pdo): void
     {
-        $phaseId = filter_input(INPUT_POST, 'phase_id', FILTER_VALIDATE_INT);
-        if ($phaseId === null || $phaseId === false) {
+        $projectAcademicYearPhaseId = filter_input(INPUT_POST, 'project_academic_year_phase_id', FILTER_VALIDATE_INT);
+        if ($projectAcademicYearPhaseId === null || $projectAcademicYearPhaseId === false) {
             $this->setMessage('Fase no vàlida.', 'error');
             return;
         }
 
-        $stmt = $pdo->prepare('SELECT is_active FROM assessment_phases WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $phaseId]);
+        $stmt = $pdo->prepare('SELECT is_active FROM project_academic_year_phases WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $projectAcademicYearPhaseId]);
         $phase = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($phase === false) {
@@ -326,22 +340,22 @@ class AdminController
         }
 
         $newState = ((int) $phase['is_active'] === 1) ? 0 : 1;
-        $update = $pdo->prepare('UPDATE assessment_phases SET is_active = :is_active WHERE id = :id');
-        $update->execute(['is_active' => $newState, 'id' => (int) $phaseId]);
+        $update = $pdo->prepare('UPDATE project_academic_year_phases SET is_active = :is_active WHERE id = :id');
+        $update->execute(['is_active' => $newState, 'id' => (int) $projectAcademicYearPhaseId]);
 
         $this->setMessage('Estat de la fase actualitzat.', 'success');
     }
 
     private function toggleAssessmentTask(PDO $pdo): void
     {
-        $taskId = filter_input(INPUT_POST, 'task_id', FILTER_VALIDATE_INT);
-        if ($taskId === null || $taskId === false) {
+        $projectAcademicYearPhaseTaskId = filter_input(INPUT_POST, 'project_academic_year_phase_task_id', FILTER_VALIDATE_INT);
+        if ($projectAcademicYearPhaseTaskId === null || $projectAcademicYearPhaseTaskId === false) {
             $this->setMessage('Tasca no vàlida.', 'error');
             return;
         }
 
-        $stmt = $pdo->prepare('SELECT is_visible FROM assessment_tasks WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $taskId]);
+        $stmt = $pdo->prepare('SELECT is_visible FROM project_academic_year_phase_tasks WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => (int) $projectAcademicYearPhaseTaskId]);
         $task = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($task === false) {
@@ -350,8 +364,8 @@ class AdminController
         }
 
         $newState = ((int) $task['is_visible'] === 1) ? 0 : 1;
-        $update = $pdo->prepare('UPDATE assessment_tasks SET is_visible = :is_visible WHERE id = :id');
-        $update->execute(['is_visible' => $newState, 'id' => (int) $taskId]);
+        $update = $pdo->prepare('UPDATE project_academic_year_phase_tasks SET is_visible = :is_visible WHERE id = :id');
+        $update->execute(['is_visible' => $newState, 'id' => (int) $projectAcademicYearPhaseTaskId]);
 
         $this->setMessage('Visibilitat de la tasca actualitzada.', 'success');
     }
@@ -411,34 +425,45 @@ class AdminController
             return;
         }
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO users (name, surname, email, password_hash, is_active, created_at)
-             VALUES (:name, :surname, :email, :password_hash, :is_active, NOW())'
-        );
+        $pdo->beginTransaction();
 
-        $stmt->execute([
-            'name' => $name,
-            'surname' => $surname,
-            'email' => $email,
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'is_active' => $isActive,
-        ]);
+        try {
+            $stmt = $pdo->prepare(
+                'INSERT INTO users (name, surname, email, password_hash, is_active, created_at)
+                 VALUES (:name, :surname, :email, :password_hash, :is_active, NOW())'
+            );
 
-        $userId = (int) $pdo->lastInsertId();
-        $roleIds = [];
+            $stmt->execute([
+                'name' => $name,
+                'surname' => $surname,
+                'email' => $email,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'is_active' => $isActive,
+            ]);
 
-        if (!empty($roles) && is_array($roles)) {
-            $roleIds = array_map('intval', $roles);
-        }
+            $userId = (int) $pdo->lastInsertId();
+            $roleIds = [];
 
-        if ($roleIds !== []) {
-            $insertRoleStmt = $pdo->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)');
-            foreach ($roleIds as $roleId) {
-                $insertRoleStmt->execute(['user_id' => $userId, 'role_id' => $roleId]);
+            if (!empty($roles) && is_array($roles)) {
+                $roleIds = array_map('intval', $roles);
             }
-        }
 
-        $this->setMessage('Usuari creat correctament.', 'success');
+            if ($roleIds !== []) {
+                $insertRoleStmt = $pdo->prepare('INSERT INTO user_web_roles (user_id, role_id) VALUES (:user_id, :role_id)');
+                foreach ($roleIds as $roleId) {
+                    $insertRoleStmt->execute(['user_id' => $userId, 'role_id' => $roleId]);
+                }
+            }
+
+            $pdo->commit();
+            $this->setMessage('Usuari creat correctament.', 'success');
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            $this->setMessage('No s’ha pogut crear l’usuari.', 'error');
+        }
     }
 
     private function toggleUser(PDO $pdo): void
@@ -524,28 +549,39 @@ class AdminController
 
         $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
         $resolvedClassId = $classId === null || $classId === false ? null : (int) $classId;
-        $this->syncClassAssignment($pdo, $userId, $resolvedClassId);
+        $pdo->beginTransaction();
 
-        $roles = $_POST['roles'] ?? [];
-        if (is_array($roles)) {
-            $this->syncUserRoles($pdo, $userId, array_map('intval', $roles));
+        try {
+            $this->syncClassAssignment($pdo, $userId, $resolvedClassId);
+
+            $roles = $_POST['roles'] ?? [];
+            if (is_array($roles)) {
+                $this->syncUserRoles($pdo, $userId, array_map('intval', $roles));
+            }
+
+            $this->upsertStudentProfile(
+                $pdo,
+                $userId,
+                '',
+                $project,
+                $teamNumber,
+                $groupNumber,
+                $groupCode1T,
+                $membersCount,
+                $externalId,
+                $trimester,
+                $resolvedClassId
+            );
+
+            $pdo->commit();
+            $this->setMessage('Informació de l’alumne actualitzada.', 'success');
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            $this->setMessage('No s’ha pogut actualitzar l’alumne.', 'error');
         }
-
-        $this->upsertStudentProfile(
-            $pdo,
-            $userId,
-            '',
-            $project,
-            $teamNumber,
-            $groupNumber,
-            $groupCode1T,
-            $membersCount,
-            $externalId,
-            $trimester,
-            $resolvedClassId
-        );
-
-        $this->setMessage('Informació de l’alumne actualitzada.', 'success');
     }
 
     private function importStudents(PDO $pdo): void
@@ -618,33 +654,45 @@ class AdminController
             $existingUserStmt->execute(['email' => $email]);
             $existingUser = $existingUserStmt->fetch(PDO::FETCH_ASSOC);
 
-            $userId = $this->findOrCreateUser($pdo, $name, $surname, $email, $password);
-            if ($userId === null) {
-                $errors[] = 'Fila ' . $lineNumber . ': no s’ha pogut crear l’usuari.';
-                continue;
-            }
+            $pdo->beginTransaction();
 
-            $this->setRolesForUser($pdo, $userId, $rolesInput);
-            $this->updateUserAcademicFields($pdo, $userId, $academicRole, $gender, $article, $inaturalistUserLogin);
-            $this->upsertStudentProfile($pdo, $userId, $className, $project, $teamNumber, $groupNumber, $groupCode1T, $membersCount, $externalId, $trimester);
-
-            if ($className !== '') {
-                $classId = $this->findOrCreateClass($pdo, $className);
-                if ($classId !== null) {
-                    $this->syncClassAssignment($pdo, $userId, $classId);
+            try {
+                $userId = $this->findOrCreateUser($pdo, $name, $surname, $email, $password);
+                if ($userId === null) {
+                    throw new RuntimeException('No s’ha pogut crear l’usuari.');
                 }
-            } else {
-                $this->syncClassAssignment($pdo, $userId, null);
-            }
 
-            if ($existingUser === false) {
-                $created++;
-            } else {
-                $updated++;
-            }
+                $this->setRolesForUser($pdo, $userId, $rolesInput);
+                $this->updateUserAcademicFields($pdo, $userId, $academicRole, $gender, $article, $inaturalistUserLogin);
+                $this->upsertStudentProfile($pdo, $userId, $className, $project, $teamNumber, $groupNumber, $groupCode1T, $membersCount, $externalId, $trimester);
 
-            if ($trimester !== '') {
-                $trimesterLabel = $trimester;
+                if ($className !== '') {
+                    $classId = $this->findOrCreateClass($pdo, $className);
+                    if ($classId !== null) {
+                        $this->syncClassAssignment($pdo, $userId, $classId);
+                    }
+                } else {
+                    $this->syncClassAssignment($pdo, $userId, null);
+                }
+
+                $pdo->commit();
+
+                if ($existingUser === false) {
+                    $created++;
+                } else {
+                    $updated++;
+                }
+
+                if ($trimester !== '') {
+                    $trimesterLabel = $trimester;
+                }
+            } catch (Throwable $exception) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+
+                $errors[] = 'Fila ' . $lineNumber . ': ' . $exception->getMessage();
+                continue;
             }
         }
 
@@ -698,25 +746,36 @@ class AdminController
         $stmt = $pdo->prepare('UPDATE projects SET display_order = :display_order WHERE id = :id');
         $updated = 0;
 
-        foreach ($orders as $projectId => $displayOrder) {
-            $id = filter_var($projectId, FILTER_VALIDATE_INT);
-            if ($id === false || $id === null) {
-                continue;
+        $pdo->beginTransaction();
+
+        try {
+            foreach ($orders as $projectId => $displayOrder) {
+                $id = filter_var($projectId, FILTER_VALIDATE_INT);
+                if ($id === false || $id === null) {
+                    continue;
+                }
+
+                $order = filter_var($displayOrder, FILTER_VALIDATE_INT);
+                if ($order === false || $order === null || $order < 0) {
+                    $order = 0;
+                }
+
+                $stmt->execute([
+                    'display_order' => (int) $order,
+                    'id' => (int) $id,
+                ]);
+                $updated++;
             }
 
-            $order = filter_var($displayOrder, FILTER_VALIDATE_INT);
-            if ($order === false || $order === null || $order < 0) {
-                $order = 0;
+            $pdo->commit();
+            $this->setMessage('Ordre dels projectes actualitzat (' . $updated . ').', 'success');
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
             }
 
-            $stmt->execute([
-                'display_order' => (int) $order,
-                'id' => (int) $id,
-            ]);
-            $updated++;
+            $this->setMessage('No s’ha pogut actualitzar l’ordre dels projectes.', 'error');
         }
-
-        $this->setMessage('Ordre dels projectes actualitzat (' . $updated . ').', 'success');
     }
 
     private function assignProjectToClass(PDO $pdo): void
@@ -736,14 +795,32 @@ class AdminController
             return;
         }
 
+        $projectAcademicYearStmt = $pdo->prepare(
+            'SELECT pay.id
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+             ORDER BY ay.id DESC
+             LIMIT 1'
+        );
+        $projectAcademicYearStmt->execute([
+            'project_id' => (int) $projectId,
+        ]);
+        $projectAcademicYearId = $projectAcademicYearStmt->fetchColumn();
+
+        if ($projectAcademicYearId === false) {
+            $this->setMessage('Aquest projecte no té cap edició acadèmica vinculada.', 'error');
+            return;
+        }
+
         $stmt = $pdo->prepare(
-            'INSERT INTO project_groups (class_id, project_id, status, created_at)
-             VALUES (:class_id, :project_id, :status, NOW())
-             ON DUPLICATE KEY UPDATE status = VALUES(status)'
+            'INSERT INTO project_class_assignments (project_academic_year_id, class_id, status, created_at)
+             VALUES (:project_academic_year_id, :class_id, :status, NOW())
+             ON DUPLICATE KEY UPDATE status = VALUES(status), project_academic_year_id = VALUES(project_academic_year_id)'
         );
         $stmt->execute([
+            'project_academic_year_id' => (int) $projectAcademicYearId,
             'class_id' => (int) $classId,
-            'project_id' => (int) $projectId,
             'status' => $status,
         ]);
 
@@ -766,7 +843,7 @@ class AdminController
             return;
         }
 
-        $stmt = $pdo->prepare('SELECT status FROM project_groups WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT status FROM project_class_assignments WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => (int) $assignmentId]);
         $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -775,7 +852,7 @@ class AdminController
             return;
         }
 
-        $updateStmt = $pdo->prepare('UPDATE project_groups SET status = :status WHERE id = :id');
+        $updateStmt = $pdo->prepare('UPDATE project_class_assignments SET status = :status WHERE id = :id');
         $updateStmt->execute([
             'status' => $status,
             'id' => (int) $assignmentId,
@@ -793,7 +870,7 @@ class AdminController
             return;
         }
 
-        $stmt = $pdo->prepare('SELECT id FROM project_groups WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id FROM project_class_assignments WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => (int) $assignmentId]);
 
         if ($stmt->fetch(PDO::FETCH_ASSOC) === false) {
@@ -801,7 +878,7 @@ class AdminController
             return;
         }
 
-        $deleteStmt = $pdo->prepare('DELETE FROM project_groups WHERE id = :id');
+        $deleteStmt = $pdo->prepare('DELETE FROM project_class_assignments WHERE id = :id');
         $deleteStmt->execute(['id' => (int) $assignmentId]);
 
         $this->setMessage('Assignació eliminada correctament.', 'success');
@@ -841,8 +918,8 @@ class AdminController
             $stmt = $pdo->prepare(
                 "SELECT DISTINCT u.id
                  FROM users u
-                 INNER JOIN user_roles ur ON ur.user_id = u.id
-                 INNER JOIN roles r ON r.id = ur.role_id
+                  INNER JOIN user_web_roles ur ON ur.user_id = u.id
+                  INNER JOIN web_roles r ON r.id = ur.role_id
                  WHERE r.name = 'teacher'
                    AND u.id IN ($placeholders)"
             );
@@ -943,8 +1020,8 @@ class AdminController
     {
         $stmt = $pdo->prepare(
             'SELECT 1
-             FROM user_roles ur
-             INNER JOIN roles r ON r.id = ur.role_id
+             FROM user_web_roles ur
+             INNER JOIN web_roles r ON r.id = ur.role_id
              WHERE ur.user_id = :user_id
                AND r.name = :role_name
              LIMIT 1'
@@ -970,14 +1047,14 @@ class AdminController
 
     private function syncUserRoles(PDO $pdo, int $userId, array $roleIds): void
     {
-        $deleteStmt = $pdo->prepare('DELETE FROM user_roles WHERE user_id = :user_id');
+        $deleteStmt = $pdo->prepare('DELETE FROM user_web_roles WHERE user_id = :user_id');
         $deleteStmt->execute(['user_id' => $userId]);
 
         if ($roleIds === []) {
             return;
         }
 
-        $insertStmt = $pdo->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)');
+        $insertStmt = $pdo->prepare('INSERT INTO user_web_roles (user_id, role_id) VALUES (:user_id, :role_id)');
         foreach ($roleIds as $roleId) {
             if ($roleId > 0) {
                 $insertStmt->execute(['user_id' => $userId, 'role_id' => $roleId]);
@@ -1015,7 +1092,7 @@ class AdminController
 
     private function setRolesForUser(PDO $pdo, int $userId, string $rolesInput): void
     {
-        $deleteStmt = $pdo->prepare('DELETE FROM user_roles WHERE user_id = :user_id');
+        $deleteStmt = $pdo->prepare('DELETE FROM user_web_roles WHERE user_id = :user_id');
         $deleteStmt->execute(['user_id' => $userId]);
 
         $roles = array_filter(array_map('trim', preg_split('/[;,|]/', $rolesInput) ?: []));
@@ -1023,7 +1100,7 @@ class AdminController
             $roles = ['student'];
         }
 
-        $insertStmt = $pdo->prepare('INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)');
+        $insertStmt = $pdo->prepare('INSERT INTO user_web_roles (user_id, role_id) VALUES (:user_id, :role_id)');
         foreach ($roles as $roleName) {
             $roleId = $this->findOrCreateRole($pdo, $roleName);
             if ($roleId !== null) {
@@ -1117,14 +1194,14 @@ class AdminController
             return null;
         }
 
-        $existingStmt = $pdo->prepare('SELECT id FROM roles WHERE LOWER(name) = :name LIMIT 1');
+        $existingStmt = $pdo->prepare('SELECT id FROM web_roles WHERE LOWER(name) = :name LIMIT 1');
         $existingStmt->execute(['name' => $normalized]);
         $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
         if ($existing !== false) {
             return (int) $existing['id'];
         }
 
-        $insertStmt = $pdo->prepare('INSERT INTO roles (name, created_at) VALUES (:name, NOW())');
+        $insertStmt = $pdo->prepare('INSERT INTO web_roles (name, created_at) VALUES (:name, NOW())');
         $insertStmt->execute(['name' => $normalized]);
         return (int) $pdo->lastInsertId();
     }
@@ -1212,32 +1289,33 @@ class AdminController
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
-    private function ensureProjectGroupsTable(PDO $pdo): void
+    private function ensureProjectClassAssignmentsTable(PDO $pdo): void
     {
         $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS project_groups (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                class_id INT UNSIGNED NOT NULL,
-                project_id INT UNSIGNED NOT NULL,
-                status VARCHAR(50) NOT NULL DEFAULT "actiu",
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id),
-                UNIQUE KEY uq_project_groups (class_id, project_id),
-                KEY idx_project_groups_class_id (class_id),
-                KEY idx_project_groups_project_id (project_id),
-                CONSTRAINT fk_project_groups_class
-                    FOREIGN KEY (class_id) REFERENCES classes (id)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE,
-                CONSTRAINT fk_project_groups_project
-                    FOREIGN KEY (project_id) REFERENCES projects (id)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            'CREATE TABLE IF NOT EXISTS project_class_assignments (
+                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                 project_academic_year_id BIGINT UNSIGNED NOT NULL,
+                 class_id INT UNSIGNED NOT NULL,
+                 status VARCHAR(50) NOT NULL DEFAULT "actiu",
+                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                 PRIMARY KEY (id),
+                 UNIQUE KEY uq_project_class_assignments (project_academic_year_id, class_id),
+                 KEY idx_project_class_assignments_project_academic_year_id (project_academic_year_id),
+                 KEY idx_project_class_assignments_class_id (class_id),
+                 CONSTRAINT fk_project_class_assignments_project_academic_year
+                     FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
+                     ON DELETE CASCADE
+                     ON UPDATE CASCADE,
+                 CONSTRAINT fk_project_class_assignments_class
+                     FOREIGN KEY (class_id) REFERENCES classes (id)
+                     ON DELETE CASCADE
+                     ON UPDATE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
 
         $pdo->exec(
-            "UPDATE project_groups
+            "UPDATE project_class_assignments
              SET status = CASE status
                  WHEN 'planned' THEN 'pendent'
                  WHEN 'previst' THEN 'pendent'

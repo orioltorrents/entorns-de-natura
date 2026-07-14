@@ -197,6 +197,8 @@ classes
 class_members
 class_teachers
 languages
+project_academic_years
+project_class_assignments
 project_assets
 project_asset_links
 projects
@@ -208,6 +210,8 @@ assessment_records
 assessment_import_errors
 assessment_phases
 assessment_tasks
+project_academic_year_phases
+project_academic_year_phase_tasks
 assessment_supports
 assessment_task_resources
 roles
@@ -228,17 +232,36 @@ database/schema.sql
   -> 06_project_assets.sql
   -> 07_task_resources.sql
   -> 08_document_tables.sql
+  -> 10_project_sections.sql
+  -> 13_project_academic_years.sql
+  -> 14_project_class_assignments_project_year_link.sql
+  -> 15_documents_project_year_link.sql
+  -> 18_assessment_records_project_id_cleanup.sql
+  -> 24_assessment_project_year_phases.sql
+  -> 25_assessment_project_year_phase_tasks.sql
+  -> 26_assessment_sources_project_year_link.sql
 ```
 
 La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
 
-`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07` i `08` formen l'esquema actual.
+`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25` i `26` formen l'esquema actual.
 
 Si la base ja existia abans de la capa de documents, cal aplicar també `database/09_document_tables_fix.sql` com a ajust no destructiu.
 
 `database/10_project_sections.sql` afegeix les seccions de projecte i els permisos per rol.
 
 Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
+
+Regla del model:
+
+- `projects` és el catàleg base del projecte;
+- `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
+- si una entitat canvia per edició, no s'ha de resoldre només amb `projects`;
+
+- `documents` han d'anar per `project_academic_year_id`;
+- `assessment_sources` i `assessment_import_runs` han d'anar per `project_academic_year_id`;
+- `assessment_phases` i `assessment_tasks` són definició base;
+- `project_academic_year_phases` i `project_academic_year_phase_tasks` governen visibilitat i ordre per curs.
 
 ---
 

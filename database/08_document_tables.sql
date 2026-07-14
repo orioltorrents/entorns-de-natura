@@ -6,7 +6,7 @@ SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS documents (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_id INT UNSIGNED NOT NULL,
+    project_academic_year_id BIGINT UNSIGNED NOT NULL,
     slug VARCHAR(150) NOT NULL,
     title VARCHAR(255) NOT NULL,
     doc_type VARCHAR(50) NOT NULL DEFAULT 'markdown',
@@ -17,15 +17,13 @@ CREATE TABLE IF NOT EXISTS documents (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_documents_project_slug (project_id, slug),
-    KEY idx_documents_project_id (project_id),
-    KEY idx_documents_display_order (display_order),
-    KEY idx_documents_is_active (is_active),
-    CONSTRAINT fk_documents_project
-        FOREIGN KEY (project_id) REFERENCES projects (id)
+    UNIQUE KEY uq_documents_project_academic_year_slug (project_academic_year_id, slug),
+    KEY idx_documents_project_year_active_order (project_academic_year_id, is_active, display_order, title),
+    CONSTRAINT fk_documents_project_academic_year
+        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS document_sources (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -44,8 +42,7 @@ CREATE TABLE IF NOT EXISTS document_sources (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_document_sources_fingerprint (document_id, source_fingerprint),
-    KEY idx_document_sources_document_id (document_id),
-    KEY idx_document_sources_source_type (source_type),
+    KEY idx_document_sources_document_active (document_id, is_active, id),
     CONSTRAINT fk_document_sources_document
         FOREIGN KEY (document_id) REFERENCES documents (id)
         ON DELETE CASCADE
@@ -66,8 +63,7 @@ CREATE TABLE IF NOT EXISTS document_fragments (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_document_fragments_document_key (document_id, fragment_key),
-    KEY idx_document_fragments_document_id (document_id),
-    KEY idx_document_fragments_display_order (display_order),
+    KEY idx_document_fragments_document_active_order (document_id, is_active, display_order, id),
     CONSTRAINT fk_document_fragments_document
         FOREIGN KEY (document_id) REFERENCES documents (id)
         ON DELETE CASCADE
@@ -79,8 +75,9 @@ CREATE TABLE IF NOT EXISTS document_visibility_rules (
     document_id BIGINT UNSIGNED NOT NULL,
     fragment_id BIGINT UNSIGNED NULL,
     rule_fingerprint VARCHAR(64) NOT NULL,
-    visibility_type ENUM('public', 'role', 'class', 'assigned_teacher') NOT NULL DEFAULT 'public',
+    visibility_type ENUM('public', 'role', 'project_role', 'class', 'assigned_teacher') NOT NULL DEFAULT 'public',
     role_id INT UNSIGNED NULL,
+    project_role_id INT UNSIGNED NULL,
     class_id INT UNSIGNED NULL,
     allow_view TINYINT(1) NOT NULL DEFAULT 1,
     allow_edit TINYINT(1) NOT NULL DEFAULT 0,
@@ -90,11 +87,11 @@ CREATE TABLE IF NOT EXISTS document_visibility_rules (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_document_visibility_rules_fingerprint (document_id, rule_fingerprint),
-    KEY idx_document_visibility_document_id (document_id),
+    KEY idx_document_visibility_document_active_priority (document_id, is_active, priority, id),
     KEY idx_document_visibility_fragment_id (fragment_id),
     KEY idx_document_visibility_role_id (role_id),
+    KEY idx_document_visibility_project_role_id (project_role_id),
     KEY idx_document_visibility_class_id (class_id),
-    KEY idx_document_visibility_priority (priority),
     CONSTRAINT fk_document_visibility_document
         FOREIGN KEY (document_id) REFERENCES documents (id)
         ON DELETE CASCADE
@@ -104,7 +101,11 @@ CREATE TABLE IF NOT EXISTS document_visibility_rules (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT fk_document_visibility_role
-        FOREIGN KEY (role_id) REFERENCES roles (id)
+        FOREIGN KEY (role_id) REFERENCES web_roles (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_document_visibility_project_role
+        FOREIGN KEY (project_role_id) REFERENCES project_roles (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT fk_document_visibility_class

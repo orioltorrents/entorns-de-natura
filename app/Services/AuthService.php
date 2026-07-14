@@ -149,11 +149,11 @@ class AuthService
     private function rolesForUser(int $userId): array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT roles.name
-             FROM user_roles
-             INNER JOIN roles ON roles.id = user_roles.role_id
-             WHERE user_roles.user_id = :user_id
-             ORDER BY roles.name'
+            'SELECT web_roles.name
+              FROM user_web_roles
+              INNER JOIN web_roles ON web_roles.id = user_web_roles.role_id
+              WHERE user_web_roles.user_id = :user_id
+              ORDER BY web_roles.name'
         );
         $stmt->execute(['user_id' => $userId]);
 

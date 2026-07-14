@@ -31,17 +31,20 @@ class ProjectAssignmentService
                 projects.id AS project_id,
                 projects.slug,
                 projects.display_order,
+                academic_years.name AS academic_year_name,
                 COALESCE(project_translations.title, projects.name) AS title,
                 project_translations.description,
-                project_groups.status
-            FROM {$membershipTable}
-            INNER JOIN classes ON classes.id = {$membershipTable}.class_id
-            INNER JOIN project_groups ON project_groups.class_id = classes.id
-            INNER JOIN projects ON projects.id = project_groups.project_id
-            LEFT JOIN languages ON languages.code = :language_code
-            LEFT JOIN project_translations
-                ON project_translations.project_id = projects.id
-                AND project_translations.language_id = languages.id
+                project_class_assignments.status
+             FROM {$membershipTable}
+             INNER JOIN classes ON classes.id = {$membershipTable}.class_id
+            INNER JOIN project_class_assignments ON project_class_assignments.class_id = classes.id
+            INNER JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+            INNER JOIN projects ON projects.id = project_academic_years.project_id
+            INNER JOIN academic_years ON academic_years.id = project_academic_years.academic_year_id
+             LEFT JOIN languages ON languages.code = :language_code
+             LEFT JOIN project_translations
+                 ON project_translations.project_id = projects.id
+                 AND project_translations.language_id = languages.id
             WHERE {$membershipTable}.user_id = :user_id
                 AND projects.is_active = 1
             ORDER BY classes.name, projects.display_order, title
@@ -78,6 +81,7 @@ class ProjectAssignmentService
                 'display_order' => (int) $row['display_order'],
                 'title' => (string) $row['title'],
                 'description' => $row['description'] !== null ? (string) $row['description'] : '',
+                'academic_year_name' => (string) $row['academic_year_name'],
                 'status' => (string) $row['status'],
             ];
         }
