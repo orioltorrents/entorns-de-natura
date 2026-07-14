@@ -53,6 +53,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `projects`, `project_translations`, `project_groups`;
 - `project_assets`, `project_asset_links`;
 - `documents`, `document_sources`, `document_fragments`, `document_visibility_rules`;
+- `project_sections`, `project_section_roles`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `assessment_supports`, `assessment_task_resources`;
 - `settings`;

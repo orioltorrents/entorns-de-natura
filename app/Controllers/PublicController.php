@@ -8,7 +8,8 @@ class PublicController
         private ProjectService $projectService,
         private AuthService $authService,
         private AssessmentService $assessmentService,
-        private DocumentService $documentService
+        private DocumentService $documentService,
+        private ProjectSectionService $projectSectionService
     ) {
     }
 
@@ -40,18 +41,83 @@ class PublicController
             ]);
         }
 
-        $studentGrades = null;
         $currentUser = $this->authService->user();
-
-        if ($currentUser !== null && $this->authService->hasRole('student')) {
-            $studentGrades = $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
-        }
+        $projectSectionsData = $this->projectSectionService->visibleSectionsForProject($slug, $currentUser);
 
         return view('public.project-detail', [
             'title' => (string) $project['title'],
             'project' => $project,
+            'projectSections' => $projectSectionsData['sections'] ?? [],
+            'projectSectionsContext' => $projectSectionsData['context'] ?? [],
             'currentUser' => $currentUser,
-            'studentGrades' => $studentGrades,
+        ]);
+    }
+
+    public function projectTasks(string $slug): string
+    {
+        $project = $this->projectService->findActiveBySlug($slug, getLanguage());
+
+        if ($project === null) {
+            http_response_code(404);
+
+            return view('public.project-tasks', [
+                'title' => 'Tasques no trobades',
+                'project' => null,
+                'tasks' => [],
+                'context' => [],
+                'currentUser' => $this->authService->user(),
+            ]);
+        }
+
+        $currentUser = $this->authService->user();
+        $tasksData = $this->assessmentService->visibleTaskSectionsForProject($slug, $currentUser);
+
+        return view('public.project-tasks', [
+            'title' => 'Tasques de ' . (string) $project['title'],
+            'project' => $project,
+            'tasks' => $tasksData['sections'] ?? [],
+            'context' => $tasksData['context'] ?? [],
+            'currentUser' => $currentUser,
+        ]);
+    }
+
+    public function projectNotes(string $slug): string
+    {
+        $project = $this->projectService->findActiveBySlug($slug, getLanguage());
+
+        if ($project === null) {
+            http_response_code(404);
+
+            return view('public.project-notes', [
+                'title' => 'Notes no trobades',
+                'project' => null,
+                'notes' => null,
+                'currentUser' => $this->authService->user(),
+                'accessDenied' => false,
+            ]);
+        }
+
+        $currentUser = $this->authService->user();
+        $notes = $this->resolveProjectNotes($slug, $currentUser);
+
+        if ($notes === null) {
+            http_response_code(403);
+
+            return view('public.project-notes', [
+                'title' => 'Accés restringit',
+                'project' => $project,
+                'notes' => null,
+                'currentUser' => $currentUser,
+                'accessDenied' => true,
+            ]);
+        }
+
+        return view('public.project-notes', [
+            'title' => 'Notes de ' . (string) $project['title'],
+            'project' => $project,
+            'notes' => $notes,
+            'currentUser' => $currentUser,
+            'accessDenied' => false,
         ]);
     }
 
@@ -79,5 +145,26 @@ class PublicController
             'documents' => $documentsData['documents'] ?? [],
             'context' => $documentsData['context'] ?? [],
         ]);
+    }
+
+    private function resolveProjectNotes(string $slug, ?array $currentUser): ?array
+    {
+        if ($currentUser === null) {
+            return null;
+        }
+
+        $hasStudentRole = $this->authService->hasRole('student');
+        $hasTeacherRole = $this->authService->hasRole('teacher');
+        $hasAdminRole = $this->authService->hasRole('admin');
+
+        if (!$hasStudentRole && !$hasTeacherRole && !$hasAdminRole) {
+            return null;
+        }
+
+        if ($hasStudentRole && !$hasTeacherRole && !$hasAdminRole) {
+            return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
+        }
+
+        return $this->assessmentService->projectNotesOverview($slug);
     }
 }

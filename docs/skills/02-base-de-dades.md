@@ -26,6 +26,8 @@ La base de dades ha de permetre gestionar:
 - esquema educatiu base amb usuaris, rols, classes, projectes, idiomes i assignacions;
 - taules d'avaluació i estructura de fases i tasques;
 - catàleg d'assets de projecte i relacions amb projectes;
+- capa de documents, fragments i visibilitat;
+- seccions de projecte i permisos per rol;
 - taula d'analítica de visites `site_visits`.
 
 ### Encara previst
@@ -114,6 +116,8 @@ documents
 document_sources
 document_fragments
 document_visibility_rules
+project_sections
+project_section_roles
 roles
 settings
 site_visits

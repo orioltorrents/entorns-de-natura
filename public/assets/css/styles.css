@@ -403,18 +403,33 @@ code {
 .public-project-detail__breadcrumb { margin-top: 0; }
 .public-project-detail__hero {
     align-items: flex-start;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 1rem;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(180px, 280px) minmax(0, 1fr) auto;
     margin-bottom: .75rem;
+}
+.public-project-detail__hero-logo-wrap {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: 180px;
+}
+.public-project-detail__hero-content {
+    display: grid;
+    gap: .4rem;
+    align-content: start;
+}
+.public-project-detail__subtitle {
+    color: #49644b;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
 }
 .public-project-detail__logo {
     display: block;
-    max-height: 84px;
-    max-width: min(240px, 100%);
+    max-height: 180px;
+    max-width: min(280px, 100%);
     object-fit: contain;
-    margin-bottom: .75rem;
 }
 .public-project-detail__eyebrow {
     color: var(--leaf-2);
@@ -427,6 +442,7 @@ code {
 .public-project-detail__title { margin: 0; font-size: clamp(2rem, 4vw, 3.3rem); line-height: 1.04; }
 .public-project-detail__status { white-space: nowrap; }
 .public-project-detail__lead { max-width: 72ch; }
+.public-project-detail__lead--hero { margin-top: .4rem; }
 .public-project-detail__meta {
     display: grid;
     gap: 1rem;
@@ -441,6 +457,60 @@ code {
 }
 .public-project-detail__meta dt { color: #47624a; font-size: .875rem; margin-bottom: .35rem; }
 .public-project-detail__meta dd { font-weight: 700; margin: 0; }
+.public-project-detail__sections { margin-top: 1.25rem; }
+.project-sections {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdf8 100%);
+    border: 1px solid #dfe9d8;
+    border-radius: 20px;
+    box-shadow: 0 14px 40px rgba(47,93,58,.08);
+    padding: 1.25rem;
+}
+.project-sections__header {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.project-sections__title { margin: 0; }
+.project-sections__grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.project-section-card {
+    align-items: center;
+    border: 1px solid rgba(71, 98, 74, .16);
+    border-radius: 22px;
+    box-shadow: 0 12px 30px rgba(47, 93, 58, .08);
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 190px;
+    padding: 1.4rem;
+    text-align: center;
+    text-decoration: none;
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.project-section-card:hover {
+    box-shadow: 0 16px 34px rgba(47, 93, 58, .14);
+    filter: saturate(1.04);
+    transform: translateY(-2px);
+}
+.project-section-card__title {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    margin: 0;
+    max-width: 12ch;
+}
+.project-section-card--programacio,
+.project-section-card--planificacio { background: linear-gradient(160deg, #edf8ea 0%, #dff0d8 100%); }
+.project-section-card--tasques { background: linear-gradient(160deg, #fef6df 0%, #f6e4b5 100%); }
+.project-section-card--notes { background: linear-gradient(160deg, #f8ecff 0%, #ead8fb 100%); }
+.project-section-card--bastides { background: linear-gradient(160deg, #eaf6fb 0%, #d7ecf6 100%); }
+.project-section-card--observacions_aula { background: linear-gradient(160deg, #fff0ea 0%, #f8d9cb 100%); }
 
 /* ── static/public-site blocks from styles2 ── */
 .role-panel,
@@ -1223,7 +1293,17 @@ code {
         justify-self: start;
     }
     .public-project-card__title { font-size: 1.2rem; }
-    .public-project-detail__hero { align-items: flex-start; }
+    .public-project-detail__hero {
+        grid-template-columns: 1fr;
+    }
+    .public-project-detail__hero-logo-wrap {
+        min-height: 0;
+        justify-content: flex-start;
+    }
+    .public-project-detail__logo {
+        max-height: 130px;
+        max-width: 220px;
+    }
     .teacher-dashboard__hero,
     .student-dashboard__hero { border-radius: 20px; padding: 1.25rem; }
     .teacher-dashboard__class-header,

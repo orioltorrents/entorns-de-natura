@@ -15,6 +15,7 @@ require_once dirname(__DIR__) . '/app/Services/AssessmentStructureImportService.
 require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Services/DocumentImportService.php';
 require_once dirname(__DIR__) . '/app/Services/DocumentService.php';
+require_once dirname(__DIR__) . '/app/Services/ProjectSectionService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
@@ -29,7 +30,8 @@ $assessmentService = new AssessmentService();
 $analyticsService = new AnalyticsService();
 $documentImportService = new DocumentImportService();
 $documentService = new DocumentService();
-$controller = new PublicController($projectService, $authService, $assessmentService, $documentService);
+$projectSectionService = new ProjectSectionService();
+$controller = new PublicController($projectService, $authService, $assessmentService, $documentService, $projectSectionService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);
@@ -102,6 +104,16 @@ switch ($requestUri) {
         break;
 
     default:
+        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/tasques$#', $requestUri, $matches) === 1) {
+            echo $controller->projectTasks($matches[2]);
+            break;
+        }
+
+        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/notes$#', $requestUri, $matches) === 1) {
+            echo $controller->projectNotes($matches[2]);
+            break;
+        }
+
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/documents$#', $requestUri, $matches) === 1) {
             echo $controller->projectDocuments($matches[2]);
             break;

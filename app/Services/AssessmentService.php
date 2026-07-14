@@ -4,6 +4,117 @@ declare(strict_types=1);
 
 class AssessmentService
 {
+    public function visibleTaskSectionsForProject(string $projectSlug, ?array $currentUser = null): array
+    {
+        $project = $this->findProjectBySlug($projectSlug);
+
+        if ($project === null) {
+            return [
+                'project' => null,
+                'sections' => [],
+                'context' => [],
+            ];
+        }
+
+        $contextRoles = array_values(array_map('strval', $currentUser['roles'] ?? []));
+        $showAll = in_array('admin', $contextRoles, true) || in_array('teacher', $contextRoles, true);
+        $structure = $this->assessmentStructureForProject((int) $project['id']);
+
+        if ($structure === []) {
+            return [
+                'project' => $project,
+                'sections' => [],
+                'context' => [
+                    'roles' => $contextRoles,
+                    'show_all' => $showAll,
+                ],
+            ];
+        }
+
+        $sections = [];
+
+        foreach ($structure as $phase) {
+            $items = [];
+
+            foreach ($phase['tasks'] as $task) {
+                if (!$showAll && !$this->taskMatchesAnyRole((string) ($task['role_filter'] ?? ''), $contextRoles)) {
+                    continue;
+                }
+
+                $items[] = [
+                    'label' => (string) $task['title'],
+                    'description' => $task['description'] !== null ? (string) $task['description'] : '',
+                    'weight' => $task['weight_label'] !== null ? (string) $task['weight_label'] : '',
+                    'source_column' => (string) $task['source_column'],
+                    'role_filter' => (string) ($task['role_filter'] ?? ''),
+                ];
+            }
+
+            if ($items === []) {
+                continue;
+            }
+
+            $sections[] = [
+                'title' => (string) $phase['title'],
+                'description' => $phase['description'] !== null ? (string) $phase['description'] : '',
+                'items' => $items,
+            ];
+        }
+
+        return [
+            'project' => $project,
+            'sections' => $sections,
+            'context' => [
+                'roles' => $contextRoles,
+                'show_all' => $showAll,
+            ],
+        ];
+    }
+
+    public function projectNotesOverview(string $projectSlug): array
+    {
+        $project = $this->findProjectBySlug($projectSlug);
+
+        if ($project === null) {
+            return [
+                'project' => null,
+                'summary' => [],
+                'labels' => [],
+            ];
+        }
+
+        $stmt = $this->pdo()->prepare(
+            'SELECT
+                COUNT(*) AS total_records,
+                COUNT(DISTINCT user_id) AS total_students,
+                MAX(imported_at) AS latest_imported_at
+             FROM assessment_records
+             WHERE project_id = :project_id'
+        );
+        $stmt->execute(['project_id' => (int) $project['id']]);
+        $summary = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $labelsStmt = $this->pdo()->prepare(
+            'SELECT label, COUNT(*) AS total
+             FROM assessment_records
+             WHERE project_id = :project_id
+             GROUP BY label
+             ORDER BY total DESC, label
+             LIMIT 8'
+        );
+        $labelsStmt->execute(['project_id' => (int) $project['id']]);
+
+        return [
+            'project' => $project,
+            'summary' => [
+                'total_records' => (int) ($summary['total_records'] ?? 0),
+                'total_students' => (int) ($summary['total_students'] ?? 0),
+                'latest_imported_at' => $summary['latest_imported_at'] ?? null,
+            ],
+            'labels' => $labelsStmt->fetchAll(PDO::FETCH_ASSOC),
+        ];
+    }
+
     public function gradesForStudentProject(int $userId, string $projectSlug): array
     {
         $project = $this->findProjectBySlug($projectSlug);
@@ -198,6 +309,25 @@ class AssessmentService
 
         foreach ($roles as $role) {
             if ($this->normalizeText($role) === $normalizedStudentRole) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function taskMatchesAnyRole(string $roleFilter, array $roles): bool
+    {
+        $roleFilter = trim($roleFilter);
+        if ($roleFilter === '') {
+            return true;
+        }
+
+        $normalizedRoles = array_map([$this, 'normalizeText'], $roles);
+        $filters = array_filter(array_map('trim', explode(',', $roleFilter)));
+
+        foreach ($filters as $filter) {
+            if (in_array($this->normalizeText($filter), $normalizedRoles, true)) {
                 return true;
             }
         }

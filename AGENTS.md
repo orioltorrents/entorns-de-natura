@@ -236,6 +236,8 @@ La migració `05_project_display_order.sql` es manté com a canvi no destructiu 
 
 Si la base ja existia abans de la capa de documents, cal aplicar també `database/09_document_tables_fix.sql` com a ajust no destructiu.
 
+`database/10_project_sections.sql` afegeix les seccions de projecte i els permisos per rol.
+
 Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
 
 ---
