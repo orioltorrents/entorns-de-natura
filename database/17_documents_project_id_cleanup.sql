@@ -2,6 +2,22 @@
 
 SET NAMES utf8mb4;
 
+SET @old_unique_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.statistics
+    WHERE table_schema = DATABASE()
+      AND table_name = 'documents'
+      AND index_name = 'uq_documents_project_slug'
+);
+
+SET @sql := IF(@old_unique_exists > 0,
+    'ALTER TABLE documents DROP INDEX uq_documents_project_slug',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 SET @project_id_exists := (
     SELECT COUNT(*)
     FROM information_schema.columns

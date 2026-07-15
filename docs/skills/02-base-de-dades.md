@@ -30,12 +30,13 @@ La base de dades ha de permetre gestionar:
 - capa de documents, fragments i visibilitat;
 - documents lligats a `project_academic_years`;
 - notes i imports d'avaluació lligats a `project_academic_year_id`;
+- capa de Google Workspace preparada amb taules pròpies lligades a `project_academic_years`;
 - seccions de projecte i permisos per rol;
 - taula d'analítica de visites `site_visits`.
 
 ### Encara previst
 
-- taules específiques per a Google Workspace;
+- integració real amb Google Workspace;
 - taules de rúbriques i notes definitives;
 - possibles extensions de visibilitat i historial si calen més endavant.
 
@@ -146,6 +147,27 @@ database/schema.sql
   -> 04_assessment_structure_tables.sql
   -> 06_project_assets.sql
   -> 07_task_resources.sql
+  -> 08_document_tables.sql
+  -> 10_project_sections.sql
+  -> 11_roles_split.sql
+  -> 12_project_class_assignments.sql
+  -> 13_project_academic_years.sql
+  -> 14_project_class_assignments_project_year_link.sql
+  -> 15_documents_project_year_link.sql
+  -> 16_project_class_assignments_cleanup.sql
+  -> 17_documents_project_id_cleanup.sql
+  -> 18_assessment_records_project_id_cleanup.sql
+  -> 19_documents_composite_read_index.sql
+  -> 20_assessment_records_user_source_index.sql
+  -> 21_documents_composite_read_index_title.sql
+  -> 22_document_indexes_cleanup.sql
+  -> 23_project_sections_indexes_cleanup.sql
+  -> 24_assessment_project_year_phases.sql
+  -> 25_assessment_project_year_phase_tasks.sql
+  -> 26_assessment_sources_project_year_link.sql
+  -> 27_assessment_sources_project_id_cleanup.sql
+  -> 28_assessment_index_cleanup.sql
+  -> 29_google_workspace_tables.sql
 ```
 
 La migració `05_project_display_order.sql` es manté només per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja existeix a la base.
@@ -347,6 +369,12 @@ Norma clau:
 - la clau recomanada és `project_academic_year_id + slug`;
 - evita dependre del projecte base per determinar la unitat del document.
 
+Quan usar cada una:
+
+- `projects`: informació estable i compartida del projecte;
+- `project_academic_years`: dades que canvien per curs o edició;
+- si la consulta necessita saber quin curs és actiu o quin context d'aula hi ha, parteix de `project_academic_years`.
+
 ## Avaluació
 
 Taules:
@@ -376,6 +404,12 @@ Norma clau:
 - `projects` és el catàleg base del projecte;
 - `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
 - si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
+
+### Quan `project_id` és correcte
+
+- `project_id` és correcte quan la relació apunta al catàleg base del projecte, com `project_translations`, `project_asset_links` o altres relacions compartides per totes les edicions;
+- si la dada varia per curs, edició o context d'aula, cal usar `project_academic_year_id` o una taula pont equivalent;
+- en documents, imports i avaluació, `project_id` només s'ha de conservar com a dada d'origen o de migració, no com a clau funcional.
 
 ---
 
@@ -612,9 +646,9 @@ Això és especialment útil per:
 
 ---
 
-## Taules previstes per Google
+## Google Workspace
 
-Encara no implementades:
+Taules:
 
 ```text
 google_sources
@@ -623,6 +657,12 @@ synced_sheet_rows
 google_sync_runs
 google_sync_errors
 ```
+
+Norma clau:
+
+- la unitat funcional és `project_academic_years` quan el contingut és contextual;
+- `google_sources` i els resultats sincronitzats han d'anar lligats a `project_academic_year_id`;
+- no publicar dades directament des de Google sense validació i sense passar per la BD.
 
 ---
 
@@ -649,3 +689,11 @@ La base de dades ha de guardar dades estructurades, segures i relacionades.
 No s’ha de copiar literalment l’estructura d’un Google Sheet si no encaixa amb el model de l’aplicació.
 
 Els Google Sheets poden ser font d’importació, però la web ha de treballar amb dades validades dins MySQL/MariaDB.
+
+## Validació de coherència
+
+Després de canvis d'esquema, executa `scripts/check-schema-coherence.php` per detectar:
+
+- camps legacy que encara no s'han eliminat;
+- relacions mal situades;
+- uniques i índexs que han de seguir existint.

@@ -48,6 +48,8 @@ Google és l’espai d’edició del professorat.
 
 La base de dades és l’espai controlat des d’on la web mostra informació.
 
+`project_id` continua sent útil per al catàleg base del projecte, però quan el contingut depèn d'un curs o d'una edició concreta cal partir de `project_academic_year_id`.
+
 Quan un contingut tingui diferents nivells de visibilitat, la recomanació és classificar-lo per context i no publicar directament el document original sense control.
 
 ---
@@ -201,7 +203,7 @@ observacions de professorat
 
 ---
 
-## Taules previstes
+## Taules existents
 
 ```text
 google_sources
@@ -215,13 +217,12 @@ google_sync_errors
 
 ## `google_sources`
 
-Registra documents o fulls de Google vinculats al projecte o a una edició concreta de projecte.
+Registra documents o fulls de Google vinculats a una edició concreta de projecte.
 
-Camps previstos:
+Camps:
 
 ```text
 id
-project_id
 project_academic_year_id
 source_type
 google_file_id
@@ -281,12 +282,11 @@ disabled
 
 Guarda contingut processat de Google Docs.
 
-Camps previstos:
+Camps:
 
 ```text
 id
 google_source_id
-project_id
 project_academic_year_id
 language_code
 title
@@ -296,7 +296,7 @@ version_hash
 synced_at
 ```
 
-Si el document correspon a una edició concreta, millor persistir també `project_academic_year_id` i fer servir aquesta clau per mostrar-lo.
+La clau funcional ha de ser `google_source_id + language_code`, i la dada ha d'anar lligada a `project_academic_year_id`.
 
 ---
 
@@ -304,11 +304,12 @@ Si el document correspon a una edició concreta, millor persistir també `projec
 
 Guarda files importades de Google Sheets.
 
-Camps previstos:
+Camps:
 
 ```text
 id
 google_source_id
+project_academic_year_id
 external_id
 row_number
 row_data_json
@@ -317,7 +318,7 @@ is_active
 synced_at
 ```
 
-Aquesta taula pot funcionar com a zona intermèdia abans de transformar les dades cap a taules finals.
+Aquesta taula es pot usar com a zona intermèdia abans de transformar les dades cap a taules finals.
 
 ---
 
@@ -325,11 +326,12 @@ Aquesta taula pot funcionar com a zona intermèdia abans de transformar les dade
 
 Registra cada execució de sincronització.
 
-Camps previstos:
+Camps:
 
 ```text
 id
 google_source_id
+project_academic_year_id
 started_by_user_id
 started_at
 finished_at
@@ -342,7 +344,7 @@ errors_count
 message
 ```
 
-Estats previstos:
+Estats:
 
 ```text
 pending
@@ -358,11 +360,12 @@ failed
 
 Registra errors de sincronització.
 
-Camps previstos:
+Camps:
 
 ```text
 id
-sync_run_id
+google_sync_run_id
+project_academic_year_id
 row_number
 field_name
 error_message
@@ -408,6 +411,8 @@ Abans d’importar dades d’un Sheet cal validar:
 - relació amb classes;
 - dades buides;
 - formats incorrectes.
+
+Per a contingut contextual, la validació ha de partir de `project_academic_year_id`.
 
 ---
 

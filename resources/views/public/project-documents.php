@@ -39,7 +39,9 @@ $languagePrefix = getLanguage();
                 </div>
                 <p><strong>Slug:</strong> <?= htmlspecialchars((string) $document['slug'], ENT_QUOTES, 'UTF-8') ?></p>
                 <p><strong>Visibilitat base:</strong> <?= htmlspecialchars((string) $document['default_visibility'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p><strong>Notes:</strong> <?= htmlspecialchars((string) ($document['notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if (!empty($context['is_admin']) || !empty($context['is_teacher']) || !empty($context['is_assigned_teacher'])): ?>
+                    <p><strong>Notes:</strong> <?= htmlspecialchars((string) ($document['notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
 
                 <?php if (!empty($document['sources'])): ?>
                     <h3>Fonts</h3>

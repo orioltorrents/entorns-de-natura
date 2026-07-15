@@ -18,6 +18,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - fitxa pública de projecte amb selecció d'asset i bloc contextual de notes per alumnat autenticat;
 - login bàsic amb sessió, CSRF i control de rols;
 - analítica de visites a `site_visits` i panell d'administració amb estadístiques;
+- capa de Google Workspace amb taules pròpies lligades a `project_academic_years`;
 - CSS actiu a `public/assets/css/styles.css` i JavaScript actiu a `public/assets/js/scripts.js`;
 - carpeta d'assets real amb logos de projectes, col·laboradors i eines.
 
@@ -26,7 +27,6 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - sistema de rutes més formal i escalable que el `switch` actual;
 - ampliació de rutes multidioma a `es` i `en`;
 - sincronització real amb Google Docs i Google Sheets;
-- taules específiques per a fonts de Google i sincronitzacions;
 - rúbriques, notes completes i observacions d'aula;
 - refinament del model de visibilitat per context d'accés;
 - possible retirada definitiva de fitxers temporals o històrics, com `public/test-db.php`.
@@ -56,6 +56,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `project_sections`, `project_section_roles`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `project_academic_year_phases`, `project_academic_year_phase_tasks`, `assessment_supports`, `assessment_task_resources`;
+- `google_sources`, `synced_documents`, `synced_sheet_rows`, `google_sync_runs`, `google_sync_errors`;
 - `settings`;
 - `site_visits`.
 
@@ -63,15 +64,17 @@ Aquest document separa el que ja està implementat del que encara és previst.
 
 - `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 - `database/schema.sql` és el mestre de reconstrucció i apunta a les parts actuals de l'esquema.
+- `scripts/check-schema-coherence.php` valida camps legacy i relacions mal situades després de canvis d'esquema.
 - si la base ja existia abans d'aquesta capa, també cal aplicar `database/09_document_tables_fix.sql`.
 - per deixar els documents completament lligats a l'edició, també cal aplicar `database/17_documents_project_id_cleanup.sql` si la base ve d'una versió anterior.
 - si la base ve d'una versió anterior, `assessment_records.project_id` també s'ha d'eliminar amb `database/18_assessment_records_project_id_cleanup.sql`.
+- `project_id` continua sent correcte en relacions de catàleg del projecte base, com `project_translations`, `project_asset_links` i `project_sections`; el que s'elimina és l'ús de `project_id` com a context de document, import o edició.
 
 ### Documents
 
 - els documents van lligats a `project_academic_years`, no directament a `projects`;
 - la clau funcional recomanada és `project_academic_year_id + slug`;
-- `project_id` es considera herència històrica i s'està eliminant del model.
+- `project_id` és correcte per al catàleg base del projecte, però en documents i avaluació es considera herència històrica i s'està eliminant del model.
 
 ### Avaluació
 
@@ -82,6 +85,8 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `assessment_sources` i `assessment_import_runs` treballen per `project_academic_year_id`;
 - les notes i imports s'aïllen per edició, no només per projecte;
 - `assessment_records` es llegeix a través de `assessment_sources`.
+- la vista pública de notes és només per alumnat autenticat;
+- les notes de document són internes per defecte i no s'han de mostrar a visitants ni alumnat.
 
 ### Regla del model
 
@@ -89,9 +94,15 @@ Aquest document separa el que ja està implementat del que encara és previst.
 - `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
 - si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
 
+### Quan usar cada una
+
+- `projects`: nom, slug, ordre, activació i relacions que són comunes a totes les edicions;
+- `project_academic_years`: documents, imports, notes, assignacions, visibilitat i qualsevol dada que pugui variar per curs;
+- si tens dubte, pregunta't si la dada canviaria l'any que ve sense canviar el projecte base; si la resposta és sí, usa `project_academic_years`.
+
 ### Encara previst
 
-- taules de Google Workspace més completes;
+- integració real amb Google Docs i Google Sheets;
 - estructures de rúbriques i notes definitives;
 - ampliacions de visibilitat per context si calen més endavant.
 

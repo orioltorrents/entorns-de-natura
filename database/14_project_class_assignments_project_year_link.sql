@@ -46,22 +46,6 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
-SET @old_unique_exists := (
-    SELECT COUNT(*)
-    FROM information_schema.statistics
-    WHERE table_schema = DATABASE()
-      AND table_name = 'project_class_assignments'
-      AND index_name = 'uq_project_class_year'
-);
-
-SET @sql := IF(@old_unique_exists > 0,
-    'ALTER TABLE project_class_assignments DROP INDEX uq_project_class_year',
-    'SELECT 1'
-);
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
 SET @project_academic_year_fk_exists := (
     SELECT COUNT(*)
     FROM information_schema.table_constraints

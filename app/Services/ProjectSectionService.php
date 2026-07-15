@@ -72,6 +72,10 @@ class ProjectSectionService
 
     private function canViewSection(array $section, array $context): bool
     {
+        if (($section['section_key'] ?? '') === 'notes' && !$context['is_student']) {
+            return false;
+        }
+
         if ($context['is_admin']) {
             return true;
         }

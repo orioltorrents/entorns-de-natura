@@ -6,7 +6,7 @@ SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS assessment_sources (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_id INT UNSIGNED NOT NULL,
+    project_academic_year_id BIGINT UNSIGNED NOT NULL,
     name VARCHAR(255) NOT NULL,
     source_type ENUM('csv', 'google_sheet') NOT NULL DEFAULT 'csv',
     source_reference VARCHAR(500) NULL,
@@ -17,17 +17,16 @@ CREATE TABLE IF NOT EXISTS assessment_sources (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_assessment_sources_project_name (project_id, name),
-    KEY idx_assessment_sources_project_id (project_id),
-    CONSTRAINT fk_assessment_sources_project
-        FOREIGN KEY (project_id) REFERENCES projects (id)
+    UNIQUE KEY uq_assessment_sources_project_academic_year_name (project_academic_year_id, name),
+    CONSTRAINT fk_assessment_sources_project_academic_year
+        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS assessment_import_runs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_id INT UNSIGNED NOT NULL,
+    project_academic_year_id BIGINT UNSIGNED NOT NULL,
     source_id BIGINT UNSIGNED NULL,
     filename VARCHAR(500) NULL,
     status ENUM('running', 'success', 'partial', 'failed') NOT NULL DEFAULT 'running',
@@ -38,11 +37,10 @@ CREATE TABLE IF NOT EXISTS assessment_import_runs (
     finished_at DATETIME NULL,
     message TEXT NULL,
     PRIMARY KEY (id),
-    KEY idx_assessment_import_runs_project_id (project_id),
+    KEY idx_assessment_import_runs_project_academic_year_started (project_academic_year_id, started_at),
     KEY idx_assessment_import_runs_source_id (source_id),
-    KEY idx_assessment_import_runs_started_at (started_at),
-    CONSTRAINT fk_assessment_import_runs_project
-        FOREIGN KEY (project_id) REFERENCES projects (id)
+    CONSTRAINT fk_assessment_import_runs_project_academic_year
+        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT fk_assessment_import_runs_source

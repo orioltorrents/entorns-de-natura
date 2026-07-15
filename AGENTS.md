@@ -212,6 +212,11 @@ assessment_phases
 assessment_tasks
 project_academic_year_phases
 project_academic_year_phase_tasks
+google_sources
+synced_documents
+synced_sheet_rows
+google_sync_runs
+google_sync_errors
 assessment_supports
 assessment_task_resources
 roles
@@ -240,11 +245,16 @@ database/schema.sql
   -> 24_assessment_project_year_phases.sql
   -> 25_assessment_project_year_phase_tasks.sql
   -> 26_assessment_sources_project_year_link.sql
+  -> 27_assessment_sources_project_id_cleanup.sql
+  -> 28_assessment_index_cleanup.sql
+  -> 29_google_workspace_tables.sql
 ```
 
 La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
 
-`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25` i `26` formen l'esquema actual.
+`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25`, `26`, `27`, `28` i `29` formen l'esquema actual.
+
+`scripts/check-schema-coherence.php` s'ha d'executar després de canvis d'esquema per detectar camps legacy, relacions mal situades i índexs o uniques esperats.
 
 Si la base ja existia abans de la capa de documents, cal aplicar també `database/09_document_tables_fix.sql` com a ajust no destructiu.
 
@@ -258,10 +268,18 @@ Regla del model:
 - `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
 - si una entitat canvia per edició, no s'ha de resoldre només amb `projects`;
 
+Quan usar cada una:
+
+- `projects`: nom, slug, ordre, activació i relacions comunes a totes les edicions;
+- `project_academic_years`: documents, imports, notes, assignacions i visibilitat que poden variar per curs;
+- si una dada pot canviar l'any següent sense canviar el projecte base, ha d'anar a `project_academic_years`.
+
 - `documents` han d'anar per `project_academic_year_id`;
 - `assessment_sources` i `assessment_import_runs` han d'anar per `project_academic_year_id`;
 - `assessment_phases` i `assessment_tasks` són definició base;
 - `project_academic_year_phases` i `project_academic_year_phase_tasks` governen visibilitat i ordre per curs.
+- la vista pública de notes és només per alumnat autenticat;
+- les notes de document són internes per defecte i no s'han de mostrar a visitants ni alumnat.
 
 ---
 
@@ -643,7 +661,7 @@ Base de dades MySQL/MariaDB
 Web pública / alumnat / professorat / administració
 ```
 
-Taules previstes:
+Taules:
 
 ```text
 google_sources
@@ -655,11 +673,17 @@ google_sync_errors
 
 Funció prevista:
 
-- `google_sources`: registrar documents o fulls de Google vinculats a projectes.
+- `google_sources`: registrar documents o fulls de Google lligats a una edició concreta de projecte.
 - `synced_documents`: guardar contingut processat de Google Docs.
 - `synced_sheet_rows`: guardar files importades de Google Sheets.
 - `google_sync_runs`: registrar execucions de sincronització.
 - `google_sync_errors`: registrar errors de sincronització.
+
+Regla:
+
+- `project_id` és correcte per a relacions de catàleg del projecte base, com `project_translations` o `project_asset_links`;
+- quan el contingut sigui contextual, la font i la sincronització han d'anar lligades a `project_academic_year_id`;
+- si un document o un Sheet pot canviar per curs, no s'ha de modelar només amb `project_id`.
 
 Normes:
 

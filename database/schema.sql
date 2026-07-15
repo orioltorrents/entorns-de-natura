@@ -8,8 +8,8 @@
 -- - `04_assessment_structure_tables.sql` afegeix fases i tasques visibles.
 -- - `24_assessment_project_year_phases.sql` vincula fases a edicions de projecte.
 -- - `25_assessment_project_year_phase_tasks.sql` vincula tasques a fases per edició.
--- - `26_assessment_sources_project_year_link.sql` vincula fonts i imports d'avaluació a edicions de projecte.
--- - `27_assessment_sources_project_id_cleanup.sql` elimina els camps legacy `project_id` de la capa d'avaluació.
+-- - `28_assessment_index_cleanup.sql` neteja índexs massa genèrics de la capa d'avaluació.
+-- - `29_google_workspace_tables.sql` afegeix la capa de Google Workspace lligada a `project_academic_years`.
 -- - `06_project_assets.sql` afegeix assets, logos, apps i softwares reutilitzables.
 -- - `07_task_resources.sql` afegeix bastides, ajudes i recursos per a tasques.
 -- - `08_document_tables.sql` afegeix documents, fragments i visibilitat.
@@ -29,6 +29,8 @@
 -- - `23_project_sections_indexes_cleanup.sql` neteja índexs redundants de seccions.
 -- - `05_project_display_order.sql` és una migració no destructiva per a BD existents;
 --   no cal executar-la en una reconstrucció neta perquè l'ordre ja queda definit a la base.
+-- - `26_assessment_sources_project_year_link.sql` enllaça les fonts d'avaluació amb project_academic_years.
+-- - `27_assessment_sources_project_id_cleanup.sql` elimina el camp legacy project_id de l'avaluació.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -55,3 +57,5 @@ SOURCE database/24_assessment_project_year_phases.sql
 SOURCE database/25_assessment_project_year_phase_tasks.sql
 SOURCE database/26_assessment_sources_project_year_link.sql
 SOURCE database/27_assessment_sources_project_id_cleanup.sql
+SOURCE database/28_assessment_index_cleanup.sql
+SOURCE database/29_google_workspace_tables.sql

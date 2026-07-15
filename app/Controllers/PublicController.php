@@ -156,17 +156,11 @@ class PublicController
         }
 
         $hasStudentRole = $this->authService->hasRole('student');
-        $hasTeacherRole = $this->authService->hasRole('teacher');
-        $hasAdminRole = $this->authService->hasRole('admin');
 
-        if (!$hasStudentRole && !$hasTeacherRole && !$hasAdminRole) {
+        if (!$hasStudentRole) {
             return null;
         }
 
-        if ($hasStudentRole && !$hasTeacherRole && !$hasAdminRole) {
-            return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
-        }
-
-        return $this->assessmentService->projectNotesOverview($slug);
+        return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
     }
 }
