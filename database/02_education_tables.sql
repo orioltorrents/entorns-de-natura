@@ -3,7 +3,6 @@
 -- Utilitzar com a referència oficial per recrear o revisar
 -- l’estructura del projecte.
 --
--- Taules totals del projecte: 24
 -- Aquest fitxer conté les taules base (16).
 -- Les taules d'avaluació i assets complementaris viuen a:
 -- - database/03_assessment_tables.sql
@@ -23,7 +22,6 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url VARCHAR(500) NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     last_login_at TIMESTAMP NULL DEFAULT NULL,
-    academic_role VARCHAR(100) NULL,
     gender VARCHAR(50) NULL,
     article VARCHAR(255) NULL,
     inaturalist_user_login VARCHAR(255) NULL,
@@ -36,15 +34,6 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS student_profiles (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id INT UNSIGNED NOT NULL,
-    class_id INT UNSIGNED NULL,
-    class_group VARCHAR(100) NULL,
-    project VARCHAR(255) NULL,
-    team_number INT UNSIGNED NULL,
-    group_number INT UNSIGNED NULL,
-    group_code_1t VARCHAR(100) NULL,
-    members_count INT UNSIGNED NULL,
-    external_id VARCHAR(100) NULL,
-    trimester VARCHAR(100) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -53,10 +42,6 @@ CREATE TABLE IF NOT EXISTS student_profiles (
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT fk_student_profiles_class
-        FOREIGN KEY (class_id) REFERENCES classes (id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS web_roles (
@@ -139,7 +124,7 @@ CREATE TABLE IF NOT EXISTS classes (
     code VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_classes_year_name (academic_year_id, name),
+    UNIQUE KEY uq_classes_year_name (academic_year_id, class_name),
     CONSTRAINT fk_classes_academic_year
         FOREIGN KEY (academic_year_id) REFERENCES academic_years (id)
         ON DELETE CASCADE
@@ -153,6 +138,8 @@ CREATE TABLE IF NOT EXISTS class_members (
     joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_class_members (class_id, user_id),
+    UNIQUE KEY uq_class_members_user (user_id),
+    KEY idx_class_members_class (class_id),
     CONSTRAINT fk_class_members_class
         FOREIGN KEY (class_id) REFERENCES classes (id)
         ON DELETE CASCADE
@@ -160,6 +147,38 @@ CREATE TABLE IF NOT EXISTS class_members (
     CONSTRAINT fk_class_members_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS class_member_history (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id INT UNSIGNED NOT NULL,
+    previous_class_id INT UNSIGNED NULL,
+    new_class_id INT UNSIGNED NULL,
+    academic_year_id INT UNSIGNED NOT NULL,
+    change_source VARCHAR(50) NOT NULL DEFAULT 'import',
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    note VARCHAR(255) NULL,
+    PRIMARY KEY (id),
+    KEY idx_class_member_history_user_id (user_id),
+    KEY idx_class_member_history_academic_year_id (academic_year_id),
+    KEY idx_class_member_history_previous_class_id (previous_class_id),
+    KEY idx_class_member_history_new_class_id (new_class_id),
+    CONSTRAINT fk_class_member_history_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_class_member_history_previous_class
+        FOREIGN KEY (previous_class_id) REFERENCES classes (id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_class_member_history_new_class
+        FOREIGN KEY (new_class_id) REFERENCES classes (id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_class_member_history_academic_year
+        FOREIGN KEY (academic_year_id) REFERENCES academic_years (id)
+        ON DELETE RESTRICT
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -302,22 +321,22 @@ INSERT INTO academic_years (name, start_year, end_year, is_current)
 SELECT '2025-2026', 2025, 2026, 1
 WHERE NOT EXISTS (SELECT 1 FROM academic_years WHERE name = '2025-2026');
 
-INSERT INTO classes (academic_year_id, name, code)
+INSERT INTO classes (academic_year_id, class_name, class_code)
 SELECT ay.id, '4ESO A', '4ESO-A'
 FROM academic_years ay
 WHERE ay.name = '2025-2026'
   AND NOT EXISTS (
       SELECT 1 FROM classes c
-      WHERE c.academic_year_id = ay.id AND c.name = '4ESO A'
+      WHERE c.academic_year_id = ay.id AND c.class_name = '4ESO A'
   );
 
-INSERT INTO classes (academic_year_id, name, code)
+INSERT INTO classes (academic_year_id, class_name, class_code)
 SELECT ay.id, '4ESO B', '4ESO-B'
 FROM academic_years ay
 WHERE ay.name = '2025-2026'
   AND NOT EXISTS (
       SELECT 1 FROM classes c
-      WHERE c.academic_year_id = ay.id AND c.name = '4ESO B'
+      WHERE c.academic_year_id = ay.id AND c.class_name = '4ESO B'
   );
 
 INSERT INTO settings (`key`, `value`)

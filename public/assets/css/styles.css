@@ -814,6 +814,108 @@ code {
 .admin-summary__card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
 .admin-summary__card--good { background: linear-gradient(180deg, #f8fdf5 0%, #eef7ea 100%); }
 .admin-summary__card--muted { background: linear-gradient(180deg, #fbfbfa 0%, #f3f4f1 100%); }
+.admin-import-example {
+    background: #1f2d1f;
+    border: 1px solid #35523a;
+    border-radius: 14px;
+    color: #eef6e9;
+    font-size: .84rem;
+    line-height: 1.45;
+    margin: .9rem 0 1rem;
+    overflow: auto;
+    padding: .95rem 1rem;
+}
+.admin-import-example code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+.admin-import-summary {
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: .9rem;
+}
+.admin-import-summary__item {
+    align-items: center;
+    background: #f8fbf5;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    gap: .75rem;
+    justify-content: space-between;
+    padding: .85rem 1rem;
+}
+.admin-import-summary__item strong {
+    color: var(--leaf);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+.admin-import-summary__item span {
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 600;
+    text-align: right;
+}
+.admin-team-members {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+.admin-team-member {
+    background: #f7faf4;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    padding: .55rem .7rem;
+}
+.admin-team-member strong {
+    color: var(--ink);
+    font-size: .95rem;
+}
+.admin-team-member span,
+.admin-team-member small {
+    color: var(--muted);
+    font-size: .82rem;
+}
+.admin-role-groups {
+    display: grid;
+    gap: 1rem;
+}
+.admin-role-filters {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin: .25rem 0 1rem;
+}
+.admin-role-filters label {
+    color: #47624a;
+    font-size: .9rem;
+    font-weight: 700;
+}
+.admin-role-filters select {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--ink);
+    min-width: 220px;
+    padding: .6rem .75rem;
+}
+.admin-role-group {
+    background: #fafcf7;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+}
+.admin-role-group__header {
+    margin-bottom: .75rem;
+}
+.admin-role-group .admin-collapsible__content {
+    margin-top: .35rem;
+}
 .admin-summary__icon {
     align-items: center;
     background: #eef6e9;

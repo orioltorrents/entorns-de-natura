@@ -31,6 +31,12 @@
 --   no cal executar-la en una reconstrucció neta perquè l'ordre ja queda definit a la base.
 -- - `26_assessment_sources_project_year_link.sql` enllaça les fonts d'avaluació amb project_academic_years.
 -- - `27_assessment_sources_project_id_cleanup.sql` elimina el camp legacy project_id de l'avaluació.
+-- - `30_classes_column_rename.sql` renombra els camps de `classes` a `class_name` i `class_code`.
+-- - `31_student_profiles_external_id_cleanup.sql` elimina el camp redundant `external_id` de `student_profiles`.
+-- - `32_project_teams.sql` afegeix equips i membres d'equip per projecte/curs.
+-- - `33_users_academic_role_cleanup.sql` elimina el camp legacy `academic_role` de `users`.
+-- - `34_student_profiles_cleanup.sql` redueix `student_profiles` al nucli mínim.
+-- - `35_class_member_history.sql` afegeix l'historial de canvis de classe i reforça la unicitat actual.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -59,3 +65,9 @@ SOURCE database/26_assessment_sources_project_year_link.sql
 SOURCE database/27_assessment_sources_project_id_cleanup.sql
 SOURCE database/28_assessment_index_cleanup.sql
 SOURCE database/29_google_workspace_tables.sql
+SOURCE database/30_classes_column_rename.sql
+SOURCE database/31_student_profiles_external_id_cleanup.sql
+SOURCE database/32_project_teams.sql
+SOURCE database/33_users_academic_role_cleanup.sql
+SOURCE database/34_student_profiles_cleanup.sql
+SOURCE database/35_class_member_history.sql

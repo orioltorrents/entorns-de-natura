@@ -26,8 +26,8 @@ class ProjectAssignmentService
         $sql = "
             SELECT
                 classes.id AS class_id,
-                classes.name AS class_name,
-                classes.code AS class_code,
+                classes.class_name AS class_name,
+                classes.class_code AS class_code,
                 projects.id AS project_id,
                 projects.slug,
                 projects.display_order,
@@ -47,7 +47,7 @@ class ProjectAssignmentService
                  AND project_translations.language_id = languages.id
             WHERE {$membershipTable}.user_id = :user_id
                 AND projects.is_active = 1
-            ORDER BY classes.name, projects.display_order, title
+            ORDER BY classes.class_name, projects.display_order, title
         ";
 
         $stmt = $pdo->prepare($sql);

@@ -49,13 +49,14 @@ Aquest document separa el que ja està implementat del que encara és previst.
 ### Ja present
 
 - `users`, `roles`, `user_roles`;
-- `academic_years`, `classes`, `class_members`, `class_teachers`;
+- `academic_years`, `classes`, `class_members`, `class_member_history`, `class_teachers`;
 - `projects`, `project_translations`, `project_groups`, `project_academic_years`, `project_class_assignments`;
 - `project_assets`, `project_asset_links`;
 - `documents`, `document_sources`, `document_fragments`, `document_visibility_rules`;
 - `project_sections`, `project_section_roles`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `project_academic_year_phases`, `project_academic_year_phase_tasks`, `assessment_supports`, `assessment_task_resources`;
+- `project_teams`, `project_team_members`;
 - `google_sources`, `synced_documents`, `synced_sheet_rows`, `google_sync_runs`, `google_sync_errors`;
 - `settings`;
 - `site_visits`.

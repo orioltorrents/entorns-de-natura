@@ -101,6 +101,7 @@ Llistat actual:
 academic_years
 classes
 class_members
+class_member_history
 class_teachers
 languages
 project_assets
@@ -168,6 +169,12 @@ database/schema.sql
   -> 27_assessment_sources_project_id_cleanup.sql
   -> 28_assessment_index_cleanup.sql
   -> 29_google_workspace_tables.sql
+  -> 30_classes_column_rename.sql
+  -> 31_student_profiles_external_id_cleanup.sql
+   -> 32_project_teams.sql
+   -> 33_users_academic_role_cleanup.sql
+   -> 34_student_profiles_cleanup.sql
+   -> 35_class_member_history.sql
 ```
 
 La migració `05_project_display_order.sql` es manté només per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja existeix a la base.
@@ -272,6 +279,7 @@ Funció:
 academic_years  → cursos acadèmics
 classes         → grups classe
 class_members   → alumnes dins de classes
+class_member_history → historial de canvis de classe
 class_teachers  → professorat assignat a classes
 ```
 
@@ -404,6 +412,12 @@ Norma clau:
 - `projects` és el catàleg base del projecte;
 - `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
 - si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
+
+### Equips de projecte
+
+- `project_teams` agrupa els equips per projecte i curs;
+- `project_team_members` lliga usuari, equip i rol de projecte;
+- un alumne pot tenir un equip diferent a cada projecte.
 
 ### Quan `project_id` és correcte
 

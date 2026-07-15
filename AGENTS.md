@@ -195,10 +195,13 @@ Taules existents:
 academic_years
 classes
 class_members
+class_member_history
 class_teachers
 languages
 project_academic_years
 project_class_assignments
+project_teams
+project_team_members
 project_assets
 project_asset_links
 projects
@@ -248,11 +251,23 @@ database/schema.sql
   -> 27_assessment_sources_project_id_cleanup.sql
   -> 28_assessment_index_cleanup.sql
   -> 29_google_workspace_tables.sql
+  -> 30_classes_column_rename.sql
+  -> 31_student_profiles_external_id_cleanup.sql
+   -> 32_project_teams.sql
+   -> 33_users_academic_role_cleanup.sql
+   -> 34_student_profiles_cleanup.sql
+   -> 35_class_member_history.sql
 ```
 
 La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
 
-`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25`, `26`, `27`, `28` i `29` formen l'esquema actual.
+`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25`, `26`, `27`, `28`, `29`, `30`, `31`, `32`, `33`, `34` i `35` formen l'esquema actual.
+
+Equips de projecte:
+
+- `project_teams` agrupa els equips per projecte i curs;
+- `project_team_members` lliga usuari, equip i rol de projecte;
+- un alumne pot tenir un equip diferent a cada projecte.
 
 `scripts/check-schema-coherence.php` s'ha d'executar després de canvis d'esquema per detectar camps legacy, relacions mal situades i índexs o uniques esperats.
 
@@ -389,6 +404,8 @@ Oriol Torrents
 ```
 
 `class_members` relaciona alumnes amb classes.
+
+`class_member_history` guarda els canvis de classe per alumne.
 
 `class_teachers` relaciona professorat amb classes.
 

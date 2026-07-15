@@ -499,9 +499,9 @@ class DocumentImportService
 
         $normalizedValue = $this->normalizeIdentifier($value);
 
-        $stmt = $this->pdo()->query('SELECT id, name, code FROM classes ORDER BY name');
+        $stmt = $this->pdo()->query('SELECT id, class_name, class_code FROM classes ORDER BY class_name');
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $classRow) {
-            if ($this->normalizeIdentifier((string) $classRow['name']) === $normalizedValue || $this->normalizeIdentifier((string) $classRow['code']) === $normalizedValue) {
+            if ($this->normalizeIdentifier((string) $classRow['class_name']) === $normalizedValue || $this->normalizeIdentifier((string) $classRow['class_code']) === $normalizedValue) {
                 return (int) $classRow['id'];
             }
         }

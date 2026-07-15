@@ -457,19 +457,16 @@ class AssessmentService
             $metadata['group_name'] = (string) $profileMetadata['class_group'];
         }
 
-        if (empty($metadata['team_code']) && !empty($profileMetadata['group_code_1t'])) {
-            $metadata['team_code'] = (string) $profileMetadata['group_code_1t'];
-        }
-
         return $metadata;
     }
 
     private function studentProfileMetadata(int $userId): array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT class_group, group_code_1t
-             FROM student_profiles
-             WHERE user_id = :user_id
+            'SELECT c.class_name AS class_group
+             FROM class_members cm
+             INNER JOIN classes c ON c.id = cm.class_id
+             WHERE cm.user_id = :user_id
              LIMIT 1'
         );
         $stmt->execute(['user_id' => $userId]);

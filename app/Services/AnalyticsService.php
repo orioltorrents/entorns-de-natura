@@ -56,15 +56,15 @@ class AnalyticsService
         )->fetchColumn();
 
         $classStats = $pdo->query(
-            'SELECT c.id, c.name,
+            'SELECT c.id, c.class_name,
                     COUNT(DISTINCT cm.user_id) AS total_students,
                     SUM(CASE WHEN u.last_login_at IS NOT NULL THEN 1 ELSE 0 END) AS connected_students,
                     SUM(CASE WHEN u.last_login_at IS NULL THEN 1 ELSE 0 END) AS pending_students
              FROM classes c
              LEFT JOIN class_members cm ON cm.class_id = c.id
              LEFT JOIN users u ON u.id = cm.user_id
-             GROUP BY c.id, c.name
-             ORDER BY c.name'
+             GROUP BY c.id, c.class_name
+             ORDER BY c.class_name'
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $deviceStats = $pdo->query(

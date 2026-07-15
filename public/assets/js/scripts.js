@@ -256,4 +256,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateStudentCount(table);
     });
+
+    document.querySelectorAll('[data-role-filter]').forEach((select) => {
+        const groups = Array.from(document.querySelectorAll('[data-role-group]'));
+        if (groups.length === 0) return;
+
+        const storageKey = 'admin-role-filter';
+        const normalize = (value) => normalizeFilterValue(value).replace(/\s+/g, ' ');
+
+        const applyFilter = (value) => {
+            const normalizedValue = normalize(value);
+            const showAll = normalizedValue === '' || normalizedValue === 'all';
+
+            groups.forEach((group) => {
+                const groupName = normalize(group.getAttribute('data-role-name'));
+                group.hidden = !showAll && groupName !== normalizedValue;
+            });
+        };
+
+        const storedValue = window.localStorage.getItem(storageKey);
+        if (storedValue) {
+            select.value = storedValue;
+            applyFilter(storedValue);
+        } else {
+            applyFilter(select.value);
+        }
+
+        select.addEventListener('change', () => {
+            const value = select.value;
+            window.localStorage.setItem(storageKey, value);
+            applyFilter(value);
+        });
+    });
 });

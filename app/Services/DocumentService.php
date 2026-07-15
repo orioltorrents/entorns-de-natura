@@ -250,7 +250,7 @@ class DocumentService
 
         $placeholders = implode(',', array_fill(0, count($documentIds), '?'));
         $stmt = $this->pdo()->prepare(
-             "SELECT dvr.id, dvr.document_id, dvr.fragment_id, dvr.rule_fingerprint, dvr.visibility_type, dvr.role_id, wr.name AS role_name, dvr.project_role_id, pr.name AS project_role_name, dvr.class_id, c.name AS class_name, dvr.allow_view, dvr.allow_edit, dvr.priority, dvr.is_active
+             "SELECT dvr.id, dvr.document_id, dvr.fragment_id, dvr.rule_fingerprint, dvr.visibility_type, dvr.role_id, wr.name AS role_name, dvr.project_role_id, pr.name AS project_role_name, dvr.class_id, c.class_name AS class_name, dvr.allow_view, dvr.allow_edit, dvr.priority, dvr.is_active
               FROM document_visibility_rules dvr
               LEFT JOIN web_roles wr ON wr.id = dvr.role_id
               LEFT JOIN project_roles pr ON pr.id = dvr.project_role_id

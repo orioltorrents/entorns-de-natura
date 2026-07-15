@@ -79,6 +79,12 @@ database/schema.sql
   -> 27_assessment_sources_project_id_cleanup.sql
   -> 28_assessment_index_cleanup.sql
   -> 29_google_workspace_tables.sql
+  -> 30_classes_column_rename.sql
+  -> 31_student_profiles_external_id_cleanup.sql
+   -> 32_project_teams.sql
+   -> 33_users_academic_role_cleanup.sql
+   -> 34_student_profiles_cleanup.sql
+   -> 35_class_member_history.sql
 ```
 
 `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja ve definit a la base.
@@ -93,6 +99,7 @@ database/schema.sql
 - `academic_years`
 - `classes`
 - `class_members`
+- `class_member_history`
 - `class_teachers`
 
 ### Projectes
@@ -102,6 +109,11 @@ database/schema.sql
 - `project_groups`
 - `project_academic_years`
 - `project_class_assignments`
+
+### Equips de projecte
+
+- `project_teams`
+- `project_team_members`
 
 ### Assets i recursos
 

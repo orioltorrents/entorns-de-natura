@@ -12,6 +12,9 @@ $errors = [];
 $warnings = [];
 
 $editionScopedTables = [
+    'users' => [
+        'forbiddenColumns' => ['academic_role'],
+    ],
     'assessment_sources' => [
         'requiredColumns' => ['project_academic_year_id'],
         'forbiddenColumns' => ['project_id'],
@@ -102,6 +105,79 @@ $editionScopedTables = [
             'referencedColumn' => 'id',
         ]],
         'indexes' => [['google_sync_run_id'], ['project_academic_year_id'], ['row_number']],
+    ],
+    'project_teams' => [
+        'requiredColumns' => ['project_academic_year_id', 'team_code'],
+        'fks' => [[
+            'column' => 'project_academic_year_id',
+            'referencedTable' => 'project_academic_years',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['project_academic_year_id', 'team_code']],
+        'indexes' => [['project_academic_year_id', 'is_active', 'display_order']],
+    ],
+    'project_team_members' => [
+        'requiredColumns' => ['project_team_id', 'user_id', 'project_role_id'],
+        'fks' => [[
+            'column' => 'project_team_id',
+            'referencedTable' => 'project_teams',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'user_id',
+            'referencedTable' => 'users',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'project_role_id',
+            'referencedTable' => 'project_roles',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['project_team_id', 'user_id']],
+        'indexes' => [['user_id'], ['project_role_id']],
+    ],
+    'class_members' => [
+        'requiredColumns' => ['class_id', 'user_id'],
+        'fks' => [[
+            'column' => 'class_id',
+            'referencedTable' => 'classes',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'user_id',
+            'referencedTable' => 'users',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['class_id', 'user_id'], ['user_id']],
+        'indexes' => [['class_id']],
+    ],
+    'class_member_history' => [
+        'requiredColumns' => ['user_id', 'previous_class_id', 'new_class_id', 'academic_year_id'],
+        'fks' => [[
+            'column' => 'user_id',
+            'referencedTable' => 'users',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'previous_class_id',
+            'referencedTable' => 'classes',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'new_class_id',
+            'referencedTable' => 'classes',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'academic_year_id',
+            'referencedTable' => 'academic_years',
+            'referencedColumn' => 'id',
+        ]],
+        'indexes' => [['user_id'], ['academic_year_id'], ['previous_class_id'], ['new_class_id']],
+    ],
+    'student_profiles' => [
+        'requiredColumns' => ['user_id'],
+        'forbiddenColumns' => ['class_id', 'class_group', 'project', 'team_number', 'group_number', 'group_code_1t', 'members_count', 'trimester', 'external_id'],
+        'fks' => [[
+            'column' => 'user_id',
+            'referencedTable' => 'users',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['user_id']],
     ],
 ];
 
