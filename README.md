@@ -4,6 +4,15 @@
 
 Aquest document separa el que ja està implementat del que encara és previst.
 
+## Documentació canònica
+
+- `AGENTS.md`: criteris generals, arquitectura, seguretat i normes de treball.
+- `database/README.md`: esquema i procediments de base de dades.
+- `docs/skills/`: procediments detallats per àrea.
+- `database/schema.sql`: autoritat executable per reconstruir una base de dades neta.
+
+Aquest `README.md` és la introducció breu del projecte. Els detalls s'han de mantenir a la font especialitzada corresponent per evitar duplicacions.
+
 ## Estat actual
 
 ### Implementat
@@ -46,6 +55,8 @@ Aquest document separa el que ja està implementat del que encara és previst.
 
 ## Base de dades
 
+El nom canònic de la base de dades local és `entorns_de_natura`. La connexió llegeix el valor efectiu de `DB_NAME` a `.env`.
+
 ### Ja present
 
 - `users`, `roles`, `user_roles`;
@@ -64,7 +75,7 @@ Aquest document separa el que ja està implementat del que encara és previst.
 ### Observació
 
 - `site_visits` es garanteix des del servei d'analítica si encara no existeix.
-- `database/schema.sql` és el mestre de reconstrucció i apunta a les parts actuals de l'esquema.
+- `database/schema.sql` és l'autoritat executable per reconstruir una base neta; `database/README.md` documenta el procediment.
 - `scripts/check-schema-coherence.php` valida camps legacy i relacions mal situades després de canvis d'esquema.
 - si la base ja existia abans d'aquesta capa, també cal aplicar `database/09_document_tables_fix.sql`.
 - per deixar els documents completament lligats a l'edició, també cal aplicar `database/17_documents_project_id_cleanup.sql` si la base ve d'una versió anterior.

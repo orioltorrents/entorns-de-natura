@@ -15,12 +15,13 @@ El projecte gestionarà dades d’alumnat i professorat, per tant la seguretat �
 - regeneració d'identificador de sessió en iniciar sessió;
 - token CSRF al formulari de login;
 - comprovació de rols amb `AuthService::requireRole()`;
-- logout i comprovació d'usuari actiu;
+- logout i comprovació d'usuari actiu en iniciar sessió;
 - fitxa pública de projecte amb bloc contextual de notes per alumnat autenticat.
 
 ### Encara previst
 
 - login amb Google;
+- CSRF a la resta d'operacions sensibles;
 - refinament del context de visibilitat per professorat assignat vs visitant;
 - control més fi de seccions privades dins de la fitxa de projecte;
 - reforç progressiu de la capa d'auditoria i permisos.
@@ -31,17 +32,21 @@ El projecte gestionarà dades d’alumnat i professorat, per tant la seguretat �
 
 ```text
 users
-roles
-user_roles
+web_roles
+user_web_roles
+project_roles
 ```
+
+`web_roles` i `user_web_roles` controlen l'accés general a la web. `project_roles` descriu funcions dins d'equips o projectes i no substitueix els permisos web.
 
 ---
 
-## Rols previstos
+## Rols disponibles
 
 ```text
 student
 teacher
+guest_teacher
 coordinator
 admin
 ```
@@ -71,7 +76,7 @@ teacher     → professor
 student     → alumne
 ```
 
-A la base de dades és preferible assignar rols explícits.
+A la base de dades és preferible assignar rols web explícits a `user_web_roles`.
 
 Exemples:
 
@@ -87,7 +92,7 @@ Sílvia         → student
 
 ## Login
 
-Inicialment es pot crear login bàsic amb email i contrasenya.
+El login bàsic amb email i contrasenya ja està implementat.
 
 Més endavant es preveu login amb Google.
 
@@ -129,14 +134,14 @@ password_hash = NULL
 
 ## Login amb Google
 
-Encara no està implementat.
+El login amb Google encara no està implementat.
 
 Quan s’implementi:
 
 - no posar claus de Google al JavaScript;
 - no publicar secrets;
 - guardar `google_id` a `users`;
-- continuar fent servir `user_roles` per decidir permisos;
+- continuar fent servir `user_web_roles` per decidir permisos web;
 - no confiar només en el correu sense validar-lo correctament.
 
 ---
@@ -158,6 +163,26 @@ user_id
 email
 roles
 ```
+
+Cookies de sessió actuals:
+
+```text
+lifetime = 0
+path = /
+secure = true només sota HTTPS
+httponly = true
+samesite = Lax
+```
+
+El sistema regenera l'identificador de sessió en iniciar sessió. Ara mateix, `AuthService::check()` comprova la sessió guardada, però no revalida a cada petició si l'usuari continua actiu o si li han canviat els rols.
+
+---
+
+## CSRF
+
+El token CSRF està implementat al formulari de login.
+
+No s'ha de documentar com a protecció general del sistema: les altres operacions sensibles encara necessiten reforç específic.
 
 ---
 
@@ -198,7 +223,7 @@ is_active
 
 ha de controlar si un usuari pot accedir.
 
-Si `is_active = 0`, l’usuari no hauria de poder iniciar sessió.
+Si `is_active = 0`, l’usuari no pot iniciar sessió. Aquesta comprovació es fa durant el login; la sessió existent no es revalida automàticament en cada petició.
 
 ---
 
@@ -266,6 +291,8 @@ Fitxer temporal a eliminar o protegir:
 public/test-db.php
 ```
 
+Estat actual: `public/test-db.php` continua dins del document root públic i s'ha de considerar una mancança pendent de protecció o retirada.
+
 ---
 
 ## Errors
@@ -305,6 +332,20 @@ eliminar usuaris
 eliminar rols
 eliminar dades d’avaluació
 ```
+
+---
+
+## Mancances conegudes
+
+Aquests punts formen part del backlog de seguretat. No s'han de presentar com a resolts:
+
+- les operacions `POST` d'administració encara no tenen CSRF generalitzat;
+- la sincronització manual de documents a `/admin/sync-documents` no valida CSRF;
+- `/logout` funciona mitjançant ruta accessible per GET;
+- no hi ha rate limiting d'intents de login;
+- les sessions no es revaliden automàticament després de canviar rols o desactivar usuaris;
+- `public/test-db.php` és accessible dins de `public/` mentre no es protegeixi o retiri;
+- la política d'analítica, retenció, anonimització i exclusió de rutes sensibles encara no està definida.
 
 ---
 

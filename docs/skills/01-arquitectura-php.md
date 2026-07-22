@@ -18,9 +18,9 @@ El projecte és una aplicació PHP pròpia, sense frameworks grans, preparada pe
 
 ### Implementat
 
-- `public/index.php` és el punt d'entrada real;
-- hi ha controladors per a `PublicController`, `AuthController`, `StudentController`, `TeacherController` i `AdminController`;
-- hi ha serveis per a autenticació, projectes, assets, assignacions, analítica i avaluació;
+- `public/index.php` és el punt d'entrada real i `index.php` a l'arrel actua com a wrapper;
+- hi ha controladors per a web pública, autenticació, alumnat, professorat, administració i importació manual de documents;
+- hi ha serveis per a autenticació, projectes, assets, assignacions, seccions, documents, analítica, avaluació i Google Workspace;
 - hi ha helpers per a `env`, `route`, `view`, `lang` i `session`;
 - hi ha vistes públiques, d'autenticació, d'alumnat, de professorat i d'administració;
 - el layout comú ja està centralitzat.
@@ -28,8 +28,9 @@ El projecte és una aplicació PHP pròpia, sense frameworks grans, preparada pe
 ### Encara previst
 
 - un router més formal i extensible;
-- més serveis i models a mesura que creixi la funcionalitat;
-- reduir la lògica condicional dispersa en alguns punts del codi.
+- decidir si els models actuals es converteixen en una capa real o es mantenen com a placeholders;
+- reduir la lògica i el SQL concentrats a `AdminController`;
+- incorporar un sistema d'autoloading o una càrrega de dependències més declarativa.
 
 ---
 
@@ -102,14 +103,15 @@ Carpeta:
 app/Controllers/
 ```
 
-Controladors previstos:
+Controladors actuals:
 
 ```text
-PublicController.php
+AdminController.php
 AuthController.php
+DocumentSyncController.php
+PublicController.php
 StudentController.php
 TeacherController.php
-AdminController.php
 ```
 
 Responsabilitats:
@@ -124,7 +126,7 @@ Responsabilitats:
 
 ## Models
 
-Els models representen dades de la base de dades.
+Els models actuals són objectes simples o placeholders i no constitueixen la capa principal d'accés a dades del projecte.
 
 Carpeta:
 
@@ -132,23 +134,20 @@ Carpeta:
 app/Models/
 ```
 
-Models previstos:
+Models actuals:
 
 ```text
-User.php
-Project.php
 ClassGroup.php
-Role.php
-Language.php
 GoogleSource.php
+Project.php
+User.php
 ```
 
-Responsabilitats:
+Estat real:
 
-- llegir dades;
-- crear dades;
-- actualitzar dades;
-- encapsular consultes relacionades amb una entitat.
+- la major part de consultes i transformacions es fan ara des de serveis i alguns controladors;
+- `Role.php` i `Language.php` no existeixen com a models actius;
+- abans d'afegir més models, cal decidir si aquesta capa representarà entitats, repositoris o només DTOs simples.
 
 ---
 
@@ -162,14 +161,21 @@ Carpeta:
 app/Services/
 ```
 
-Serveis previstos:
+Serveis actuals:
 
 ```text
+AnalyticsService.php
+AssessmentService.php
+AssessmentStructureImportService.php
 AuthService.php
+DocumentImportService.php
+DocumentService.php
 GoogleSyncService.php
 LogService.php
+ProjectAssetService.php
+ProjectAssignmentService.php
+ProjectSectionService.php
 ProjectService.php
-RoleService.php
 ```
 
 Responsabilitats:
@@ -179,7 +185,11 @@ Responsabilitats:
 - sincronització amb Google;
 - importació de dades;
 - registre d’activitat;
+- documents, seccions i assets de projecte;
+- estructura i registres d'avaluació;
 - operacions que impliquen diverses taules.
+
+`RoleService.php` no existeix actualment. Si cal una capa pròpia de rols, s'hauria de crear com a decisió explícita i no assumir-la com a component actiu.
 
 ---
 
@@ -193,14 +203,14 @@ Carpeta:
 app/Helpers/
 ```
 
-Helpers previstos:
+Helpers actuals:
 
 ```text
 env.php
-view.php
-route.php
 lang.php
-security.php
+route.php
+session.php
+view.php
 ```
 
 Ús recomanat:
@@ -209,7 +219,10 @@ security.php
 - carregar vistes;
 - generar URLs;
 - obtenir textos traduïts;
+- gestionar inicialització segura de sessió;
 - escapar sortides HTML.
+
+`security.php` no existeix actualment com a helper actiu. Les funcions de seguretat s'han d'afegir només si hi ha una necessitat concreta i una ubicació clara.
 
 ---
 
@@ -250,6 +263,20 @@ resources/views/layouts/app.php
 resources/views/layouts/header.php
 resources/views/layouts/footer.php
 ```
+
+---
+
+## Deute tècnic actual
+
+Aquests punts descriuen l'estat real del codi i no s'han de presentar com a resolts:
+
+- `AdminController.php` és excessivament gran i concentra massa responsabilitats;
+- hi ha SQL complex i algunes operacions DDL dins del controlador d'administració;
+- la càrrega de dependències es fa manualment des de `public/index.php` i fitxers relacionats;
+- no hi ha un autoloading efectiu que carregui classes de manera declarativa;
+- els models existents no són encara la capa principal d'accés a dades.
+
+Quan es treballi en aquestes zones, cal preferir extraccions petites cap a serveis existents o nous serveis específics, sense fer una reescriptura completa si no és imprescindible.
 
 ---
 

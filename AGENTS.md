@@ -4,17 +4,41 @@
 
 **Entorns de Natura** és una aplicació web PHP modular per a projectes educatius de 4ESO.
 
-La plataforma ha de permetre, progressivament:
+La plataforma inclou i amplia progressivament:
 
 - web pública;
 - espai d’alumnes;
 - espai de professorat;
 - panell d’administració;
 - gestió d’usuaris, rols, classes i projectes;
-- futura sincronització amb Google Docs i Google Sheets;
-- futura gestió de rúbriques, notes i dades d’aula.
+- preparació i importació manual de continguts per a una futura sincronització real amb Google Docs i Google Sheets;
+- importació i consulta bàsica de notes, amb el sistema complet de rúbriques encara pendent.
 
-El projecte està en fase inicial, però ja té una base tècnica funcional amb connexió a base de dades.
+El projecte ja disposa d'una aplicació modular funcional. Té rutes públiques i privades, autenticació bàsica, dashboards per perfil, projectes provinents de la base de dades, documents, seccions, equips, assets i una capa inicial d'avaluació i Google Workspace.
+
+## Estat actual
+
+### Implementat
+
+- front controller a `public/index.php` i wrapper arrel a `index.php`;
+- controladors per a web pública, autenticació, alumnat, professorat, administració i importació manual de documents;
+- serveis d'autenticació, projectes, assignacions, assets, seccions, documents, analítica, avaluació i Google Workspace;
+- layout compartit i vistes públiques, privades i d'administració;
+- login bàsic amb sessió, CSRF al formulari de login i control de rols web;
+- projectes, edicions per curs, assignacions a classes i equips de projecte;
+- documents, fragments, regles de visibilitat i seccions per rol;
+- estructura d'avaluació, importació de registres i consulta bàsica de notes per alumnat autenticat;
+- taules de Google Workspace i importació manual JSON de documents;
+- assets de projecte recuperats des de la base de dades.
+
+### Pendent o parcial
+
+- router més formal i declaratiu;
+- integració real amb les API de Google Docs i Google Sheets;
+- sistema complet de rúbriques, criteris, puntuacions i observacions;
+- permisos més fins segons el context i l'assignació del professorat;
+- reforç de CSRF, sessions, auditoria i proves automatitzades;
+- reducció de lògica i SQL concentrats al controlador d'administració.
 
 ---
 
@@ -44,8 +68,10 @@ http://localhost/entorns-de-natura/public/
 Base de dades local:
 
 ```text
-entorns_natura_dev
+entorns_de_natura
 ```
+
+El nom es configura amb `DB_NAME` a `.env`; `entorns_de_natura` és el valor canònic per a l'entorn local.
 
 ---
 
@@ -127,6 +153,10 @@ entorns-de-natura/
 ├── docs/
 │   └── skills/
 │
+├── index.php
+├── index.html                 (legacy)
+├── assets/                    (legacy)
+├── css/                       (legacy)
 ├── .env
 ├── .env.example
 ├── .gitignore
@@ -139,9 +169,11 @@ entorns-de-natura/
 
 ## Normes d’estructura
 
-- `public/index.php` és el punt d’entrada de l’aplicació.
-- Els assets públics han d’estar dins `public/assets/`.
+- `public/index.php` és el front controller real de l’aplicació.
+- `index.php` a l'arrel és un wrapper que delega a `public/index.php`; no conté rutes ni lògica pròpies.
+- `public/assets/` és l'única ubicació activa per al CSS, JavaScript, logos i imatges de l'aplicació PHP.
 - Els fitxers JavaScript i CSS utilitzats per la web pública han de viure a `public/assets/`; si un script s’afegeix a `assets/` fora de `public/`, no es carregarà correctament des del navegador.
+- `index.html`, `assets/` i `css/` fora de `public/` són peces legacy de la maqueta estàtica; no s'han de fer servir per implementar funcionalitat nova.
 - Les vistes han d’estar dins `resources/views/`.
 - La lògica PHP ha d’estar dins `app/`.
 - La configuració ha d’estar dins `config/`.
@@ -150,6 +182,48 @@ entorns-de-natura/
 - La documentació i els skills han d’estar dins `docs/`.
 - No crear pàgines PHP soltes per cada projecte.
 - No barrejar HTML, SQL i lògica de negoci dins un mateix fitxer quan es pugui evitar.
+
+## Components PHP actuals
+
+Controladors:
+
+```text
+AdminController
+AuthController
+DocumentSyncController
+PublicController
+StudentController
+TeacherController
+```
+
+Serveis:
+
+```text
+AnalyticsService
+AssessmentService
+AssessmentStructureImportService
+AuthService
+DocumentImportService
+DocumentService
+GoogleSyncService
+LogService
+ProjectAssetService
+ProjectAssignmentService
+ProjectSectionService
+ProjectService
+```
+
+Helpers:
+
+```text
+env
+lang
+route
+session
+view
+```
+
+Aquest inventari descriu l'estat actual, però no substitueix la separació de responsabilitats: els controladors han de coordinar, els serveis han de contenir la lògica complexa i les vistes només han de presentar dades.
 
 ---
 
@@ -166,7 +240,7 @@ APP_DEBUG=true
 APP_URL=http://localhost/entorns-de-natura/public
 
 DB_HOST=localhost
-DB_NAME=entorns_natura_dev
+DB_NAME=entorns_de_natura
 DB_USER=root
 DB_PASSWORD=
 DB_CHARSET=utf8mb4
@@ -183,30 +257,41 @@ Normes:
 
 ## Base de dades actual
 
-La base de dades local actual és:
+El nom canònic de la base de dades local és:
 
 ```text
-entorns_natura_dev
+entorns_de_natura
 ```
+
+La connexió sempre ha de llegir el valor efectiu des de `DB_NAME` a `.env`.
 
 Taules existents:
 
 ```text
+users
+student_profiles
+web_roles
+user_web_roles
+project_roles
+languages
 academic_years
 classes
 class_members
 class_member_history
 class_teachers
-languages
-project_academic_years
-project_class_assignments
-project_teams
-project_team_members
-project_assets
-project_asset_links
+site_visits
+settings
+
 projects
 project_translations
-project_groups
+project_academic_years
+project_class_assignments
+project_assets
+project_asset_links
+
+project_teams
+project_team_members
+
 assessment_sources
 assessment_import_runs
 assessment_records
@@ -222,46 +307,25 @@ google_sync_runs
 google_sync_errors
 assessment_supports
 assessment_task_resources
-roles
-settings
-site_visits
-student_profiles
-users
-user_roles
+
+documents
+document_sources
+document_fragments
+document_visibility_rules
+
+project_sections
+project_section_roles
 ```
 
-Ordre recomanat de càrrega per reconstruir la base de dades:
+Per reconstruir una base neta, cal executar des de l'arrel:
 
 ```text
 database/schema.sql
-  -> 02_education_tables.sql
-  -> 03_assessment_tables.sql
-  -> 04_assessment_structure_tables.sql
-  -> 06_project_assets.sql
-  -> 07_task_resources.sql
-  -> 08_document_tables.sql
-  -> 10_project_sections.sql
-  -> 13_project_academic_years.sql
-  -> 14_project_class_assignments_project_year_link.sql
-  -> 15_documents_project_year_link.sql
-  -> 18_assessment_records_project_id_cleanup.sql
-  -> 24_assessment_project_year_phases.sql
-  -> 25_assessment_project_year_phase_tasks.sql
-  -> 26_assessment_sources_project_year_link.sql
-  -> 27_assessment_sources_project_id_cleanup.sql
-  -> 28_assessment_index_cleanup.sql
-  -> 29_google_workspace_tables.sql
-  -> 30_classes_column_rename.sql
-  -> 31_student_profiles_external_id_cleanup.sql
-   -> 32_project_teams.sql
-   -> 33_users_academic_role_cleanup.sql
-   -> 34_student_profiles_cleanup.sql
-   -> 35_class_member_history.sql
 ```
 
-La migració `05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades; en una reconstrucció neta no és necessària perquè `display_order` ja ve definit a la base.
+`database/schema.sql` és l'autoritat executable i defineix la seqüència real mitjançant `SOURCE`. No s'han d'executar després totes les migracions històriques. Per actualitzar una base existent, cal seguir `database/README.md`, identificar l'estat de partida i aplicar només els ajustos incrementals corresponents.
 
-`database/schema.sql` és el punt de partida mestre de reconstrucció. Les peces `02`, `03`, `04`, `06`, `07`, `08`, `10`, `13`, `14`, `15`, `18`, `24`, `25`, `26`, `27`, `28`, `29`, `30`, `31`, `32`, `33`, `34` i `35` formen l'esquema actual.
+`project_groups` és el nom legacy anterior a `project_class_assignments`; no forma part del model final d'una reconstrucció neta.
 
 Equips de projecte:
 
@@ -271,11 +335,7 @@ Equips de projecte:
 
 `scripts/check-schema-coherence.php` s'ha d'executar després de canvis d'esquema per detectar camps legacy, relacions mal situades i índexs o uniques esperats.
 
-Si la base ja existia abans de la capa de documents, cal aplicar també `database/09_document_tables_fix.sql` com a ajust no destructiu.
-
-`database/10_project_sections.sql` afegeix les seccions de projecte i els permisos per rol.
-
-Quan es necessiti relacionar eines, apps o recursos amb tasques, la solució recomanada és una taula de relació separada, `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
+Les seccions i els permisos per rol ja es modelen amb `project_sections` i `project_section_roles`. Els recursos de tasques ja utilitzen `assessment_task_resources`, reutilitzant `project_assets` com a catàleg i `assessment_supports` per a bastides o ajudes associades.
 
 Regla del model:
 
@@ -325,18 +385,22 @@ Taules relacionades:
 
 ```text
 users
-roles
-user_roles
+web_roles
+user_web_roles
+project_roles
 ```
 
-Rols previstos:
+Rols web disponibles:
 
 ```text
 student
 teacher
+guest_teacher
 coordinator
 admin
 ```
+
+`guest_teacher` permet representar professorat visitant quan cal diferenciar-lo del professorat assignat. Els permisos contextuals fins continuen pendents de reforç.
 
 Regla conceptual de permisos:
 
@@ -347,7 +411,7 @@ teacher     → professor
 student     → alumne
 ```
 
-És preferible assignar diversos rols explícits a la taula `user_roles`.
+És preferible assignar diversos rols web explícits a la taula `user_web_roles`. `project_roles` descriu funcions dins dels equips i no substitueix els permisos generals de la web.
 
 Exemples:
 
@@ -381,21 +445,21 @@ class_members
 class_teachers
 ```
 
-Classes inicials:
+Classes inicials (`class_name` / `class_code`):
 
 ```text
-4ESOA
-4ESOB
+4ESO A / 4ESO-A
+4ESO B / 4ESO-B
 ```
 
 Assignacions inicials d’alumnes:
 
 ```text
-Aiman  → 4ESOA
-Sílvia → 4ESOB
+Aiman  → 4ESO A
+Sílvia → 4ESO B
 ```
 
-Professorat assignat a 4ESOA i 4ESOB:
+Professorat assignat a 4ESO A i 4ESO B:
 
 ```text
 Àlex Martí
@@ -418,7 +482,10 @@ Taules relacionades:
 ```text
 projects
 project_translations
-project_groups
+project_academic_years
+project_class_assignments
+project_teams
+project_team_members
 ```
 
 Projectes inicials:
@@ -453,7 +520,7 @@ Projecte Orenetes  → 4ESOA
 Liquencity         → 4ESOB
 ```
 
-La taula `project_groups` relaciona projectes amb classes.
+`project_class_assignments` relaciona una edició de projecte amb les classes. `project_teams` i `project_team_members` gestionen els equips i els rols de projecte de cada edició.
 
 ---
 
@@ -608,11 +675,11 @@ public/test-db.php
 
 ---
 
-## Autenticació prevista
+## Autenticació
 
-Inicialment es pot crear login bàsic.
+El login bàsic amb email i contrasenya, sessió, comprovació d'usuari actiu, rols web i CSRF al formulari de login ja està implementat.
 
-Més endavant es preveu login amb Google.
+El login amb Google i el reforç de CSRF per a la resta d'operacions sensibles continuen pendents.
 
 Camps importants a `users`:
 
@@ -635,11 +702,11 @@ Criteris:
 - `email` ha de ser únic.
 - `google_id` pot ser `NULL` fins que es faci login amb Google.
 - `password_hash` pot ser `NULL` si l’usuari només accedeix amb Google.
-- El control de permisos s’ha de fer amb `user_roles`.
+- El control de permisos web s’ha de fer amb `user_web_roles`.
 
 ---
 
-## Control d’accés previst
+## Control d’accés
 
 - `/alumne` requereix rol `student`.
 - `/professor` requereix rol `teacher`.
@@ -664,7 +731,7 @@ Per tant, pot accedir a:
 
 ## Google Docs i Google Sheets
 
-El projecte està pensat per sincronitzar informació des de Google Workspace.
+El projecte ja té les taules de Google Workspace i un flux manual d'importació JSON de documents. La connexió real amb les API de Google encara està pendent.
 
 Flux previst:
 
@@ -688,7 +755,7 @@ google_sync_runs
 google_sync_errors
 ```
 
-Funció prevista:
+Funció de les taules preparades:
 
 - `google_sources`: registrar documents o fulls de Google lligats a una edició concreta de projecte.
 - `synced_documents`: guardar contingut processat de Google Docs.
@@ -715,7 +782,9 @@ Normes:
 
 ## Rúbriques i notes
 
-Encara no estan implementades.
+La importació de registres d'avaluació i la consulta bàsica de notes per alumnat autenticat ja estan implementades amb `assessment_sources`, `assessment_import_runs`, `assessment_records` i `assessment_import_errors`.
+
+El sistema complet de rúbriques, criteris, nivells, puntuacions i observacions encara està pendent.
 
 Taules previstes més endavant:
 
@@ -791,28 +860,17 @@ quina alternativa menys destructiva hi ha
 
 ---
 
-## Ordre recomanat de desenvolupament
+## Roadmap pendent
 
-Fase actual:
-
-```text
-1. Consolidar estructura del projecte.
-2. Consolidar connexió a base de dades.
-3. Consolidar usuaris, rols, classes i projectes.
-```
-
-Fases següents:
+Les bases d'arquitectura, connexió PDO, projectes des de la base de dades, layout, login, rols i dashboards ja estan implementades. Les prioritats pendents són:
 
 ```text
-4. Crear sistema de rutes estable.
-5. Crear layout general.
-6. Mostrar projectes des de la base de dades.
-7. Crear login bàsic.
-8. Crear control d’accés per rols.
-9. Crear dashboards inicials.
-10. Preparar Google Docs i Google Sheets.
-11. Crear rúbriques.
-12. Crear notes i dades d’aula.
+1. Formalitzar el router i els mètodes HTTP.
+2. Reforçar CSRF, sessions, auditoria i permisos contextuals.
+3. Reduir la lògica i el SQL concentrats a l'administració.
+4. Integrar realment Google Docs i Google Sheets.
+5. Completar rúbriques, criteris, puntuacions i observacions.
+6. Ampliar proves automatitzades i verificacions de seguretat.
 ```
 
 ---
@@ -821,7 +879,7 @@ Fases següents:
 
 Consultar els fitxers de `docs/skills/` abans de fer tasques específiques.
 
-Skills previstos:
+Skills disponibles:
 
 ```text
 docs/skills/01-arquitectura-php.md
@@ -830,7 +888,22 @@ docs/skills/03-rutes-i-vistes.md
 docs/skills/04-auth-rols-i-seguretat.md
 docs/skills/05-google-docs-sheets.md
 docs/skills/06-css-i-ui.md
+docs/skills/07-assets-projectes.md
 ```
+
+---
+
+## Fonts canòniques de documentació
+
+Per evitar informació duplicada o contradictòria, cada document té una responsabilitat concreta:
+
+- `AGENTS.md`: criteris generals, arquitectura, seguretat i normes de treball;
+- `database/README.md`: esquema i procediments de base de dades;
+- `docs/skills/`: procediments detallats per àrea;
+- `README.md`: introducció, instal·lació i enllaços a la documentació canònica;
+- `database/schema.sql`: autoritat executable per reconstruir una base de dades neta.
+
+Quan hi hagi una discrepància sobre l'esquema executable, preval `database/schema.sql`. La configuració de connexió efectiva sempre prové de `.env`.
 
 ---
 

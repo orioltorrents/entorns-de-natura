@@ -47,8 +47,10 @@ La base de dades ha de permetre gestionar:
 Nom de la base de dades local:
 
 ```text
-entorns_natura_dev
+entorns_de_natura
 ```
+
+La connexió llegeix el valor efectiu de `DB_NAME` a `.env`. Per a l'esquema i els procediments de reconstrucció, la font canònica és `database/README.md`; la seqüència executable és `database/schema.sql`.
 
 Entorn:
 
@@ -76,7 +78,7 @@ Exemple:
 
 ```env
 DB_HOST=localhost
-DB_NAME=entorns_natura_dev
+DB_NAME=entorns_de_natura
 DB_USER=root
 DB_PASSWORD=
 DB_CHARSET=utf8mb4
@@ -86,30 +88,33 @@ DB_CHARSET=utf8mb4
 
 ## Taules actuals
 
-La base de dades actual inclou diverses taules repartides entre:
-
-- `database/02_education_tables.sql`;
-- `database/03_assessment_tables.sql`;
-- `database/04_assessment_structure_tables.sql`;
-- `database/06_project_assets.sql`.
-- `database/07_task_resources.sql`.
-- `database/08_document_tables.sql`.
-
-Llistat actual:
+L'esquema final inclou:
 
 ```text
+users
+student_profiles
+web_roles
+user_web_roles
+project_roles
+languages
 academic_years
 classes
 class_members
 class_member_history
 class_teachers
-languages
-project_assets
-project_asset_links
+site_visits
+settings
+
 projects
 project_translations
+project_academic_years
 project_class_assignments
-project_class_assignments
+project_assets
+project_asset_links
+
+project_teams
+project_team_members
+
 assessment_sources
 assessment_import_runs
 assessment_records
@@ -120,64 +125,37 @@ project_academic_year_phases
 project_academic_year_phase_tasks
 assessment_supports
 assessment_task_resources
+
 documents
 document_sources
 document_fragments
 document_visibility_rules
-project_academic_years
+
 project_sections
 project_section_roles
-roles
-settings
-site_visits
-student_profiles
-users
-user_roles
+
+google_sources
+synced_documents
+synced_sheet_rows
+google_sync_runs
+google_sync_errors
 ```
 
 La taula `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 
-## Ordre recomanat de càrrega
+`project_groups` és un nom legacy. El model actual utilitza `project_class_assignments`; `database/12_project_class_assignments.sql` només conserva la conversió per a bases antigues.
 
-Per reconstruir una base de dades neta, el millor és fer servir un `schema.sql` mestre amb aquest ordre:
+## Reconstrucció i migracions
+
+Per reconstruir una base neta, cal executar:
 
 ```text
 database/schema.sql
-  -> 02_education_tables.sql
-  -> 03_assessment_tables.sql
-  -> 04_assessment_structure_tables.sql
-  -> 06_project_assets.sql
-  -> 07_task_resources.sql
-  -> 08_document_tables.sql
-  -> 10_project_sections.sql
-  -> 11_roles_split.sql
-  -> 12_project_class_assignments.sql
-  -> 13_project_academic_years.sql
-  -> 14_project_class_assignments_project_year_link.sql
-  -> 15_documents_project_year_link.sql
-  -> 16_project_class_assignments_cleanup.sql
-  -> 17_documents_project_id_cleanup.sql
-  -> 18_assessment_records_project_id_cleanup.sql
-  -> 19_documents_composite_read_index.sql
-  -> 20_assessment_records_user_source_index.sql
-  -> 21_documents_composite_read_index_title.sql
-  -> 22_document_indexes_cleanup.sql
-  -> 23_project_sections_indexes_cleanup.sql
-  -> 24_assessment_project_year_phases.sql
-  -> 25_assessment_project_year_phase_tasks.sql
-  -> 26_assessment_sources_project_year_link.sql
-  -> 27_assessment_sources_project_id_cleanup.sql
-  -> 28_assessment_index_cleanup.sql
-  -> 29_google_workspace_tables.sql
-  -> 30_classes_column_rename.sql
-  -> 31_student_profiles_external_id_cleanup.sql
-   -> 32_project_teams.sql
-   -> 33_users_academic_role_cleanup.sql
-   -> 34_student_profiles_cleanup.sql
-   -> 35_class_member_history.sql
 ```
 
-La migració `05_project_display_order.sql` es manté només per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja existeix a la base.
+La seqüència dels `SOURCE`, la classificació dels ajustos incrementals i els canvis històrics ja absorbits es documenten únicament a `database/README.md`.
+
+Per actualitzar una base existent, no s'han d'executar totes les migracions indiscriminadament. Cal identificar l'estat de partida, fer una còpia de seguretat i aplicar només els ajustos posteriors que corresponguin.
 
 ---
 
@@ -236,8 +214,17 @@ Criteris:
 Taules:
 
 ```text
-roles
-user_roles
+web_roles
+user_web_roles
+project_roles
+```
+
+Funció:
+
+```text
+web_roles       → permisos generals d'accés a la web
+user_web_roles  → assignació de rols web als usuaris
+project_roles   → funcions dels membres dins d'un projecte
 ```
 
 Rols previstos:
@@ -258,7 +245,7 @@ teacher     = teacher
 student     = student
 ```
 
-És preferible assignar diversos rols explícits a `user_roles`.
+És preferible assignar diversos rols web explícits a `user_web_roles`. Els rols de projecte no substitueixen els permisos generals de la web.
 
 ---
 
@@ -482,9 +469,9 @@ Veure també:
 
 ### Recursos de tasques
 
-Per al futur, si cal lligar eines, apps o softwares concrets a una tasca d'avaluació, és preferible una taula de relació separada, `assessment_task_resources`, i una taula de catàleg de bastides/ajudes com `assessment_supports`.
+La relació entre eines, apps o softwares i una tasca d'avaluació ja es modela amb `assessment_task_resources`. Les bastides i ajudes reutilitzables es cataloguen a `assessment_supports`.
 
-Idea de camps:
+Camps principals de la relació:
 
 ```text
 assessment_task_id
@@ -501,14 +488,15 @@ Això permet reutilitzar `project_assets` com a catàleg, vincular una bastida a
 
 ## Visibilitat i context
 
-Encara no implementat, però recomanat per al futur:
+La base ja disposa de `project_sections`, `project_section_roles` i `document_visibility_rules` per controlar seccions i continguts segons el context.
+
+Criteris:
 
 - mantenir una sola font de dades per projecte;
-- afegir camps o taules de control només si cal separar continguts per context;
 - evitar guardar la mateixa informació duplicada per rol;
 - preferir flags o nivells de visibilitat abans que rutes o taules separades per perfil.
 
-Si més endavant cal modelar seccions de projecte, programacions o materials amb visibilitat diferent, serà millor fer-ho amb una estructura controlada a la base de dades i no amb fitxers solts.
+Les ampliacions futures de visibilitat han d'estendre aquestes estructures quan sigui possible, en lloc de crear fitxers o còpies de contingut per perfil.
 
 ---
 
@@ -532,22 +520,22 @@ SELECT
     COLUMN_DEFAULT,
     EXTRA
 FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'entorns_natura_dev'
+WHERE TABLE_SCHEMA = 'entorns_de_natura'
 ORDER BY TABLE_NAME, ORDINAL_POSITION;
 ```
 
 ### Veure usuaris i rols
 
 ```sql
-SELECT 
+SELECT
     users.id,
     users.name,
     users.surname,
     users.email,
-    GROUP_CONCAT(roles.name ORDER BY roles.name SEPARATOR ', ') AS roles
+    GROUP_CONCAT(web_roles.name ORDER BY web_roles.name SEPARATOR ', ') AS roles
 FROM users
-LEFT JOIN user_roles ON user_roles.user_id = users.id
-LEFT JOIN roles ON roles.id = user_roles.role_id
+LEFT JOIN user_web_roles ON user_web_roles.user_id = users.id
+LEFT JOIN web_roles ON web_roles.id = user_web_roles.role_id
 GROUP BY users.id, users.name, users.surname, users.email
 ORDER BY users.id;
 ```
@@ -555,36 +543,36 @@ ORDER BY users.id;
 ### Veure alumnes per classe
 
 ```sql
-SELECT 
-    classes.name AS classe,
+SELECT
+    classes.class_name AS classe,
     users.name,
     users.surname,
     users.email
 FROM class_members
 JOIN users ON users.id = class_members.user_id
 JOIN classes ON classes.id = class_members.class_id
-ORDER BY classes.name, users.surname, users.name;
+ORDER BY classes.class_name, users.surname, users.name;
 ```
 
 ### Veure professorat per classe
 
 ```sql
-SELECT 
-    classes.name AS classe,
+SELECT
+    classes.class_name AS classe,
     users.name,
     users.surname,
     users.email
 FROM class_teachers
 JOIN users ON users.id = class_teachers.user_id
 JOIN classes ON classes.id = class_teachers.class_id
-ORDER BY classes.name, users.surname, users.name;
+ORDER BY classes.class_name, users.surname, users.name;
 ```
 
 ### Veure projectes per classe
 
 ```sql
 SELECT 
-    classes.name AS classe,
+    classes.class_name AS classe,
     projects.name AS projecte,
     projects.slug,
     project_class_assignments.status
@@ -592,7 +580,7 @@ FROM project_class_assignments
 JOIN classes ON classes.id = project_class_assignments.class_id
 JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
 JOIN projects ON projects.id = project_academic_years.project_id
-ORDER BY classes.name, projects.name;
+ORDER BY classes.class_name, projects.name;
 ```
 
 ### Documents per edició de projecte

@@ -13,18 +13,20 @@ La web ha de mostrar aquesta informació de manera controlada, segura i estructu
 ### Implementat
 
 - configuració base a `config/google.php`;
-- servei `GoogleSyncService` present, encara molt inicial;
-- estructura de base preparada per a sincronització i importació;
+- servei `GoogleSyncService` present com a stub de consulta, sense connexió real amb l'API;
+- estructura de base preparada per a fonts, documents sincronitzats, files importades, execucions i errors;
+- importació manual JSON de documents amb `DocumentSyncController` i `DocumentImportService`;
 - model de dades per a projectes, assets i avaluació ja existent;
 - quan el contingut és d'una edició concreta, la unitat funcional és `project_academic_years`.
 
 ### Encara previst
 
 - integració real amb API de Google;
-- taules de fonts i execucions de sincronització;
-- importació robusta de Docs i Sheets;
-- validació, logs i reprocessament d'errors;
-- definició del flux entre document origen, BD i vista final.
+- OAuth o compte de servei i gestió de scopes;
+- importació robusta directa de Docs i Sheets;
+- sanitització HTML, límits d'importació, logs, reintents i reprocessament d'errors;
+- definició definitiva del flux entre document origen, `google_sources`, `document_sources`, BD i vista final;
+- sincronització automàtica amb cron o worker.
 
 ---
 
@@ -42,6 +44,20 @@ Web pública / alumnat / professorat / administració
 
 ---
 
+## Nivells actuals
+
+L'estat del projecte s'ha de llegir en tres nivells diferents:
+
+```text
+1. Importació manual JSON de documents → implementada.
+2. Persistència Google Workspace       → taules preparades.
+3. Integració real amb API de Google   → pendent.
+```
+
+La importació manual JSON no és encara sincronització amb l'API de Google. Serveix per carregar documents, fonts, fragments i regles de visibilitat a partir d'un payload controlat.
+
+---
+
 ## Principi general
 
 Google és l’espai d’edició del professorat.
@@ -51,6 +67,8 @@ La base de dades és l’espai controlat des d’on la web mostra informació.
 `project_id` continua sent útil per al catàleg base del projecte, però quan el contingut depèn d'un curs o d'una edició concreta cal partir de `project_academic_year_id`.
 
 Quan un contingut tingui diferents nivells de visibilitat, la recomanació és classificar-lo per context i no publicar directament el document original sense control.
+
+`GoogleSyncService` actualment només recupera fonts actives per `project_academic_year_id` i retorna un resultat `pending` a `syncProjectAcademicYear()`. No llegeix Google Docs ni Google Sheets, no crea `google_sync_runs`, no registra errors i no actualitza `last_synced_at`.
 
 ---
 
@@ -213,6 +231,19 @@ google_sync_runs
 google_sync_errors
 ```
 
+Aquestes taules ja existeixen. El que està pendent és fer-les servir en una sincronització real amb l'API.
+
+També existeix la capa de documents pròpia de l'aplicació:
+
+```text
+documents
+document_sources
+document_fragments
+document_visibility_rules
+```
+
+`document_sources` descriu fonts associades als documents interns de l'aplicació. `google_sources` descriu possibles fonts de Google Workspace per edició de projecte. La relació definitiva entre totes dues capes encara és una decisió pendent.
+
 ---
 
 ## `google_sources`
@@ -265,8 +296,11 @@ Visibilitat:
 public
 students
 teachers
+assigned_teachers
 admin
 ```
+
+Nota de model: `google_sources.visibility` utilitza valors en plural (`students`, `teachers`, `assigned_teachers`). La capa interna de documents utilitza valors relacionats però no idèntics: `documents.default_visibility` fa servir `student`, `teacher` i `assigned_teacher`, i `document_visibility_rules.visibility_type` diferencia `public`, `role`, `project_role`, `class` i `assigned_teacher`. Aquesta diferència s'ha de tenir present en qualsevol transformació entre Google i documents interns.
 
 Mode de sincronització:
 
@@ -380,7 +414,7 @@ created_at
 Fase inicial:
 
 ```text
-botó manual de sincronització
+importació manual JSON de documents
 ```
 
 Fase posterior:
@@ -394,6 +428,14 @@ Fase avançada:
 ```text
 Apps Script o notificacions des de Google
 ```
+
+Components actuals de la fase inicial:
+
+- `DocumentSyncController`: protegeix la pantalla amb rol `admin`, rep el JSON i mostra resultat o error;
+- `DocumentImportService`: valida l'estructura bàsica del payload i importa documents, fonts, fragments i regles;
+- `resources/views/admin/document-sync.php`: formulari d'entrada manual del JSON.
+
+Limitació actual: aquesta importació manual no té CSRF propi i no defineix límits explícits de mida del payload.
 
 ---
 
@@ -460,6 +502,23 @@ Estratègia recomanada:
 - Validar sempre abans d’importar.
 - Guardar logs de sincronització.
 - No esborrar dades automàticament sense control.
+
+---
+
+## Backlog pendent
+
+Aquests punts no estan resolts encara i formen part de l'evolució prevista:
+
+- implementar OAuth o compte de servei amb scopes mínims;
+- llegir contingut real de Google Docs i Google Sheets des del servidor;
+- sanititzar `content_html` abans de publicar-lo;
+- definir límits de mida per importacions manuals i automàtiques;
+- afegir CSRF al formulari d'importació manual;
+- registrar `google_sync_runs` i `google_sync_errors` durant sincronitzacions reals;
+- definir política de reintents i reprocessament d'errors;
+- automatitzar sincronització amb cron, worker o mecanisme equivalent;
+- decidir la relació definitiva entre `google_sources` i `document_sources`;
+- normalitzar o mapar explícitament les visibilitats singulars i plurals.
 
 ---
 

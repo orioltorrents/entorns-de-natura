@@ -286,7 +286,7 @@ ob_start();
 
         <?php
         $classGroups = [];
-        foreach ($users as $u) {
+        foreach (($studentUsers ?? []) as $u) {
             $cg = !empty($u['class_group']) ? $u['class_group'] : 'Sense classe';
             $classGroups[$cg] = true;
         }
@@ -380,7 +380,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                     <div class="admin-panel__header">
                         <h2>Alumnes</h2>
                         <div class="admin-actions">
-                            <span class="status" id="alumnes-count"><?= count($users) ?> usuaris</span>
+                            <span class="status" id="alumnes-count"><?= count($studentUsers ?? []) ?> alumnes</span>
                             <button class="collapse-toggle" type="button" data-collapse="alumnes-content">Mostrar</button>
                         </div>
                     </div>
@@ -403,7 +403,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($users as $user): ?>
+                                    <?php foreach (($studentUsers ?? []) as $user): ?>
                                         <?php $userClass = !empty($user['class_group']) ? $user['class_group'] : 'Sense classe'; ?>
                                         <?php $isAdminUser = in_array('admin', $user['roles'], true); ?>
                                         <tr data-class="<?= htmlspecialchars((string) $userClass, ENT_QUOTES, 'UTF-8') ?>">

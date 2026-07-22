@@ -11,15 +11,16 @@ El projecte ha de funcionar com una aplicació PHP modular.
 ### Implementat
 
 - entrada única a `public/index.php`;
-- rutes públiques per portada, llistat de projectes, detall de projecte i login;
-- rutes privades per a alumnat, professorat i administració;
+- rutes públiques per portada, llistat de projectes, detall de projecte, tasques, notes, documents i login;
+- rutes privades per a alumnat, professorat, administració i sincronització manual de documents;
 - vistes ja creades a `resources/views/public`, `auth`, `students`, `teachers` i `admin`;
 - layout compartit a `resources/views/layouts/app.php`.
 
 ### Encara previst
 
 - un router més net i declaratiu;
-- ampliar l'idioma més enllà de `ca` quan toqui;
+- fer que el prefix d'idioma governi completament l'idioma intern;
+- una vista 404 dedicada;
 - afinar la vista de projecte per més contextos d'accés sense duplicar fitxers.
 
 ## Criteri d'edició
@@ -44,61 +45,48 @@ Totes les peticions principals han de passar per aquest fitxer.
 
 ---
 
-## Rutes públiques previstes
-
-```text
-/
-/ca
-/ca/projectes
-/ca/projectes/projecte-rius
-/ca/projectes/mat-penedes
-/ca/projectes/agroparc
-/ca/projectes/projecte-orenetes
-/ca/projectes/liquencity
-/ca/projectes/vespa-velutina
-```
-
 ## Rutes actuals
 
-```text
-/
-/ca
-/projectes
-/ca/projectes
-/es/projectes
-/en/projectes
-/ca/projectes/{slug}
-/login
-/logout
-/dashboard
-/alumne
-/professor
-/admin
-```
+El router actual és a `public/index.php`. Aquesta és la matriu de rutes que es poden mantenir ara:
 
-La ruta de detall de projecte ja funciona amb `slug` i retorna 404 si no existeix.
+| Ruta | Mètode | Controlador | Accés | Vista |
+| --- | --- | --- | --- | --- |
+| `/` | Qualsevol | `PublicController::home()` | Públic | `public.home` |
+| `/ca` | Qualsevol | `PublicController::home()` | Públic | `public.home` |
+| `/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
+| `/ca/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
+| `/es/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
+| `/en/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
+| `/{ca|es|en}/projectes/{slug}` | Qualsevol | `PublicController::projectDetail()` | Públic amb blocs contextuals | `public.project-detail` |
+| `/{ca|es|en}/projectes/{slug}/tasques` | Qualsevol | `PublicController::projectTasks()` | Públic amb blocs contextuals | `public.project-tasks` |
+| `/{ca|es|en}/projectes/{slug}/notes` | Qualsevol | `PublicController::projectNotes()` | Ruta pública, contingut restringit a alumnat autenticat | `public.project-notes` |
+| `/{ca|es|en}/projectes/{slug}/documents` | Qualsevol | `PublicController::projectDocuments()` | Públic amb documents filtrats per context | `public.project-documents` |
+| `/login` | GET/POST | `AuthController::login()` | Públic | `auth.login` |
+| `/logout` | Qualsevol | `AuthController::logout()` | Sessió, si existeix | Sense vista |
+| `/dashboard` | Qualsevol | `AuthController::redirectToDashboard()` | Usuari autenticat | Redirecció |
+| `/alumne` | Qualsevol | `StudentController::dashboard()` | `student` | `students.dashboard` |
+| `/professor` | Qualsevol | `TeacherController::dashboard()` | `teacher` | `teachers.dashboard` |
+| `/admin` | Qualsevol | `AdminController::dashboard()` | `admin` | `admin.dashboard` |
+| `/admin/sync-documents` | GET | `DocumentSyncController::index()` | `admin` | `admin.document-sync` |
+| `/admin/sync-documents` | POST | `DocumentSyncController::store()` | `admin` | `admin.document-sync` |
+
+Nota: moltes rutes accepten qualsevol mètode perquè el router actual no restringeix explícitament GET/POST fora de casos concrets. Formalitzar mètodes HTTP és una millora pendent.
+
+Una ruta pot ser pública i, alhora, contenir blocs protegits. Per exemple, la ruta de notes existeix públicament, però la informació de notes només s'ha de mostrar a l'alumnat autenticat corresponent.
 
 ---
 
-## Rutes privades previstes
+## Rutes previstes
 
 ```text
-/login
-/logout
-
-/alumne
 /alumne/projectes
 /alumne/materials
 /alumne/rubriques
-
-/professor
 /professor/grups
 /professor/alumnes
 /professor/projectes
 /professor/rubriques
 /professor/notes
-
-/admin
 /admin/usuaris
 /admin/projectes
 /admin/google-sources
@@ -106,6 +94,8 @@ La ruta de detall de projecte ja funciona amb `slug` i retorna 404 si no existei
 /admin/logs
 /admin/configuracio
 ```
+
+Aquestes rutes formen part del mapa funcional desitjat, però no s'han de documentar com a disponibles fins que existeixin al router.
 
 ---
 
@@ -169,20 +159,26 @@ Carpeta:
 resources/views/public/
 ```
 
-Fitxers previstos:
+Fitxers actuals:
 
 ```text
 home.php
 projects.php
 project-detail.php
+project-tasks.php
+project-notes.php
+project-documents.php
 ```
 
 Funció:
 
 ```text
-home.php           → pàgina inicial
-projects.php       → llistat de projectes
-project-detail.php → detall genèric d’un projecte
+home.php              → pàgina inicial
+projects.php          → llistat de projectes
+project-detail.php    → detall genèric d’un projecte
+project-tasks.php     → tasques visibles segons context
+project-notes.php     → notes per alumnat autenticat quan correspongui
+project-documents.php → documents filtrats segons context
 ```
 
 ## Model recomanat de visibilitat
@@ -197,7 +193,7 @@ Orientació recomanada:
 - professorat que imparteix: contingut complet del projecte;
 - administració: tot.
 
-Si cal mostrar més o menys informació, és preferible condicionar blocs dins la mateixa vista abans que crear fitxers separats per rol.
+Si cal mostrar més o menys informació, és preferible condicionar blocs dins la mateixa vista abans que crear fitxers separats per rol. Les subpàgines actuals de tasques, notes i documents són vistes funcionals del mateix projecte, no plantilles duplicades per perfil.
 
 ---
 
@@ -209,12 +205,13 @@ Carpeta:
 resources/views/auth/
 ```
 
-Fitxers previstos:
+Fitxers actuals:
 
 ```text
 login.php
-forgot-password.php
 ```
+
+`forgot-password.php` és una possible vista futura, però no existeix actualment.
 
 ---
 
@@ -226,14 +223,13 @@ Carpeta:
 resources/views/students/
 ```
 
-Fitxers previstos:
+Fitxers actuals:
 
 ```text
 dashboard.php
-projects.php
-materials.php
-rubrics.php
 ```
+
+Les vistes `projects.php`, `materials.php` i `rubrics.php` són previstes, no actuals.
 
 ---
 
@@ -245,16 +241,13 @@ Carpeta:
 resources/views/teachers/
 ```
 
-Fitxers previstos:
+Fitxers actuals:
 
 ```text
 dashboard.php
-groups.php
-students.php
-projects.php
-rubrics.php
-grades.php
 ```
+
+Les vistes `groups.php`, `students.php`, `projects.php`, `rubrics.php` i `grades.php` són previstes, no actuals.
 
 ---
 
@@ -266,17 +259,14 @@ Carpeta:
 resources/views/admin/
 ```
 
-Fitxers previstos:
+Fitxers actuals:
 
 ```text
 dashboard.php
-users.php
-projects.php
-google-sources.php
-sync.php
-logs.php
-settings.php
+document-sync.php
 ```
+
+Les vistes `users.php`, `projects.php`, `google-sources.php`, `sync.php`, `logs.php` i `settings.php` són previstes, no actuals.
 
 ---
 
@@ -290,13 +280,16 @@ projectes/liquencity.php
 projectes/projecte-rius.php
 ```
 
-Fer servir una sola vista:
+Fer servir vistes genèriques per projecte, carregant dades segons `slug` i context:
 
 ```text
 resources/views/public/project-detail.php
+resources/views/public/project-tasks.php
+resources/views/public/project-notes.php
+resources/views/public/project-documents.php
 ```
 
-I carregar el projecte segons el `slug`.
+No crear una plantilla diferent per a cada projecte ni per a cada rol.
 
 Exemples de slug:
 
@@ -313,24 +306,26 @@ vespa-velutina
 
 ## Controladors relacionats
 
-Controladors previstos:
+Controladors actuals:
 
 ```text
-PublicController.php
+AdminController.php
 AuthController.php
+DocumentSyncController.php
+PublicController.php
 StudentController.php
 TeacherController.php
-AdminController.php
 ```
 
 Exemple de responsabilitat:
 
 ```text
-PublicController → home, llistat de projectes, detall de projecte
-AuthController   → login, logout
-StudentController → dashboard d’alumne
-TeacherController → dashboard professor
-AdminController  → dashboard admin
+PublicController       → home, llistat, detall, tasques, notes i documents de projecte
+AuthController         → login, logout i redirecció de dashboard
+StudentController      → dashboard d’alumne
+TeacherController      → dashboard professor
+AdminController        → dashboard admin
+DocumentSyncController → importació manual JSON de documents
 ```
 
 ---
@@ -343,29 +338,30 @@ L’idioma principal és:
 ca
 ```
 
-Rutes públiques recomanades:
+Rutes públiques actuals amb prefix:
 
 ```text
 /ca/projectes
-/ca/projectes/{slug}
-```
-
-Més endavant es podrà ampliar a:
-
-```text
 /es/projectes
 /en/projectes
+/ca/projectes/{slug}
+/es/projectes/{slug}
+/en/projectes/{slug}
 ```
+
+El router reconeix el prefix `ca`, `es` i `en` per llistats i fitxes de projecte. Ara mateix, però, el prefix capturat no governa completament l'idioma intern perquè els controladors reben principalment el `slug`; l'idioma continua depenent de la lògica existent de sessió o paràmetres. Fer que el prefix sigui la font efectiva de l'idioma és una millora pendent.
 
 ---
 
 ## 404
 
-Si una ruta no existeix, mostrar una pàgina 404.
+Si una ruta no existeix, mostrar una resposta 404.
 
 Si un projecte no existeix, també mostrar 404.
 
 No mostrar errors interns al visitant.
+
+Estat actual: el router retorna text pla `Pagina no trobada`. Una vista 404 dedicada encara és pendent.
 
 ---
 

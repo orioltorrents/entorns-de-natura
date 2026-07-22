@@ -198,6 +198,11 @@ class AdminController
         }
         unset($user);
 
+        $studentUsers = array_values(array_filter(
+            $users,
+            static fn (array $user): bool => in_array('student', $user['roles'], true)
+        ));
+
         $teacherUsers = array_values(array_filter(
             $users,
             static fn (array $user): bool => in_array('teacher', $user['roles'], true)
@@ -240,6 +245,7 @@ class AdminController
             'roles' => $roles,
             'projects' => $projects,
             'classes' => $classes,
+            'studentUsers' => $studentUsers,
             'teacherUsers' => $teacherUsers,
             'classTeachersMap' => $classTeachersMap,
             'teacherClassMap' => $teacherClassMap,

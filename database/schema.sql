@@ -1,6 +1,9 @@
 -- --------------------------------------------------------
 -- Entorns de Natura - Schema mestre
 -- Executar des de l'arrel del repositori per recrear una BD completa.
+-- Aquest fitxer és l'autoritat executable per a una reconstrucció neta.
+-- El nom de la base de dades no es fixa aquí: s'ha de seleccionar o proporcionar
+-- externament segons DB_NAME, amb `entorns_de_natura` com a valor local canònic.
 --
 -- Nota:
 -- - `02_education_tables.sql` conté l'estructura base i les taules mare.

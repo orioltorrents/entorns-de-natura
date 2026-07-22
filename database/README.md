@@ -2,21 +2,19 @@
 
 Aquesta carpeta conté l'esquema, les migracions i les peces de reconstrucció de la base de dades del projecte **Entorns de Natura**.
 
+## Responsabilitat d'aquest document
+
+Aquest fitxer és la font canònica per descriure l'esquema i els procediments de base de dades. `database/schema.sql` és l'autoritat executable per reconstruir una base neta; si una llista documental no coincideix amb els seus `SOURCE`, preval `database/schema.sql`.
+
 ## Base de dades local
 
-Nom local habitual:
+Nom canònic:
 
 ```text
 entorns_de_natura
 ```
 
-En alguns entorns de desenvolupament també es fa servir:
-
-```text
-entorns_natura_dev
-```
-
-La connexió es gestiona des de `config/database.php` llegint `.env`.
+La connexió es gestiona des de `config/database.php` i llegeix `DB_NAME` des de `.env`. El codi no ha de fixar aquest nom directament.
 
 ## Requisits
 
@@ -47,55 +45,37 @@ La base de dades gestiona principalment:
 - `project_id` és correcte per a relacions de catàleg base.
 - `project_id` no s'ha d'usar com a context de document, import o avaluació quan el context real és l'edició.
 
-## Ordre de càrrega
+## Reconstrucció neta
 
-Per reconstruir una base de dades neta, l'ordre recomanat és:
+Per crear una base de dades buida, cal seleccionar `entorns_de_natura` i executar `database/schema.sql` des de l'arrel del repositori. No s'han d'executar després, una per una, totes les migracions històriques: els fitxers base ja incorporen aquests canvis.
 
-```text
-database/schema.sql
-  -> 02_education_tables.sql
-  -> 03_assessment_tables.sql
-  -> 04_assessment_structure_tables.sql
-  -> 06_project_assets.sql
-  -> 07_task_resources.sql
-  -> 08_document_tables.sql
-  -> 10_project_sections.sql
-  -> 11_roles_split.sql
-  -> 12_project_class_assignments.sql
-  -> 13_project_academic_years.sql
-  -> 14_project_class_assignments_project_year_link.sql
-  -> 15_documents_project_year_link.sql
-  -> 16_project_class_assignments_cleanup.sql
-  -> 17_documents_project_id_cleanup.sql
-  -> 18_assessment_records_project_id_cleanup.sql
-  -> 19_documents_composite_read_index.sql
-  -> 20_assessment_records_user_source_index.sql
-  -> 21_documents_composite_read_index_title.sql
-  -> 22_document_indexes_cleanup.sql
-  -> 23_project_sections_indexes_cleanup.sql
-  -> 24_assessment_project_year_phases.sql
-  -> 25_assessment_project_year_phase_tasks.sql
-  -> 26_assessment_sources_project_year_link.sql
-  -> 27_assessment_sources_project_id_cleanup.sql
-  -> 28_assessment_index_cleanup.sql
-  -> 29_google_workspace_tables.sql
-  -> 30_classes_column_rename.sql
-  -> 31_student_profiles_external_id_cleanup.sql
-   -> 32_project_teams.sql
-   -> 33_users_academic_role_cleanup.sql
-   -> 34_student_profiles_cleanup.sql
-   -> 35_class_member_history.sql
-```
+La seqüència canònica és exactament la definida pels `SOURCE` de `database/schema.sql`. Aquest README no la duplica perquè el fitxer executable és l'autoritat.
 
-`05_project_display_order.sql` es manté com a canvi no destructiu per a bases ja creades. En una reconstrucció neta no cal, perquè `display_order` ja ve definit a la base.
+## Bases de dades existents
+
+Les migracions numerades que no formen part dels `SOURCE` de `database/schema.sql` són ajustos incrementals per portar bases antigues a l'estat actual. S'han d'aplicar només quan la base parteix de l'estat anterior corresponent, amb còpia de seguretat i revisant abans cada script.
+
+Canvis històrics ja absorbits pels fitxers de reconstrucció neta:
+
+- `05_project_display_order.sql`: `projects.display_order` ja forma part de la base;
+- `09_document_tables_fix.sql`: les definicions actuals de documents ja incorporen l'ajust;
+- `14` a `23`: els enllaços per edició, neteges i índexs ja estan consolidats;
+- `26` a `28`: les fonts d'avaluació i els seus índexs ja treballen amb l'edició;
+- `30` i `31`: `classes` i `student_profiles` ja tenen les columnes actuals;
+- `33` a `35`: la neteja de rols acadèmics, perfils i historial de classe ja és a l'esquema base.
+
+No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
 ## Taules principals
 
 ### Educació i usuaris
 
 - `users`
-- `roles`
-- `user_roles`
+- `student_profiles`
+- `web_roles`
+- `user_web_roles`
+- `project_roles`
+- `languages`
 - `academic_years`
 - `classes`
 - `class_members`
@@ -106,9 +86,10 @@ database/schema.sql
 
 - `projects`
 - `project_translations`
-- `project_groups`
 - `project_academic_years`
 - `project_class_assignments`
+
+`project_groups` és el nom legacy que `12_project_class_assignments.sql` pot migrar. No forma part del model final d'una reconstrucció neta.
 
 ### Equips de projecte
 
@@ -128,6 +109,11 @@ database/schema.sql
 - `document_sources`
 - `document_fragments`
 - `document_visibility_rules`
+
+### Seccions i permisos
+
+- `project_sections`
+- `project_section_roles`
 
 ### Avaluació
 
@@ -164,7 +150,7 @@ database/schema.sql
 
 ## Validació
 
-Després de canvis d'esquema, cal revisar:
+Després de qualsevol canvi d'esquema, és obligatori executar:
 
 ```text
 scripts/check-schema-coherence.php
