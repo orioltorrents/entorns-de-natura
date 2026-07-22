@@ -27,12 +27,14 @@ CREATE TABLE IF NOT EXISTS project_team_members (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     project_team_id BIGINT UNSIGNED NOT NULL,
     user_id INT UNSIGNED NOT NULL,
-    project_role_id INT UNSIGNED NOT NULL,
+    class_id INT UNSIGNED NULL,
+    project_role_id INT UNSIGNED NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_project_team_members_team_user (project_team_id, user_id),
     KEY idx_project_team_members_user_id (user_id),
+    KEY idx_project_team_members_class_id (class_id),
     KEY idx_project_team_members_project_role_id (project_role_id),
     CONSTRAINT fk_project_team_members_project_team
         FOREIGN KEY (project_team_id) REFERENCES project_teams (id)
@@ -41,6 +43,10 @@ CREATE TABLE IF NOT EXISTS project_team_members (
     CONSTRAINT fk_project_team_members_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_project_team_members_class
+        FOREIGN KEY (class_id) REFERENCES classes (id)
+        ON DELETE SET NULL
         ON UPDATE CASCADE,
     CONSTRAINT fk_project_team_members_project_role
         FOREIGN KEY (project_role_id) REFERENCES project_roles (id)

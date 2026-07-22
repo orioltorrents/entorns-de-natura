@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!countEl) return;
 
         const visible = table.querySelectorAll('tbody tr[data-class]:not([hidden])').length;
-        countEl.textContent = visible + ' usuaris';
+        countEl.textContent = visible + ' alumnes';
     };
 
     const normalizeFilterValue = (value) => {
@@ -215,32 +215,69 @@ document.addEventListener('DOMContentLoaded', () => {
         const table = document.getElementById(bar.getAttribute('data-filter-table') || '');
         if (!table) return;
 
-        bar.addEventListener('click', (event) => {
-            const chip = event.target.closest('.admin-filters__chip, .filter-chip');
-            if (!chip || !bar.contains(chip)) return;
+        const yearSelect = bar.querySelector('[data-year-filter]');
+        const yearChips = Array.from(bar.querySelectorAll('[data-year-filter-chip]'));
+        const classChipList = bar.querySelector('[data-class-chip-list]');
+        const classChips = Array.from(bar.querySelectorAll('[data-class-filter-chip]'));
 
-            const chips = Array.from(bar.querySelectorAll('.admin-filters__chip, .filter-chip'));
-            const value = chip.getAttribute('data-value');
+        const selectedYearValue = () => {
+            return yearSelect ? yearSelect.value : 'all';
+        };
 
-            if (value === 'all') {
-                chips.forEach((item) => item.classList.toggle('is-active', item === chip));
-            } else {
-                chip.classList.toggle('is-active');
-                const hasActiveClass = chips.some((item) => {
-                    return item.getAttribute('data-value') !== 'all' && item.classList.contains('is-active');
-                });
-                const allChip = bar.querySelector('.admin-filters__chip[data-value="all"], .filter-chip[data-value="all"]');
-                if (allChip) allChip.classList.toggle('is-active', !hasActiveClass);
-            }
+        const resetClassChips = () => {
+            classChips.forEach((chip) => {
+                chip.classList.toggle('is-active', chip.getAttribute('data-value') === 'all');
+            });
+        };
 
+        const syncYearChips = () => {
+            const selectedYear = selectedYearValue();
+            yearChips.forEach((chip) => {
+                chip.classList.toggle('is-active', chip.getAttribute('data-value') === selectedYear);
+            });
+        };
+
+        const updateClassChips = () => {
+            if (!classChipList || classChips.length === 0) return;
+
+            const selectedYear = selectedYearValue();
+            const showClassChips = selectedYear !== '' && selectedYear !== 'all';
+            classChipList.hidden = !showClassChips;
+
+            classChips.forEach((chip) => {
+                const chipYear = chip.getAttribute('data-class-year') || '';
+                const isAllChip = chip.getAttribute('data-value') === 'all';
+                chip.hidden = !showClassChips || (!isAllChip && chipYear !== selectedYear);
+                if (chip.hidden && !isAllChip) chip.classList.remove('is-active');
+            });
+
+            const hasActiveClass = classChips.some((chip) => {
+                return !chip.hidden && chip.getAttribute('data-value') !== 'all' && chip.classList.contains('is-active');
+            });
+            const allClassChip = classChips.find((chip) => chip.getAttribute('data-value') === 'all');
+            if (allClassChip) allClassChip.classList.toggle('is-active', !hasActiveClass);
+        };
+
+        const applyFilters = () => {
+            syncYearChips();
+            updateClassChips();
+
+            const chips = classChips.length > 0
+                ? classChips.filter((chip) => !chip.hidden)
+                : Array.from(bar.querySelectorAll('.admin-filters__chip, .filter-chip'));
             const activeClasses = chips
                 .filter((item) => item.getAttribute('data-value') !== 'all' && item.classList.contains('is-active'))
                 .map((item) => normalizeFilterValue(item.getAttribute('data-value')));
-            const showAll = activeClasses.length === 0;
+            const showAllClasses = activeClasses.length === 0;
+            const selectedYear = selectedYearValue();
+            const showAllYears = selectedYear === '' || selectedYear === 'all';
 
             table.querySelectorAll('tbody tr[data-class]').forEach((row) => {
                 const rowClass = normalizeFilterValue(row.getAttribute('data-class'));
-                const isVisible = showAll || activeClasses.includes(rowClass);
+                const rowYear = row.getAttribute('data-academic-year') || '';
+                const isClassVisible = showAllClasses || activeClasses.includes(rowClass);
+                const isYearVisible = showAllYears || rowYear === selectedYear;
+                const isVisible = isClassVisible && isYearVisible;
                 row.hidden = !isVisible;
 
                 const editorRow = row.nextElementSibling;
@@ -252,40 +289,184 @@ document.addEventListener('DOMContentLoaded', () => {
 
             closeHiddenEditorRows(table);
             updateStudentCount(table);
+        };
+
+        bar.addEventListener('click', (event) => {
+            const chip = event.target.closest('.admin-filters__chip, .filter-chip');
+            if (!chip || !bar.contains(chip)) return;
+
+            if (chip.matches('[data-year-filter-chip]')) {
+                const value = chip.getAttribute('data-value') || 'all';
+                if (yearSelect) yearSelect.value = value;
+                resetClassChips();
+                applyFilters();
+                return;
+            }
+
+            const chips = classChips.length > 0
+                ? classChips.filter((item) => !item.hidden)
+                : Array.from(bar.querySelectorAll('.admin-filters__chip, .filter-chip'));
+            const value = chip.getAttribute('data-value');
+
+            if (value === 'all') {
+                chips.forEach((item) => item.classList.toggle('is-active', item === chip));
+            } else {
+                chip.classList.toggle('is-active');
+                const hasActiveClass = chips.some((item) => {
+                    return item.getAttribute('data-value') !== 'all' && item.classList.contains('is-active');
+                });
+                const allChip = chips.find((item) => item.getAttribute('data-value') === 'all');
+                if (allChip) allChip.classList.toggle('is-active', !hasActiveClass);
+            }
+
+            applyFilters();
         });
 
-        updateStudentCount(table);
+        if (yearSelect) {
+            yearSelect.addEventListener('change', () => {
+                resetClassChips();
+                applyFilters();
+            });
+        }
+
+        applyFilters();
+    });
+
+    document.querySelectorAll('[data-team-filters]').forEach((filters) => {
+        const yearSelect = filters.querySelector('[data-team-year-filter]');
+        const projectSelect = filters.querySelector('[data-team-project-filter]');
+        const projectOptions = Array.from(filters.querySelectorAll('[data-team-project-option]'));
+        const countEl = filters.querySelector('[data-team-filter-count]');
+        const rows = Array.from(document.querySelectorAll('[data-team-row]'));
+        if (!yearSelect || !projectSelect || rows.length === 0) return;
+
+        const yearStorageKey = 'admin-team-year-filter';
+        const projectStorageKey = 'admin-team-project-filter';
+
+        const updateProjectOptions = () => {
+            const selectedYear = yearSelect.value || 'all';
+            const showAllYears = selectedYear === 'all' || selectedYear === '';
+            let selectedProjectStillVisible = false;
+
+            projectOptions.forEach((option) => {
+                const optionYear = option.getAttribute('data-team-year') || 'all';
+                const isVisible = optionYear === 'all' || showAllYears || optionYear === selectedYear;
+                option.hidden = !isVisible;
+                option.disabled = !isVisible;
+
+                if (isVisible && option.value === projectSelect.value) {
+                    selectedProjectStillVisible = true;
+                }
+            });
+
+            if (!selectedProjectStillVisible) {
+                projectSelect.value = 'all';
+            }
+        };
+
+        const applyTeamFilters = () => {
+            updateProjectOptions();
+
+            const selectedYear = yearSelect.value || 'all';
+            const selectedProject = projectSelect.value || 'all';
+            const showAllYears = selectedYear === 'all' || selectedYear === '';
+            const showAllProjects = selectedProject === 'all' || selectedProject === '';
+            let visibleCount = 0;
+
+            rows.forEach((row) => {
+                const yearMatches = showAllYears || row.getAttribute('data-team-year') === selectedYear;
+                const projectMatches = showAllProjects || row.getAttribute('data-team-project') === selectedProject;
+                const isVisible = yearMatches && projectMatches;
+                row.hidden = !isVisible;
+                if (isVisible) visibleCount++;
+            });
+
+            if (countEl) {
+                countEl.textContent = visibleCount + ' equips';
+            }
+        };
+
+        const storedYear = window.localStorage.getItem(yearStorageKey);
+        if (storedYear) {
+            yearSelect.value = storedYear;
+        }
+
+        updateProjectOptions();
+
+        const storedProject = window.localStorage.getItem(projectStorageKey);
+        if (storedProject) {
+            projectSelect.value = storedProject;
+        }
+
+        applyTeamFilters();
+
+        yearSelect.addEventListener('change', () => {
+            window.localStorage.setItem(yearStorageKey, yearSelect.value);
+            projectSelect.value = 'all';
+            window.localStorage.setItem(projectStorageKey, projectSelect.value);
+            applyTeamFilters();
+        });
+
+        projectSelect.addEventListener('change', () => {
+            window.localStorage.setItem(projectStorageKey, projectSelect.value);
+            applyTeamFilters();
+        });
     });
 
     document.querySelectorAll('[data-role-filter]').forEach((select) => {
+        const projectSelect = document.querySelector('[data-project-role-filter]');
         const groups = Array.from(document.querySelectorAll('[data-role-group]'));
         if (groups.length === 0) return;
 
         const storageKey = 'admin-role-filter';
+        const projectStorageKey = 'admin-project-role-filter';
         const normalize = (value) => normalizeFilterValue(value).replace(/\s+/g, ' ');
 
-        const applyFilter = (value) => {
-            const normalizedValue = normalize(value);
-            const showAll = normalizedValue === '' || normalizedValue === 'all';
+        const applyFilter = () => {
+            const normalizedRoleValue = normalize(select.value);
+            const selectedProject = projectSelect ? projectSelect.value : 'all';
+            const showAllRoles = normalizedRoleValue === '' || normalizedRoleValue === 'all';
+            const showAllProjects = selectedProject === '' || selectedProject === 'all';
 
             groups.forEach((group) => {
                 const groupName = normalize(group.getAttribute('data-role-name'));
-                group.hidden = !showAll && groupName !== normalizedValue;
+                const roleMatches = showAllRoles || groupName === normalizedRoleValue;
+                const rows = Array.from(group.querySelectorAll('[data-role-member-row]'));
+                let visibleRows = 0;
+
+                rows.forEach((row) => {
+                    const projectMatches = showAllProjects || row.getAttribute('data-project-key') === selectedProject;
+                    const isVisible = roleMatches && projectMatches;
+                    row.hidden = !isVisible;
+                    if (isVisible) visibleRows++;
+                });
+
+                group.hidden = !roleMatches || visibleRows === 0;
             });
         };
 
         const storedValue = window.localStorage.getItem(storageKey);
         if (storedValue) {
             select.value = storedValue;
-            applyFilter(storedValue);
-        } else {
-            applyFilter(select.value);
         }
 
+        const storedProjectValue = window.localStorage.getItem(projectStorageKey);
+        if (projectSelect && storedProjectValue) {
+            projectSelect.value = storedProjectValue;
+        }
+
+        applyFilter();
+
         select.addEventListener('change', () => {
-            const value = select.value;
-            window.localStorage.setItem(storageKey, value);
-            applyFilter(value);
+            window.localStorage.setItem(storageKey, select.value);
+            applyFilter();
         });
+
+        if (projectSelect) {
+            projectSelect.addEventListener('change', () => {
+                window.localStorage.setItem(projectStorageKey, projectSelect.value);
+                applyFilter();
+            });
+        }
     });
 });

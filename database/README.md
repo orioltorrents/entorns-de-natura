@@ -91,10 +91,17 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 
 `project_groups` és el nom legacy que `12_project_class_assignments.sql` pot migrar. No forma part del model final d'una reconstrucció neta.
 
+`ratpenats` és un projecte històric del curs `2023-2024`, assignat a `23-24_4ESOA` amb estat `realitzat`.
+
 ### Equips de projecte
 
 - `project_teams`
 - `project_team_members`
+- `project_team_member_roles`
+
+`project_team_members.class_id` guarda la classe contextual de l'alumne dins d'aquella edició de projecte. No s'ha d'inferir només de `class_members`, perquè aquesta taula representa la classe actual, ni de `project_teams.class_group`, perquè un equip pot barrejar alumnat de més d'una classe.
+
+`project_team_member_roles` és la font principal dels rols de projecte d'una pertinença. Permet que un membre tingui més d'un rol real, per exemple `científic/a` i `cartògraf/a`. `project_team_members.project_role_id` es manté com a rol principal de compatibilitat i no s'ha d'utilitzar com a única font quan cal mostrar, filtrar o importar rols múltiples.
 
 ### Assets i recursos
 

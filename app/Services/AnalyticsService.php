@@ -55,16 +55,49 @@ class AnalyticsService
             'SELECT COUNT(*) FROM (SELECT DISTINCT user_id FROM site_visits WHERE user_id IS NOT NULL) AS u'
         )->fetchColumn();
 
-        $classStats = $pdo->query(
-            'SELECT c.id, c.class_name,
+        $currentClassVisitStats = $pdo->query(
+            'SELECT ay.name AS academic_year_name,
+                    c.id,
+                    c.class_name,
+                    c.class_code,
                     COUNT(DISTINCT cm.user_id) AS total_students,
-                    SUM(CASE WHEN u.last_login_at IS NOT NULL THEN 1 ELSE 0 END) AS connected_students,
-                    SUM(CASE WHEN u.last_login_at IS NULL THEN 1 ELSE 0 END) AS pending_students
-             FROM classes c
+                    COUNT(sv.id) AS page_visits,
+                    COUNT(DISTINCT sv.user_id) AS students_with_visits,
+                    COUNT(DISTINCT cm.user_id) - COUNT(DISTINCT sv.user_id) AS students_without_visits
+             FROM academic_years ay
+             INNER JOIN classes c ON c.academic_year_id = ay.id
              LEFT JOIN class_members cm ON cm.class_id = c.id
-             LEFT JOIN users u ON u.id = cm.user_id
-             GROUP BY c.id, c.class_name
-             ORDER BY c.class_name'
+             LEFT JOIN site_visits sv ON sv.user_id = cm.user_id
+                AND sv.visited_at >= STR_TO_DATE(CONCAT(ay.start_year, "-09-01"), "%Y-%m-%d")
+                AND sv.visited_at < STR_TO_DATE(CONCAT(ay.end_year, "-09-01"), "%Y-%m-%d")
+             WHERE ay.is_current = 1
+             GROUP BY ay.id, ay.name, c.id, c.class_name, c.class_code
+             ORDER BY c.class_code'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $historicalAcademicYearVisitStats = $pdo->query(
+            'SELECT ay.name AS academic_year_name,
+                    COUNT(DISTINCT membership.user_id) AS total_students,
+                    COUNT(sv.id) AS page_visits,
+                    COUNT(DISTINCT sv.user_id) AS students_with_visits,
+                    COUNT(DISTINCT membership.user_id) - COUNT(DISTINCT sv.user_id) AS students_without_visits
+             FROM academic_years ay
+             LEFT JOIN (
+                 SELECT DISTINCT h.user_id, h.academic_year_id
+                 FROM class_member_history h
+                 WHERE h.new_class_id IS NOT NULL
+                 UNION
+                 SELECT DISTINCT cm.user_id, c.academic_year_id
+                 FROM class_members cm
+                 INNER JOIN classes c ON c.id = cm.class_id
+             ) membership ON membership.academic_year_id = ay.id
+             LEFT JOIN site_visits sv ON sv.user_id = membership.user_id
+                AND sv.visited_at >= STR_TO_DATE(CONCAT(ay.start_year, "-09-01"), "%Y-%m-%d")
+                AND sv.visited_at < STR_TO_DATE(CONCAT(ay.end_year, "-09-01"), "%Y-%m-%d")
+             WHERE ay.start_year < (SELECT start_year FROM academic_years WHERE is_current = 1 ORDER BY id DESC LIMIT 1)
+             GROUP BY ay.id, ay.name, ay.start_year
+             HAVING total_students > 0
+             ORDER BY ay.start_year DESC'
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $deviceStats = $pdo->query(
@@ -114,7 +147,9 @@ class AnalyticsService
             'total_visits' => $totalVisits,
             'unique_sessions' => $uniqueSessions,
             'unique_users' => $uniqueUsers,
-            'class_stats' => $classStats,
+            'class_stats' => $currentClassVisitStats,
+            'current_class_visit_stats' => $currentClassVisitStats,
+            'historical_academic_year_visit_stats' => $historicalAcademicYearVisitStats,
             'device_stats' => $deviceStats,
             'os_stats' => $osStats,
             'geo_stats' => $geoStats,

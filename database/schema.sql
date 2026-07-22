@@ -37,9 +37,11 @@
 -- - `30_classes_column_rename.sql` renombra els camps de `classes` a `class_name` i `class_code`.
 -- - `31_student_profiles_external_id_cleanup.sql` elimina el camp redundant `external_id` de `student_profiles`.
 -- - `32_project_teams.sql` afegeix equips i membres d'equip per projecte/curs.
+-- - `39_project_team_member_roles.sql` afegeix múltiples rols per membre d'equip.
 -- - `33_users_academic_role_cleanup.sql` elimina el camp legacy `academic_role` de `users`.
 -- - `34_student_profiles_cleanup.sql` redueix `student_profiles` al nucli mínim.
 -- - `35_class_member_history.sql` afegeix l'historial de canvis de classe i reforça la unicitat actual.
+-- - `38_ratpenats_project.sql` afegeix el projecte Ratpenats del curs 2023-2024.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -56,3 +58,5 @@ SOURCE database/24_assessment_project_year_phases.sql
 SOURCE database/25_assessment_project_year_phase_tasks.sql
 SOURCE database/29_google_workspace_tables.sql
 SOURCE database/32_project_teams.sql
+SOURCE database/39_project_team_member_roles.sql
+SOURCE database/38_ratpenats_project.sql

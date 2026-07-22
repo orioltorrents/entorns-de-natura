@@ -117,7 +117,7 @@ $editionScopedTables = [
         'indexes' => [['project_academic_year_id', 'is_active', 'display_order']],
     ],
     'project_team_members' => [
-        'requiredColumns' => ['project_team_id', 'user_id', 'project_role_id'],
+        'requiredColumns' => ['project_team_id', 'user_id', 'class_id', 'project_role_id'],
         'fks' => [[
             'column' => 'project_team_id',
             'referencedTable' => 'project_teams',
@@ -127,12 +127,30 @@ $editionScopedTables = [
             'referencedTable' => 'users',
             'referencedColumn' => 'id',
         ], [
+            'column' => 'class_id',
+            'referencedTable' => 'classes',
+            'referencedColumn' => 'id',
+        ], [
             'column' => 'project_role_id',
             'referencedTable' => 'project_roles',
             'referencedColumn' => 'id',
         ]],
         'uniqueIndexes' => [['project_team_id', 'user_id']],
-        'indexes' => [['user_id'], ['project_role_id']],
+        'indexes' => [['user_id'], ['class_id'], ['project_role_id']],
+    ],
+    'project_team_member_roles' => [
+        'requiredColumns' => ['project_team_member_id', 'project_role_id'],
+        'fks' => [[
+            'column' => 'project_team_member_id',
+            'referencedTable' => 'project_team_members',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'project_role_id',
+            'referencedTable' => 'project_roles',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['project_team_member_id', 'project_role_id']],
+        'indexes' => [['project_role_id']],
     ],
     'class_members' => [
         'requiredColumns' => ['class_id', 'user_id'],

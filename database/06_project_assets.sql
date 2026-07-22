@@ -62,6 +62,18 @@ INSERT INTO project_assets (slug, name, asset_type, logo_path, website_url, desc
 SELECT 'agroparc-logo', 'Agroparc', 'project', 'assets/logos/projectes/agroparc.png', NULL, NULL, 30, 1
 WHERE NOT EXISTS (SELECT 1 FROM project_assets WHERE slug = 'agroparc-logo');
 
+INSERT INTO project_assets (slug, name, asset_type, logo_path, website_url, description, display_order, is_active)
+SELECT 'projecte-orenetes-logo', 'Projecte Orenetes', 'project', 'assets/logos/projectes/projecte-orenetes.png', NULL, NULL, 40, 1
+WHERE NOT EXISTS (SELECT 1 FROM project_assets WHERE slug = 'projecte-orenetes-logo');
+
+INSERT INTO project_assets (slug, name, asset_type, logo_path, website_url, description, display_order, is_active)
+SELECT 'liquencity-logo', 'Liquencity', 'project', 'assets/logos/projectes/liquencity.png', NULL, NULL, 50, 1
+WHERE NOT EXISTS (SELECT 1 FROM project_assets WHERE slug = 'liquencity-logo');
+
+INSERT INTO project_assets (slug, name, asset_type, logo_path, website_url, description, display_order, is_active)
+SELECT 'vespa-velutina-logo', 'Vespa velutina', 'project', 'assets/logos/projectes/vespa-velutina.png', NULL, NULL, 60, 1
+WHERE NOT EXISTS (SELECT 1 FROM project_assets WHERE slug = 'vespa-velutina-logo');
+
 INSERT INTO project_asset_links (project_id, asset_id, display_order, is_visible)
 SELECT p.id, a.id, 10, 1
 FROM projects p
@@ -94,6 +106,45 @@ FROM projects p
 JOIN project_assets a
 WHERE p.slug = 'agroparc'
   AND a.slug = 'agroparc-logo'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM project_asset_links pal
+      WHERE pal.project_id = p.id
+        AND pal.asset_id = a.id
+  );
+
+INSERT INTO project_asset_links (project_id, asset_id, display_order, is_visible)
+SELECT p.id, a.id, 40, 1
+FROM projects p
+JOIN project_assets a
+WHERE p.slug = 'projecte-orenetes'
+  AND a.slug = 'projecte-orenetes-logo'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM project_asset_links pal
+      WHERE pal.project_id = p.id
+        AND pal.asset_id = a.id
+  );
+
+INSERT INTO project_asset_links (project_id, asset_id, display_order, is_visible)
+SELECT p.id, a.id, 50, 1
+FROM projects p
+JOIN project_assets a
+WHERE p.slug = 'liquencity'
+  AND a.slug = 'liquencity-logo'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM project_asset_links pal
+      WHERE pal.project_id = p.id
+        AND pal.asset_id = a.id
+  );
+
+INSERT INTO project_asset_links (project_id, asset_id, display_order, is_visible)
+SELECT p.id, a.id, 60, 1
+FROM projects p
+JOIN project_assets a
+WHERE p.slug = 'vespa-velutina'
+  AND a.slug = 'vespa-velutina-logo'
   AND NOT EXISTS (
       SELECT 1
       FROM project_asset_links pal

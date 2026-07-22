@@ -8,7 +8,7 @@ ob_start();
             <span>Administració</span>
         </div>
         <nav class="admin-layout__nav">
-            <a class="active" href="#panell">Panell</a>
+            <a class="active" href="#panell">Resum</a>
             <a href="#analytics">Visites</a>
             <div class="admin-layout__nav-group">
                 <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="usuaris-submenu" aria-expanded="false">
@@ -38,7 +38,76 @@ ob_start();
             </div>
         <?php endif; ?>
 
+        <?php
+        $activeUsersCount = count(array_filter($users, static fn (array $user): bool => (int) $user['is_active'] === 1));
+        $inactiveUsersCount = count($users) - $activeUsersCount;
+        $activeProjectsCount = count(array_filter($projects, static fn (array $project): bool => (int) ($project['is_active'] ?? 0) === 1));
+        $inactiveProjectsCount = count($projects) - $activeProjectsCount;
+        ?>
         <div class="admin-summary">
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">🛡️</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Rols de la web</span>
+                    <span class="admin-summary__value"><?= count($roles) ?></span>
+                    <div class="admin-summary__roles">
+                        <?php foreach ($roles as $role): ?>
+                            <span class="admin-summary__role-badge">
+                                <small><?= (int) $role['user_count'] ?></small>
+                                <span><?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">📅</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Anys acadèmics</span>
+                    <span class="admin-summary__value"><?= count($academicYears ?? []) ?></span>
+                    <div class="admin-summary__roles">
+                        <?php foreach (($academicYears ?? []) as $academicYear): ?>
+                            <span class="admin-summary__role-badge <?= ((int) ($academicYear['is_current'] ?? 0) === 1) ? 'admin-summary__role-badge--active' : '' ?>">
+                                <?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">🌿</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Projectes</span>
+                    <span class="admin-summary__value"><?= count($projects) ?></span>
+                    <span class="admin-summary__desc"><?= $activeProjectsCount ?> actius · <?= $inactiveProjectsCount ?> inactius</span>
+                </div>
+            </div>
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">👥</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Equips</span>
+                    <span class="admin-summary__value"><?= count($projectTeams ?? []) ?></span>
+                    <span class="admin-summary__desc"><?= (int) ($projectTeamMembershipCount ?? 0) ?> pertinences d’alumnes</span>
+                </div>
+            </div>
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">🎒</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Rols del projecte</span>
+                    <span class="admin-summary__value"><?= count($projectRoles ?? []) ?></span>
+                    <div class="admin-summary__roles">
+                        <?php foreach (($projectRoles ?? []) as $projectRole): ?>
+                            <span class="admin-summary__role-badge">
+                                <small><?= (int) $projectRole['member_count'] ?></small>
+                                <span><?= htmlspecialchars((string) $projectRole['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                        <?php if ((int) ($projectMembersWithoutRole ?? 0) > 0): ?>
+                            <span class="admin-summary__role-badge admin-summary__role-badge--muted"><small><?= (int) $projectMembersWithoutRole ?></small> <span>Sense rol</span></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
             <div class="admin-summary__card">
                 <div class="admin-summary__icon">👤</div>
                 <div class="admin-summary__body">
@@ -47,34 +116,19 @@ ob_start();
                     <span class="admin-summary__desc">Registrats al sistema</span>
                 </div>
             </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">🛡️</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Rols web</span>
-                    <span class="admin-summary__value"><?= count($roles) ?></span>
-                    <div class="admin-summary__roles">
-                        <?php foreach ($roles as $role): ?>
-                            <span class="admin-summary__role-badge">
-                                <?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?>
-                                <small><?= (int) $role['user_count'] ?></small>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
             <div class="admin-summary__card admin-summary__card--good">
                 <div class="admin-summary__icon">✅</div>
                 <div class="admin-summary__body">
-                    <span class="admin-summary__label">Actius</span>
-                    <span class="admin-summary__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] === 1)) ?></span>
+                    <span class="admin-summary__label">Usuaris actius</span>
+                    <span class="admin-summary__value"><?= $activeUsersCount ?></span>
                     <span class="admin-summary__desc">Usuaris amb accés actiu</span>
                 </div>
             </div>
             <div class="admin-summary__card admin-summary__card--muted">
                 <div class="admin-summary__icon">⏸️</div>
                 <div class="admin-summary__body">
-                    <span class="admin-summary__label">Inactius</span>
-                    <span class="admin-summary__value"><?= count(array_filter($users, fn($user) => (int) $user['is_active'] !== 1)) ?></span>
+                    <span class="admin-summary__label">Usuaris inactius</span>
+                    <span class="admin-summary__value"><?= $inactiveUsersCount ?></span>
                     <span class="admin-summary__desc">Usuaris desactivats</span>
                 </div>
             </div>
@@ -119,29 +173,64 @@ ob_start();
 
             <div class="admin-panels">
                 <section class="card admin-panel admin-panel--table">
-                    <h3>Connexions per classe</h3>
+                    <h3>Visites per classe</h3>
+                    <p class="muted">Detall del curs acadèmic actual per codi de classe. Les visites es compten entre l’1 de setembre i el 31 d’agost del curs.</p>
                     <div class="admin-table__wrapper">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Classe</th>
                                     <th>Alumnes</th>
-                                    <th>Connexions</th>
-                                    <th>Sense connectar</th>
+                                    <th>Visites</th>
+                                    <th>Alumnes amb visites</th>
+                                    <th>Sense visites</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach (($analytics['class_stats'] ?? []) as $class): ?>
+                                <?php foreach (($analytics['current_class_visit_stats'] ?? []) as $class): ?>
                                     <tr>
-                                        <td><?= htmlspecialchars((string) ($class['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($class['class_code'] ?? $class['class_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <?php if (!empty($class['academic_year_name'])): ?>
+                                                <span class="muted"> · <?= htmlspecialchars((string) $class['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?= (int) ($class['total_students'] ?? 0) ?></td>
-                                        <td><?= (int) ($class['connected_students'] ?? 0) ?></td>
-                                        <td><?= (int) ($class['pending_students'] ?? 0) ?></td>
+                                        <td><?= (int) ($class['page_visits'] ?? 0) ?></td>
+                                        <td><?= (int) ($class['students_with_visits'] ?? 0) ?></td>
+                                        <td><?= (int) ($class['students_without_visits'] ?? 0) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
+                    <?php if (!empty($analytics['historical_academic_year_visit_stats'] ?? [])): ?>
+                        <h4>Resum d’anys anteriors</h4>
+                        <div class="admin-table__wrapper">
+                            <table class="admin-table admin-table--compact">
+                                <thead>
+                                    <tr>
+                                        <th>Any acadèmic</th>
+                                        <th>Alumnes</th>
+                                        <th>Visites</th>
+                                        <th>Alumnes amb visites</th>
+                                        <th>Sense visites</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach (($analytics['historical_academic_year_visit_stats'] ?? []) as $yearStats): ?>
+                                        <tr>
+                                            <td><strong><?= htmlspecialchars((string) ($yearStats['academic_year_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                            <td><?= (int) ($yearStats['total_students'] ?? 0) ?></td>
+                                            <td><?= (int) ($yearStats['page_visits'] ?? 0) ?></td>
+                                            <td><?= (int) ($yearStats['students_with_visits'] ?? 0) ?></td>
+                                            <td><?= (int) ($yearStats['students_without_visits'] ?? 0) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </section>
 
                 <section class="card admin-panel admin-panel--chart">
@@ -285,12 +374,36 @@ ob_start();
         </div>
 
         <?php
-        $classGroups = [];
+        $studentFilterYears = [];
         foreach (($studentUsers ?? []) as $u) {
-            $cg = !empty($u['class_group']) ? $u['class_group'] : 'Sense classe';
-            $classGroups[$cg] = true;
+            $studentAcademicYear = is_array($u['academic_year'] ?? null) ? $u['academic_year'] : null;
+            $academicYearId = (int) ($studentAcademicYear['id'] ?? 0);
+            $academicYearName = (string) ($studentAcademicYear['name'] ?? '');
+            $classCode = !empty($u['class_code']) ? (string) $u['class_code'] : 'Sense classe';
+
+            if ($academicYearId <= 0 || $academicYearName === '') {
+                continue;
+            }
+
+            if (!isset($studentFilterYears[$academicYearId])) {
+                $studentFilterYears[$academicYearId] = [
+                    'id' => $academicYearId,
+                    'name' => $academicYearName,
+                    'classes' => [],
+                ];
+            }
+
+            $studentFilterYears[$academicYearId]['classes'][$classCode] = true;
         }
-        ksort($classGroups);
+
+        $orderedStudentFilterYears = [];
+        foreach (($academicYears ?? []) as $academicYear) {
+            $academicYearId = (int) $academicYear['id'];
+            if (isset($studentFilterYears[$academicYearId])) {
+                ksort($studentFilterYears[$academicYearId]['classes']);
+                $orderedStudentFilterYears[$academicYearId] = $studentFilterYears[$academicYearId];
+            }
+        }
         ?>
 
         <div id="usuaris-seccio" class="card admin-panel admin-panel--users admin-collapsible is-collapsed">
@@ -346,9 +459,9 @@ ob_start();
 
                 <div id="importar-usuaris" class="card admin-panel admin-panel--import">
                     <h2>Importar alumnes CSV</h2>
-                    <p>Importa fitxers amb columnes com <strong>email</strong>, <strong>name</strong>, <strong>surname</strong>, <strong>is_active</strong>, <strong>class_code</strong> o <strong>class</strong>, <strong>project_academic_year_id</strong> o <strong>project_slug</strong> + <strong>academic_year</strong>, <strong>team_code</strong> i <strong>project_role</strong>. El sistema crea o actualitza l’usuari, sincronitza la classe actual i assigna l’equip de projecte quan hi ha aquestes dades.</p>
+                    <p>Importa fitxers amb columnes com <strong>email</strong>, <strong>name</strong>, <strong>surname</strong>, <strong>is_active</strong>, <strong>class_code</strong> o <strong>class</strong>, <strong>project_academic_year_id</strong> o <strong>project_slug</strong> + <strong>academic_year</strong>, <strong>team_code</strong>, <strong>team_name</strong> i <strong>project_role</strong>. El sistema crea o actualitza l’usuari, sincronitza la classe actual i assigna l’equip de projecte quan hi ha aquestes dades. <strong>project_role</strong> pot quedar buit o incloure diversos rols separats per espai, punt i coma, coma o barra vertical.</p>
                     <pre class="admin-import-example"><code>email,name,surname,is_active,class_code,project_slug,academic_year,team_code,team_name,project_role
-aiman@example.com,Aiman,Aliaga,1,24-25_4ESOA,projecte-rius,2024-2025,24-25_projecte-rius_4ESOA-1,4ESOAB-1,científic/a
+aiman@example.com,Aiman,Aliaga,1,24-25_4ESOA,projecte-rius,2024-2025,24-25_projecte-rius_4ESOA-1,4ESOAB-1,
 silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc_4ESOB-2,4ESOAB-1,cartògraf/a</code></pre>
                     <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                         <input type="hidden" name="action" value="import_students">
@@ -385,11 +498,33 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                         </div>
                     </div>
                     <div class="admin-filters" id="alumnes-filter" data-filter-table="alumnes-table">
-                        <span class="admin-filters__label">Classe:</span>
-                        <button class="admin-filters__chip is-active" type="button" data-value="all">Totes</button>
-                        <?php foreach ($classGroups as $group => $_): ?>
-                            <button class="admin-filters__chip" type="button" data-value="<?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $group, ENT_QUOTES, 'UTF-8') ?></button>
-                        <?php endforeach; ?>
+                        <label class="admin-filters__select-label">
+                            Any acadèmic:
+                            <select data-year-filter>
+                                <option value="all">Tots</option>
+                                <?php foreach ($orderedStudentFilterYears as $academicYear): ?>
+                                    <option value="<?= (int) $academicYear['id'] ?>"><?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <?php if ($orderedStudentFilterYears !== []): ?>
+                            <div class="admin-filters__group" data-year-chip-list>
+                                <span class="admin-filters__label">Anys:</span>
+                                <button class="admin-filters__chip is-active" type="button" data-year-filter-chip data-value="all">Tots</button>
+                                <?php foreach ($orderedStudentFilterYears as $academicYear): ?>
+                                    <button class="admin-filters__chip" type="button" data-year-filter-chip data-value="<?= (int) $academicYear['id'] ?>"><?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?></button>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="admin-filters__group" data-class-chip-list hidden>
+                                <span class="admin-filters__label">Classes:</span>
+                                <button class="admin-filters__chip is-active" type="button" data-class-filter-chip data-class-year="all" data-value="all">Totes</button>
+                                <?php foreach ($orderedStudentFilterYears as $academicYear): ?>
+                                    <?php foreach ($academicYear['classes'] as $classCode => $_): ?>
+                                        <button class="admin-filters__chip" type="button" data-class-filter-chip data-class-year="<?= (int) $academicYear['id'] ?>" data-value="<?= htmlspecialchars((string) $classCode, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $classCode, ENT_QUOTES, 'UTF-8') ?></button>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div id="alumnes-content" class="admin-collapsible__content">
                         <div class="admin-table__wrapper">
@@ -398,24 +533,30 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                     <tr>
                                         <th scope="col" data-sort-type="text">Usuari</th>
                                         <th scope="col" data-sort-type="text">Email</th>
-                                        <th scope="col" data-sort-type="text" class="th-class">Classe</th>
+                                        <th scope="col" data-sort-type="text" class="th-class">Class code</th>
+                                        <th scope="col" data-sort-type="text">Estat</th>
                                         <th scope="col">Accions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach (($studentUsers ?? []) as $user): ?>
-                                        <?php $userClass = !empty($user['class_group']) ? $user['class_group'] : 'Sense classe'; ?>
+                                        <?php $userClass = !empty($user['class_code']) ? $user['class_code'] : 'Sense classe'; ?>
+                                        <?php $studentAcademicYear = is_array($user['academic_year'] ?? null) ? $user['academic_year'] : null; ?>
                                         <?php $isAdminUser = in_array('admin', $user['roles'], true); ?>
-                                        <tr data-class="<?= htmlspecialchars((string) $userClass, ENT_QUOTES, 'UTF-8') ?>">
+                                        <tr data-class="<?= htmlspecialchars((string) $userClass, ENT_QUOTES, 'UTF-8') ?>" data-academic-year="<?= (int) ($studentAcademicYear['id'] ?? 0) ?>">
                                             <td><?= htmlspecialchars(trim(($user['name'] ?? '') . ' ' . ($user['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
                                             <td><?= htmlspecialchars((string) ($user['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                             <td>
-                                                <?php if (!empty($user['class_group'])): ?>
-                                                    <?= htmlspecialchars((string) $user['class_group'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php if (!empty($user['class_code'])): ?>
+                                                    <?= htmlspecialchars((string) $user['class_code'], ENT_QUOTES, 'UTF-8') ?>
+                                                    <?php if (!empty($studentAcademicYear['name'])): ?>
+                                                        <span class="muted"> · <?= htmlspecialchars((string) $studentAcademicYear['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php endif; ?>
                                                 <?php else: ?>
                                                     <span class="muted">Sense classe</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td><?= ((int) $user['is_active'] === 1) ? 'Actiu' : 'Inactiu' ?></td>
                                             <td>
                                                 <div class="admin-actions">
                                                     <?php if (!$isAdminUser): ?>
@@ -434,7 +575,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             </td>
                                         </tr>
                                         <tr id="student-<?= (int) $user['id'] ?>" class="student-editor-row">
-                                            <td colspan="4">
+                                            <td colspan="5">
                                                 <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
                                                     <input type="hidden" name="action" value="update_student">
                                                     <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
@@ -446,7 +587,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                             <select name="class_id">
                                                                 <option value="">Sense classe</option>
                                                                 <?php foreach ($classes as $class): ?>
-                                                                    <option value="<?= (int) $class['id'] ?>" <?= ((int) ($user['class_id'] ?? 0) === (int) $class['id']) ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                                    <option value="<?= (int) $class['id'] ?>" <?= ((int) ($user['class_id'] ?? 0) === (int) $class['id']) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($class['code'] ?? $class['name']), ENT_QUOTES, 'UTF-8') ?></option>
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </label>
@@ -516,7 +657,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                 <?php if (!empty($teacherClasses)): ?>
                                                     <div class="admin-table__meta">
                                                         <?php foreach ($teacherClasses as $teacherClass): ?>
-                                                            <span class="admin-table__meta-item"><?= htmlspecialchars((string) $teacherClass['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <span class="admin-table__meta-item"><?= htmlspecialchars((string) ($teacherClass['code'] ?? $teacherClass['name']), ENT_QUOTES, 'UTF-8') ?></span>
                                                         <?php endforeach; ?>
                                                     </div>
                                                 <?php else: ?>
@@ -599,61 +740,51 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             </div>
 
             <div id="classes-content" class="admin-collapsible__content">
-                <p>Marca el professorat assignat a cada classe. Aquestes relacions alimenten el dashboard de professorat.</p>
+                <p>Marca el professorat assignat a cada classe i desa tots els canvis amb un sol botó. Aquestes relacions alimenten el dashboard de professorat.</p>
 
-                <div class="admin-table__wrapper">
-                    <table class="admin-table admin-table--compact">
-                        <thead>
-                            <tr>
-                                <th scope="col">Classe</th>
-                                <th scope="col">Professorat assignat</th>
-                                <th scope="col">Modificar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($classes as $class): ?>
-                                <?php
-                                $classId = (int) $class['id'];
-                                $assignedTeachers = $classTeachersMap[$classId] ?? [];
-                                $assignedTeacherIds = array_map(static fn (array $teacher): int => (int) $teacher['id'], $assignedTeachers);
-                                ?>
+                <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>#classes">
+                    <input type="hidden" name="action" value="sync_all_class_teachers">
+                    <div class="admin-table__wrapper">
+                        <table class="admin-table admin-table--compact">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <strong><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
-                                        <span class="muted"><?= htmlspecialchars((string) $class['code'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    </td>
-                                    <td>
-                                        <?php if (!empty($assignedTeachers)): ?>
-                                            <div class="admin-table__meta">
-                                                <?php foreach ($assignedTeachers as $teacher): ?>
-                                                    <span class="admin-table__tag"><?= htmlspecialchars((string) $teacher['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="muted">Sense professorat assignat</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>#classes">
-                                            <input type="hidden" name="action" value="sync_class_teachers">
-                                            <input type="hidden" name="class_id" value="<?= $classId ?>">
+                                    <th scope="col">Classe</th>
+                                    <th scope="col">Professorat assignat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($classes as $class): ?>
+                                    <?php
+                                    $classId = (int) $class['id'];
+                                    $assignedTeachers = $classTeachersMap[$classId] ?? [];
+                                    $assignedTeacherIds = array_map(static fn (array $teacher): int => (int) $teacher['id'], $assignedTeachers);
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($class['code'] ?? $class['name']), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="muted"><?= htmlspecialchars((string) ($class['academic_year_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td>
                                             <div class="form__choices">
                                                 <?php foreach ($teacherUsers as $teacher): ?>
                                                     <?php $teacherId = (int) $teacher['id']; ?>
                                                     <label class="form__choice">
-                                                        <input type="checkbox" name="teacher_ids[]" value="<?= $teacherId ?>" <?= in_array($teacherId, $assignedTeacherIds, true) ? 'checked' : '' ?>>
+                                                        <input type="checkbox" name="teacher_ids_by_class[<?= $classId ?>][]" value="<?= $teacherId ?>" <?= in_array($teacherId, $assignedTeacherIds, true) ? 'checked' : '' ?>>
                                                         <?= htmlspecialchars(trim((string) ($teacher['name'] ?? '') . ' ' . (string) ($teacher['surname'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
                                                     </label>
                                                 <?php endforeach; ?>
                                             </div>
-                                            <button class="button" type="submit">Guardar professorat</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="button" type="submit">Guardar tot el professorat</button>
+                        <span class="muted">S'actualitzaran totes les classes visibles a la taula.</span>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -662,6 +793,11 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
         $projectAssignmentsByProject = [];
         foreach ($projectAssignments as $assignment) {
             $projectAssignmentsByProject[(int) $assignment['project_id']][] = $assignment;
+        }
+
+        $projectAcademicYearsByProject = [];
+        foreach (($projectAcademicYears ?? []) as $projectAcademicYear) {
+            $projectAcademicYearsByProject[(int) $projectAcademicYear['project_id']][] = $projectAcademicYear;
         }
         ?>
         <div id="projectes-lista" class="card admin-panel admin-panel--projects admin-collapsible is-collapsed">
@@ -683,9 +819,20 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                             $projectId = (int) $project['id'];
                             $projectSlug = (string) ($project['slug'] ?? '');
                             $projectAssignmentsForCard = $projectAssignmentsByProject[$projectId] ?? [];
+                            $projectAssignmentsByClass = [];
+                            foreach ($projectAssignmentsForCard as $assignment) {
+                                $projectAssignmentsByClass[(int) $assignment['class_id']] = $assignment;
+                            }
+                            $projectAcademicYearsForCard = $projectAcademicYearsByProject[$projectId] ?? [];
+                            $availableAcademicYearIds = array_map(static fn (array $year): int => (int) $year['academic_year_id'], $projectAcademicYearsForCard);
+                            $availableAcademicYearLabels = array_map(static fn (array $year): string => (string) $year['academic_year_name'], $projectAcademicYearsForCard);
+                            $classesForProject = array_values(array_filter(
+                                $classes,
+                                static fn (array $class): bool => in_array((int) ($class['academic_year_id'] ?? 0), $availableAcademicYearIds, true)
+                            ));
                             $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null);
                         ?>
-                        <article class="project-admin-card">
+                        <article class="project-admin-card admin-collapsible is-collapsed">
                             <div class="project-admin-card__header">
                                 <div class="project-admin-card__logo">
                                     <?php if (!empty($projectAsset['logo_path'])): ?>
@@ -701,97 +848,95 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                 <span class="status <?= ((int) ($project['is_active'] ?? 0) === 1) ? 'status--active' : 'status--inactive' ?>">
                                     <?= ((int) ($project['is_active'] ?? 0) === 1) ? 'Actiu' : 'Inactiu' ?>
                                 </span>
-                            </div>
-                            <p class="project-admin-card__description"><?= htmlspecialchars((string) ($project['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="project-admin-card__controls">
-                                <label class="project-admin-card__order">
-                                    Ordre
-                                    <input form="project-order-form" type="number" name="display_order[<?= $projectId ?>]" value="<?= (int) ($project['display_order'] ?? 0) ?>" min="0" step="1">
-                                </label>
-                                <button class="button button--secondary" form="project-order-form" type="submit">Guardar ordre</button>
-                                <form method="post" action="<?= url('admin') ?>#projectes-lista" class="admin-inline-action">
-                                    <input type="hidden" name="action" value="toggle_project">
-                                    <input type="hidden" name="project_id" value="<?= $projectId ?>">
-                                    <button class="button button--secondary" type="submit">
-                                        <?= ((int) ($project['is_active'] ?? 0) === 1) ? 'Desactivar' : 'Activar' ?>
-                                    </button>
-                                </form>
+                                <button class="collapse-toggle" type="button" data-collapse="project-card-content-<?= $projectId ?>">Mostrar</button>
                             </div>
 
-                            <div class="project-admin-card__assignments">
-                                <div class="project-admin-card__assignments-header">
-                                    <strong>Assignacions</strong>
-                                    <span class="status"><?= count($projectAssignmentsForCard) ?> classes</span>
+                            <div id="project-card-content-<?= $projectId ?>" class="admin-collapsible__content project-admin-card__content">
+                                <p class="project-admin-card__description"><?= htmlspecialchars((string) ($project['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <div class="project-admin-card__controls">
+                                    <label class="project-admin-card__order">
+                                        Ordre
+                                        <input form="project-order-form" type="number" name="display_order[<?= $projectId ?>]" value="<?= (int) ($project['display_order'] ?? 0) ?>" min="0" step="1">
+                                    </label>
+                                    <button class="button button--secondary" form="project-order-form" type="submit">Guardar ordre</button>
+                                    <form method="post" action="<?= url('admin') ?>#projectes-lista" class="admin-inline-action">
+                                        <input type="hidden" name="action" value="toggle_project">
+                                        <input type="hidden" name="project_id" value="<?= $projectId ?>">
+                                        <button class="button button--secondary" type="submit">
+                                            <?= ((int) ($project['is_active'] ?? 0) === 1) ? 'Desactivar' : 'Activar' ?>
+                                        </button>
+                                    </form>
                                 </div>
 
-                                <form class="project-admin-card__assign-form" method="post" action="<?= url('admin') ?>#projectes-lista">
-                                    <input type="hidden" name="action" value="assign_project_to_class">
-                                    <input type="hidden" name="project_id" value="<?= $projectId ?>">
-                                    <select name="class_id" required aria-label="Classe">
-                                        <option value="">Classe</option>
-                                        <?php foreach ($classes as $class): ?>
-                                            <option value="<?= (int) $class['id'] ?>"><?= htmlspecialchars((string) $class['name'], ENT_QUOTES, 'UTF-8') ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <select name="status" required aria-label="Estat inicial">
-                                        <option value="pendent">Pendent</option>
-                                        <option value="actiu" selected>Actiu</option>
-                                        <option value="realitzat">Realitzat</option>
-                                    </select>
-                                    <button class="button" type="submit">Assignar</button>
-                                </form>
-
-                                <?php if (!empty($projectAssignmentsForCard)): ?>
-                                    <div class="project-admin-card__assignment-list">
-                                        <?php foreach ($projectAssignmentsForCard as $assignment): ?>
-                                            <?php
-                                                $assignmentStatus = strtolower(trim((string) ($assignment['status'] ?? 'actiu')));
-                                                $assignmentStatusMap = [
-                                                    'planned' => 'pendent',
-                                                    'previst' => 'pendent',
-                                                    'active' => 'actiu',
-                                                    'completed' => 'realitzat',
-                                                    'completat' => 'realitzat',
-                                                ];
-                                                $assignmentStatus = $assignmentStatusMap[$assignmentStatus] ?? $assignmentStatus;
-                                                $statusLabels = [
-                                                    'pendent' => 'Pendent',
-                                                    'actiu' => 'Actiu',
-                                                    'realitzat' => 'Realitzat',
-                                                ];
-                                                $statusLabel = $statusLabels[$assignmentStatus] ?? $assignmentStatus;
-                                            ?>
-                                            <div class="project-admin-card__assignment">
-                                                <div class="project-admin-card__assignment-main">
-                                                    <strong><?= htmlspecialchars((string) ($assignment['class_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
-                                                    <?php if (!empty($assignment['academic_year_name'])): ?>
-                                                        <span><?= htmlspecialchars((string) $assignment['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                    <?php endif; ?>
-                                                    <span><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                                </div>
-                                                <div class="project-admin-card__assignment-actions">
-                                                    <form method="post" action="<?= url('admin') ?>#projectes-lista" class="project-admin-card__assignment-status">
-                                                        <input type="hidden" name="action" value="update_project_assignment_status">
-                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                        <select name="status" aria-label="Estat del projecte">
-                                                            <option value="pendent" <?= $assignmentStatus === 'pendent' ? 'selected' : '' ?>>Pendent</option>
-                                                            <option value="actiu" <?= $assignmentStatus === 'actiu' ? 'selected' : '' ?>>Actiu</option>
-                                                            <option value="realitzat" <?= $assignmentStatus === 'realitzat' ? 'selected' : '' ?>>Realitzat</option>
-                                                        </select>
-                                                        <button class="button button--secondary" type="submit">Guardar</button>
-                                                    </form>
-                                                    <form method="post" action="<?= url('admin') ?>#projectes-lista" class="project-admin-card__assignment-delete" data-confirm="Vols eliminar aquesta assignació?">
-                                                        <input type="hidden" name="action" value="delete_project_assignment">
-                                                        <input type="hidden" name="assignment_id" value="<?= (int) $assignment['id'] ?>">
-                                                        <button class="button button--danger" type="submit">Eliminar</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
+                                <div class="project-admin-card__assignments">
+                                    <div class="project-admin-card__assignments-header">
+                                        <strong>Assignacions</strong>
+                                        <span class="status"><?= count($projectAssignmentsForCard) ?> classes</span>
                                     </div>
-                                <?php else: ?>
-                                    <p class="muted">Encara no està assignat a cap classe.</p>
-                                <?php endif; ?>
+
+                                    <form class="project-admin-card__assign-form" method="post" action="<?= url('admin') ?>#projectes-lista" data-confirm="Es desaran els estats marcats per aquest projecte. Les files amb No assignat eliminaran l'assignació de la classe.">
+                                        <input type="hidden" name="action" value="sync_project_class_assignments">
+                                        <input type="hidden" name="project_id" value="<?= $projectId ?>">
+                                        <?php if ($availableAcademicYearLabels !== []): ?>
+                                            <p class="muted">Edicions disponibles: <?= htmlspecialchars(implode(', ', $availableAcademicYearLabels), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php endif; ?>
+                                        <?php if ($classesForProject !== []): ?>
+                                            <div class="project-assignment-matrix" role="region" aria-label="Assignacions per classe">
+                                                <table class="project-assignment-matrix__table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">Classe</th>
+                                                            <th scope="col">Realitzat</th>
+                                                            <th scope="col">Actiu</th>
+                                                            <th scope="col">Pendent</th>
+                                                            <th scope="col">No assignat</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($classesForProject as $class): ?>
+                                                            <?php
+                                                                $classIdForProject = (int) $class['id'];
+                                                                $assignmentForClass = $projectAssignmentsByClass[$classIdForProject] ?? null;
+                                                                $currentStatus = $assignmentForClass['status'] ?? 'no_assignat';
+                                                                $currentStatus = strtolower(trim((string) $currentStatus));
+                                                                $statusMap = [
+                                                                    'planned' => 'pendent',
+                                                                    'previst' => 'pendent',
+                                                                    'active' => 'actiu',
+                                                                    'completed' => 'realitzat',
+                                                                    'completat' => 'realitzat',
+                                                                ];
+                                                                $currentStatus = $statusMap[$currentStatus] ?? $currentStatus;
+                                                                if (!in_array($currentStatus, ['realitzat', 'actiu', 'pendent'], true)) {
+                                                                    $currentStatus = 'no_assignat';
+                                                                }
+                                                            ?>
+                                                            <tr>
+                                                                <th scope="row">
+                                                                    <strong><?= htmlspecialchars((string) ($class['code'] ?? $class['name']), ENT_QUOTES, 'UTF-8') ?></strong>
+                                                                    <?php if (!empty($class['academic_year_name'])): ?>
+                                                                        <span><?= htmlspecialchars((string) $class['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                                    <?php endif; ?>
+                                                                </th>
+                                                                <?php foreach (['realitzat' => 'Realitzat', 'actiu' => 'Actiu', 'pendent' => 'Pendent', 'no_assignat' => 'No assignat'] as $statusValue => $statusLabel): ?>
+                                                                    <td>
+                                                                        <label class="project-assignment-matrix__option">
+                                                                            <input type="radio" name="class_statuses[<?= $classIdForProject ?>]" value="<?= htmlspecialchars($statusValue, ENT_QUOTES, 'UTF-8') ?>" <?= $currentStatus === $statusValue ? 'checked' : '' ?>>
+                                                                            <span><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                                                        </label>
+                                                                    </td>
+                                                                <?php endforeach; ?>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <button class="button" type="submit">Guardar assignacions</button>
+                                        <?php else: ?>
+                                            <p class="muted">Aquest projecte encara no té edicions acadèmiques configurades.</p>
+                                        <?php endif; ?>
+                                    </form>
+                                </div>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -800,6 +945,37 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             </div>
         </div>
 
+        <?php
+        $projectTeamFilterYears = [];
+        foreach (($projectTeams ?? []) as $team) {
+            if (empty($team['members'])) {
+                continue;
+            }
+
+            $yearName = (string) ($team['academic_year_name'] ?? '');
+            $projectSlug = (string) ($team['project_slug'] ?? '');
+            $projectName = (string) ($team['project_name'] ?? '');
+
+            if ($yearName === '' || $projectSlug === '') {
+                continue;
+            }
+
+            if (!isset($projectTeamFilterYears[$yearName])) {
+                $projectTeamFilterYears[$yearName] = [
+                    'name' => $yearName,
+                    'projects' => [],
+                ];
+            }
+
+            $projectTeamFilterYears[$yearName]['projects'][$projectSlug] = $projectName !== '' ? $projectName : $projectSlug;
+        }
+
+        ksort($projectTeamFilterYears);
+        foreach ($projectTeamFilterYears as &$projectTeamFilterYear) {
+            asort($projectTeamFilterYear['projects']);
+        }
+        unset($projectTeamFilterYear);
+        ?>
         <div id="equips" class="card admin-panel admin-panel--teams admin-collapsible is-collapsed">
             <div class="admin-panel__header">
                 <h2>Equips de projecte</h2>
@@ -815,6 +991,25 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                         <p>Encara no hi ha equips sincronitzats.</p>
                     </div>
                 <?php else: ?>
+                    <div class="admin-role-filters" data-team-filters>
+                        <label for="team-year-filter">Any acadèmic</label>
+                        <select id="team-year-filter" data-team-year-filter>
+                            <option value="all">Tots amb equips</option>
+                            <?php foreach ($projectTeamFilterYears as $year): ?>
+                                <option value="<?= htmlspecialchars((string) $year['name'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $year['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <label for="team-project-filter">Projecte</label>
+                        <select id="team-project-filter" data-team-project-filter>
+                            <option value="all" data-team-project-option data-team-year="all">Tots</option>
+                            <?php foreach ($projectTeamFilterYears as $year): ?>
+                                <?php foreach ($year['projects'] as $projectSlug => $projectName): ?>
+                                    <option value="<?= htmlspecialchars((string) $projectSlug, ENT_QUOTES, 'UTF-8') ?>" data-team-project-option data-team-year="<?= htmlspecialchars((string) $year['name'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $projectName . ' · ' . (string) $year['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="status" data-team-filter-count><?= count($projectTeams ?? []) ?> equips</span>
+                    </div>
                     <div class="admin-table__wrapper">
                         <table class="admin-table admin-table--compact">
                             <thead>
@@ -828,7 +1023,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                             </thead>
                             <tbody>
                                 <?php foreach ($projectTeams as $team): ?>
-                                    <tr>
+                                    <tr data-team-row data-team-year="<?= htmlspecialchars((string) $team['academic_year_name'], ENT_QUOTES, 'UTF-8') ?>" data-team-project="<?= htmlspecialchars((string) $team['project_slug'], ENT_QUOTES, 'UTF-8') ?>">
                                         <td>
                                             <strong><?= htmlspecialchars((string) $team['project_name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
                                             <span class="muted"><?= htmlspecialchars((string) $team['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span><br>
@@ -849,7 +1044,14 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                     <?php foreach ($team['members'] as $member): ?>
                                                         <div class="admin-team-member">
                                                             <strong><?= htmlspecialchars((string) $member['name'], ENT_QUOTES, 'UTF-8') ?></strong>
-                                                            <span><?= htmlspecialchars((string) $member['project_role_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <?php if (!empty($member['project_role_names'])): ?>
+                                                                <span><?= htmlspecialchars(implode(' · ', array_map('strval', $member['project_role_names'])), ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <?php else: ?>
+                                                                <span class="muted">Sense rol</span>
+                                                            <?php endif; ?>
+                                                            <?php if (!empty($member['class_code'])): ?>
+                                                                <small><?= htmlspecialchars((string) $member['class_code'], ENT_QUOTES, 'UTF-8') ?></small>
+                                                            <?php endif; ?>
                                                             <small><?= htmlspecialchars((string) $member['email'], ENT_QUOTES, 'UTF-8') ?></small>
                                                         </div>
                                                     <?php endforeach; ?>
@@ -872,6 +1074,23 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             </div>
         </div>
 
+        <?php
+        $projectRoleProjectOptions = [];
+        foreach (($projectRoleGroups ?? []) as $roleGroup) {
+            foreach (($roleGroup['members'] ?? []) as $member) {
+                $projectKey = (string) ($member['project_slug'] ?? '') . '|' . (string) ($member['academic_year_name'] ?? '');
+                if ($projectKey === '|') {
+                    continue;
+                }
+
+                $projectRoleProjectOptions[$projectKey] = [
+                    'key' => $projectKey,
+                    'label' => (string) ($member['project_name'] ?? '') . ' · ' . (string) ($member['academic_year_name'] ?? ''),
+                ];
+            }
+        }
+        uasort($projectRoleProjectOptions, static fn (array $a, array $b): int => strcmp($a['label'], $b['label']));
+        ?>
         <div id="rols" class="card admin-panel admin-panel--roles admin-collapsible is-collapsed">
             <div class="admin-panel__header">
                 <h2>Rols de projecte</h2>
@@ -883,7 +1102,14 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
             <div id="rols-content" class="admin-collapsible__content">
                 <div class="admin-role-filters">
-                    <label for="role-filter-select">Mostra rol</label>
+                    <label for="project-role-project-filter">Projecte</label>
+                    <select id="project-role-project-filter" data-project-role-filter>
+                        <option value="all">Tots amb membres</option>
+                        <?php foreach ($projectRoleProjectOptions as $projectOption): ?>
+                            <option value="<?= htmlspecialchars((string) $projectOption['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $projectOption['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <label for="role-filter-select">Rol</label>
                     <select id="role-filter-select" data-role-filter>
                         <option value="all">Tots</option>
                         <?php foreach ($projectRoleGroups as $roleGroup): ?>
@@ -913,15 +1139,18 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             <tr>
                                                 <th>Nom</th>
                                                 <th>Email</th>
+                                                <th>Classe</th>
                                                 <th>Equip</th>
                                                 <th>Projecte / curs</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php foreach ($roleGroup['members'] as $member): ?>
-                                                <tr>
+                                                <?php $memberProjectKey = (string) ($member['project_slug'] ?? '') . '|' . (string) ($member['academic_year_name'] ?? ''); ?>
+                                                <tr data-role-member-row data-project-key="<?= htmlspecialchars($memberProjectKey, ENT_QUOTES, 'UTF-8') ?>">
                                                     <td><?= htmlspecialchars((string) $member['name'], ENT_QUOTES, 'UTF-8') ?></td>
                                                     <td><?= htmlspecialchars((string) $member['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                                                    <td><?= !empty($member['class_code']) ? htmlspecialchars((string) $member['class_code'], ENT_QUOTES, 'UTF-8') : '<span class="muted">Sense classe</span>' ?></td>
                                                     <td>
                                                         <strong><?= htmlspecialchars((string) $member['team_code'], ENT_QUOTES, 'UTF-8') ?></strong>
                                                         <?php if (!empty($member['team_name'])): ?>

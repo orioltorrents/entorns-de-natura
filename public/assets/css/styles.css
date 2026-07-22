@@ -798,7 +798,7 @@ code {
 .admin-summary {
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
     margin-bottom: .5rem;
 }
 .admin-summary__card {
@@ -806,9 +806,10 @@ code {
     border: 1px solid var(--border);
     border-radius: 18px;
     box-shadow: var(--shadow);
-    display: flex;
-    gap: 1rem;
+    display: block;
     padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
     transition: transform .2s ease, box-shadow .2s ease;
 }
 .admin-summary__card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
@@ -924,10 +925,12 @@ code {
     font-size: 1.6rem;
     height: 52px;
     justify-content: center;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
     width: 52px;
-    flex-shrink: 0;
 }
-.admin-summary__body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.admin-summary__body { align-items: flex-start; display: flex; flex-direction: column; gap: .15rem; min-width: 0; padding-right: 3.9rem; }
 .admin-summary__label {
     color: #6d7a6b;
     font-size: .82rem;
@@ -937,26 +940,45 @@ code {
 }
 .admin-summary__value { color: #1f2d1f; font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
 .admin-summary__desc { color: #6d7a6b; font-size: .85rem; }
-.admin-summary__roles { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .25rem; }
+.admin-summary__roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    justify-content: flex-start;
+    margin-top: .25rem;
+    max-width: 100%;
+    width: 100%;
+}
 .admin-summary__role-badge {
     align-items: center;
     background: #f4f8f2;
     border-radius: 999px;
     display: flex;
+    flex-wrap: nowrap;
     font-size: .82rem;
     font-weight: 600;
     gap: .35rem;
+    justify-content: flex-start;
+    max-width: 100%;
     padding: .25rem .7rem;
+    text-align: left;
+    white-space: nowrap;
 }
 .admin-summary__role-badge small {
     background: #2f5d3a;
     border-radius: 999px;
     color: white;
     font-size: .7rem;
+    flex-shrink: 0;
     font-weight: 700;
     line-height: 1;
     padding: .2rem .45rem;
 }
+.admin-summary__role-badge span {
+    min-width: 0;
+}
+.admin-summary__role-badge--active { background: #e7efdf; color: #2f5d3a; }
+.admin-summary__role-badge--muted { background: #f1f2ef; color: #647263; }
 
 .admin-panel {
     border: 1px solid var(--border);
@@ -1151,6 +1173,18 @@ code {
     gap: .5rem;
     margin-bottom: 1rem;
 }
+.admin-filters__group {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.admin-filters__group[hidden] { display: none; }
+.admin-filters__select-label {
+    align-items: center;
+    display: inline-flex;
+    gap: .4rem;
+}
 .admin-filters__label { color: #47624a; font-size: .85rem; font-weight: 600; margin-right: .25rem; }
 .admin-filters__chip {
     background: #f4f8f2;
@@ -1237,6 +1271,7 @@ code {
 .project-admin-card__title { display: flex; flex-direction: column; gap: .15rem; }
 .project-admin-card__title span,
 .project-admin-card__description { color: var(--muted); }
+.project-admin-card__content { display: grid; gap: 1rem; }
 .project-admin-card__controls { align-items: flex-end; }
 .project-admin-card__order { display: flex; flex-direction: column; gap: .35rem; }
 .project-admin-card__order input,
@@ -1248,7 +1283,9 @@ code {
     padding: .55rem .7rem;
 }
 .project-admin-card__assignments { display: grid; gap: .85rem; }
-.project-admin-card__assign-form { display: flex; flex-wrap: wrap; gap: .5rem; }
+.project-admin-card__assign-form { align-items: flex-start; display: flex; flex-wrap: wrap; gap: .75rem; }
+.project-admin-card__assign-form .muted,
+.project-admin-card__assign-form .project-assignment-matrix { flex: 1 1 100%; }
 .project-admin-card__assignment-list { display: grid; gap: .75rem; }
 .project-admin-card__assignment {
     background: #f8faf7;
@@ -1259,6 +1296,57 @@ code {
 .project-admin-card__assignment-main span { color: var(--muted); font-size: .9rem; }
 .project-admin-card__assignment-status,
 .project-admin-card__assignment-delete { display: flex; gap: .5rem; }
+.project-assignment-matrix {
+    border: 1px solid #dfe9d8;
+    border-radius: 12px;
+    overflow-x: auto;
+    width: 100%;
+}
+.project-assignment-matrix__table {
+    border-collapse: collapse;
+    min-width: 620px;
+    width: 100%;
+}
+.project-assignment-matrix__table th,
+.project-assignment-matrix__table td {
+    border-bottom: 1px solid #e8eee4;
+    padding: .65rem .75rem;
+    text-align: center;
+    vertical-align: middle;
+}
+.project-assignment-matrix__table tr:last-child th,
+.project-assignment-matrix__table tr:last-child td { border-bottom: 0; }
+.project-assignment-matrix__table thead th {
+    background: #eef5ea;
+    color: #2f5d3a;
+    font-size: .85rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+.project-assignment-matrix__table th:first-child {
+    text-align: left;
+    width: 32%;
+}
+.project-assignment-matrix__table tbody th {
+    background: #fbfdf8;
+    font-weight: 600;
+}
+.project-assignment-matrix__table tbody th span {
+    color: var(--muted);
+    display: block;
+    font-size: .82rem;
+    font-weight: 400;
+    margin-top: .12rem;
+}
+.project-assignment-matrix__option {
+    align-items: center;
+    cursor: pointer;
+    display: inline-flex;
+    gap: .35rem;
+    justify-content: center;
+    white-space: nowrap;
+}
+.project-assignment-matrix__option span { font-size: .88rem; }
 
 .admin-assessment {
     border-top: 1px solid #e6ece2;
@@ -1351,6 +1439,8 @@ code {
 }
 
 @media (max-width: 680px) {
+    .admin-summary { grid-template-columns: 1fr; }
+    .admin-summary__body { padding-right: 3.5rem; }
     .site-header { padding: 1rem; }
     .site-header nav { justify-content: flex-start; }
     .hero, .section, .page-header { width: min(1120px, calc(100% - 24px)); }
