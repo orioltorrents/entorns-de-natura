@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
     CONSTRAINT fk_student_profiles_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS web_roles (
@@ -120,8 +120,8 @@ CREATE TABLE IF NOT EXISTS academic_years (
 CREATE TABLE IF NOT EXISTS classes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     academic_year_id INT UNSIGNED NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    code VARCHAR(20) NOT NULL,
+    class_name VARCHAR(100) NOT NULL,
+    class_code VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_classes_year_name (academic_year_id, class_name),
@@ -228,27 +228,6 @@ CREATE TABLE IF NOT EXISTS project_translations (
         FOREIGN KEY (language_id) REFERENCES languages (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS project_class_assignments (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_academic_year_id BIGINT UNSIGNED NOT NULL,
-    class_id INT UNSIGNED NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'actiu',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uq_project_class_assignments (project_academic_year_id, class_id),
-    KEY idx_project_class_assignments_project_academic_year_id (project_academic_year_id),
-    KEY idx_project_class_assignments_class_id (class_id),
-    CONSTRAINT fk_project_class_assignments_project_academic_year
-        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-    CONSTRAINT fk_project_class_assignments_class
-        FOREIGN KEY (class_id) REFERENCES classes (id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS project_assets (

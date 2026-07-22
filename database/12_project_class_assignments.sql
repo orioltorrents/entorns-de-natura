@@ -45,5 +45,5 @@ CREATE TABLE IF NOT EXISTS project_class_assignments (
     CONSTRAINT fk_project_class_assignments_class
         FOREIGN KEY (class_id) REFERENCES classes (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
