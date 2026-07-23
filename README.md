@@ -68,7 +68,7 @@ El nom canònic de la base de dades local és `entorns_de_natura`. La connexió 
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `project_academic_year_phases`, `project_academic_year_phase_tasks`, `assessment_supports`, `assessment_task_resources`;
 - `project_teams`, `project_team_members`, `project_team_member_roles`;
-- `google_sources`, `synced_documents`, `synced_sheet_rows`, `google_sync_runs`, `google_sync_errors`;
+- `google_sources`, `google_documents`, `google_document_blocks`, `google_sheet_rows`, `google_sync_runs`, `google_sync_errors`;
 - `settings`;
 - `site_visits`.
 

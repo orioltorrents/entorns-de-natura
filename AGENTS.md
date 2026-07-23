@@ -302,8 +302,9 @@ assessment_tasks
 project_academic_year_phases
 project_academic_year_phase_tasks
 google_sources
-synced_documents
-synced_sheet_rows
+google_documents
+google_document_blocks
+google_sheet_rows
 google_sync_runs
 google_sync_errors
 assessment_supports
@@ -755,8 +756,9 @@ Taules:
 
 ```text
 google_sources
-synced_documents
-synced_sheet_rows
+google_documents
+google_document_blocks
+google_sheet_rows
 google_sync_runs
 google_sync_errors
 ```
@@ -764,8 +766,9 @@ google_sync_errors
 Funció de les taules preparades:
 
 - `google_sources`: registrar documents o fulls de Google lligats a una edició concreta de projecte.
-- `synced_documents`: guardar contingut processat de Google Docs.
-- `synced_sheet_rows`: guardar files importades de Google Sheets.
+- `google_documents`: guardar contingut processat de Google Docs.
+- `google_document_blocks`: guardar blocs o fragments processats de Google Docs.
+- `google_sheet_rows`: guardar files importades de Google Sheets.
 - `google_sync_runs`: registrar execucions de sincronització.
 - `google_sync_errors`: registrar errors de sincronització.
 

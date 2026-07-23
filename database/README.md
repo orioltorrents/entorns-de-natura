@@ -67,6 +67,7 @@ Canvis històrics ja absorbits pels fitxers de reconstrucció neta:
 Canvis incrementals recents per a bases existents:
 
 - `40_users_password_change_required.sql`: afegeix `must_change_password` i `password_changed_at` a `users` per forçar el canvi de contrasenya inicial.
+- `41_google_workspace_table_rename.sql`: renombra `synced_documents` i `synced_sheet_rows` a `google_documents` i `google_sheet_rows`, i afegeix `google_document_blocks`.
 
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
@@ -140,8 +141,9 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 ### Google Workspace
 
 - `google_sources`
-- `synced_documents`
-- `synced_sheet_rows`
+- `google_documents`
+- `google_document_blocks`
+- `google_sheet_rows`
 - `google_sync_runs`
 - `google_sync_errors`
 

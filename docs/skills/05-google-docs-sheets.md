@@ -225,8 +225,9 @@ observacions de professorat
 
 ```text
 google_sources
-synced_documents
-synced_sheet_rows
+google_documents
+google_document_blocks
+google_sheet_rows
 google_sync_runs
 google_sync_errors
 ```
@@ -312,7 +313,7 @@ disabled
 
 ---
 
-## `synced_documents`
+## `google_documents`
 
 Guarda contingut processat de Google Docs.
 
@@ -328,13 +329,41 @@ content_html
 plain_text
 version_hash
 synced_at
+is_active
+created_at
+updated_at
 ```
 
 La clau funcional ha de ser `google_source_id + language_code`, i la dada ha d'anar lligada a `project_academic_year_id`.
 
 ---
 
-## `synced_sheet_rows`
+## `google_document_blocks`
+
+Guarda blocs o fragments processats d'un document sincronitzat.
+
+Camps:
+
+```text
+id
+google_document_id
+google_source_id
+project_academic_year_id
+visibility_level
+section_title
+slug
+content_html
+display_order
+is_active
+created_at
+updated_at
+```
+
+La clau funcional recomanada és `google_document_id + slug`. La taula manté també `google_source_id` i `project_academic_year_id` per facilitar filtres de lectura i coherència amb l'edició de projecte.
+
+---
+
+## `google_sheet_rows`
 
 Guarda files importades de Google Sheets.
 
@@ -350,6 +379,8 @@ row_data_json
 row_hash
 is_active
 synced_at
+created_at
+updated_at
 ```
 
 Aquesta taula es pot usar com a zona intermèdia abans de transformar les dades cap a taules finals.
@@ -482,7 +513,7 @@ Estratègia recomanada:
 
 ```text
 1. Llegir dades del Sheet.
-2. Guardar files a synced_sheet_rows.
+2. Guardar files a google_sheet_rows.
 3. Validar dades.
 4. Transformar dades.
 5. Actualitzar taules finals.

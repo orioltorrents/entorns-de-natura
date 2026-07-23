@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS google_sources (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS synced_documents (
+CREATE TABLE IF NOT EXISTS google_documents (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     google_source_id BIGINT UNSIGNED NOT NULL,
     project_academic_year_id BIGINT UNSIGNED NOT NULL,
@@ -44,20 +44,51 @@ CREATE TABLE IF NOT EXISTS synced_documents (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_synced_documents_source_language (google_source_id, language_code),
-    KEY idx_synced_documents_year_active_synced (project_academic_year_id, is_active, synced_at),
-    KEY idx_synced_documents_source_id (google_source_id),
-    CONSTRAINT fk_synced_documents_google_source
+    UNIQUE KEY uq_google_documents_source_language (google_source_id, language_code),
+    KEY idx_google_documents_year_active_synced (project_academic_year_id, is_active, synced_at),
+    KEY idx_google_documents_source_id (google_source_id),
+    CONSTRAINT fk_google_documents_google_source
         FOREIGN KEY (google_source_id) REFERENCES google_sources (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT fk_synced_documents_project_academic_year
+    CONSTRAINT fk_google_documents_project_academic_year
         FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS synced_sheet_rows (
+CREATE TABLE IF NOT EXISTS google_document_blocks (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    google_document_id BIGINT UNSIGNED NOT NULL,
+    google_source_id BIGINT UNSIGNED NOT NULL,
+    project_academic_year_id BIGINT UNSIGNED NOT NULL,
+    visibility_level ENUM('public', 'student', 'teacher', 'assigned_teacher', 'admin') NOT NULL DEFAULT 'public',
+    section_title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    content_html LONGTEXT NULL,
+    display_order INT UNSIGNED NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_google_document_blocks_document_slug (google_document_id, slug),
+    KEY idx_google_document_blocks_year_visibility_order (project_academic_year_id, visibility_level, is_active, display_order),
+    KEY idx_google_document_blocks_source_id (google_source_id),
+    CONSTRAINT fk_google_document_blocks_document
+        FOREIGN KEY (google_document_id) REFERENCES google_documents (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_google_document_blocks_google_source
+        FOREIGN KEY (google_source_id) REFERENCES google_sources (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_google_document_blocks_project_academic_year
+        FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS google_sheet_rows (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     google_source_id BIGINT UNSIGNED NOT NULL,
     project_academic_year_id BIGINT UNSIGNED NOT NULL,
@@ -70,14 +101,14 @@ CREATE TABLE IF NOT EXISTS synced_sheet_rows (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_synced_sheet_rows_source_external (google_source_id, external_id),
-    KEY idx_synced_sheet_rows_year_active_row (project_academic_year_id, is_active, row_number),
-    KEY idx_synced_sheet_rows_source_row (google_source_id, row_number),
-    CONSTRAINT fk_synced_sheet_rows_google_source
+    UNIQUE KEY uq_google_sheet_rows_source_external (google_source_id, external_id),
+    KEY idx_google_sheet_rows_year_active_row (project_academic_year_id, is_active, row_number),
+    KEY idx_google_sheet_rows_source_row (google_source_id, row_number),
+    CONSTRAINT fk_google_sheet_rows_google_source
         FOREIGN KEY (google_source_id) REFERENCES google_sources (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT fk_synced_sheet_rows_project_academic_year
+    CONSTRAINT fk_google_sheet_rows_project_academic_year
         FOREIGN KEY (project_academic_year_id) REFERENCES project_academic_years (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -126,6 +157,7 @@ CREATE TABLE IF NOT EXISTS google_sync_errors (
     error_message TEXT NOT NULL,
     raw_value LONGTEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_google_sync_errors_run_id (google_sync_run_id),
     KEY idx_google_sync_errors_year_id (project_academic_year_id),

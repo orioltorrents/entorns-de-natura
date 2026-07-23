@@ -136,8 +136,9 @@ project_sections
 project_section_roles
 
 google_sources
-synced_documents
-synced_sheet_rows
+google_documents
+google_document_blocks
+google_sheet_rows
 google_sync_runs
 google_sync_errors
 ```
@@ -660,8 +661,9 @@ Taules:
 
 ```text
 google_sources
-synced_documents
-synced_sheet_rows
+google_documents
+google_document_blocks
+google_sheet_rows
 google_sync_runs
 google_sync_errors
 ```

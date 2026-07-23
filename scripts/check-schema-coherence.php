@@ -68,7 +68,7 @@ $editionScopedTables = [
         'uniqueIndexes' => [['project_academic_year_id', 'source_type', 'google_file_id', 'sheet_name', 'range_name']],
         'indexes' => [['project_academic_year_id', 'is_active', 'source_type'], ['google_file_id']],
     ],
-    'synced_documents' => [
+    'google_documents' => [
         'requiredColumns' => ['project_academic_year_id'],
         'fks' => [[
             'column' => 'project_academic_year_id',
@@ -78,7 +78,25 @@ $editionScopedTables = [
         'uniqueIndexes' => [['google_source_id', 'language_code']],
         'indexes' => [['project_academic_year_id', 'is_active', 'synced_at'], ['google_source_id']],
     ],
-    'synced_sheet_rows' => [
+    'google_document_blocks' => [
+        'requiredColumns' => ['google_document_id', 'google_source_id', 'project_academic_year_id'],
+        'fks' => [[
+            'column' => 'google_document_id',
+            'referencedTable' => 'google_documents',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'google_source_id',
+            'referencedTable' => 'google_sources',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'project_academic_year_id',
+            'referencedTable' => 'project_academic_years',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['google_document_id', 'slug']],
+        'indexes' => [['project_academic_year_id', 'visibility_level', 'is_active', 'display_order'], ['google_source_id']],
+    ],
+    'google_sheet_rows' => [
         'requiredColumns' => ['project_academic_year_id'],
         'fks' => [[
             'column' => 'project_academic_year_id',

@@ -44,6 +44,8 @@
 -- - `38_ratpenats_project.sql` afegeix el projecte Ratpenats del curs 2023-2024.
 -- - `40_users_password_change_required.sql` és una migració no destructiva per a BD existents;
 --   no cal executar-la en una reconstrucció neta perquè users ja inclou aquests camps.
+-- - `41_google_workspace_table_rename.sql` és una migració no destructiva per a BD existents;
+--   no cal executar-la en una reconstrucció neta perquè Google Workspace ja usa noms homogenis.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
