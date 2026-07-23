@@ -129,7 +129,8 @@ class AdminDashboardService
     private function sitePages(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT id, slug, language_code, title, google_file_id, last_synced_at, last_sync_status, last_sync_error, is_active
+            'SELECT id, slug, language_code, title, google_file_id, last_synced_at, last_sync_status, last_sync_error, is_active,
+                    CHAR_LENGTH(COALESCE(content_json, "")) AS content_json_length
                FROM site_pages
               ORDER BY language_code, slug'
         );

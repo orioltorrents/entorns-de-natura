@@ -113,6 +113,39 @@ class AdminActionService
             }
         }
 
+        if ($action === 'update_site_page_google_file') {
+            $slug = trim((string) ($post['slug'] ?? ''));
+            $languageCode = trim((string) ($post['language_code'] ?? 'ca'));
+            $googleFileId = trim((string) ($post['google_file_id'] ?? ''));
+
+            try {
+                $result = (new SitePageService())->updateGoogleFileId($slug, $languageCode !== '' ? $languageCode : 'ca', $googleFileId);
+                $this->auditAdminAction($action, [
+                    'slug' => $slug,
+                    'language_code' => $languageCode,
+                    'status' => (string) ($result['status'] ?? ''),
+                ]);
+
+                return [
+                    'message' => ($result['status'] ?? '') === 'unchanged'
+                        ? 'El Google Doc de la pàgina pública no ha canviat.'
+                        : 'Google Doc de la pàgina pública actualitzat. Ara cal sincronitzar-la.',
+                    'type' => 'success',
+                ];
+            } catch (Throwable $throwable) {
+                $this->auditAdminAction($action . '_failed', [
+                    'slug' => $slug,
+                    'language_code' => $languageCode,
+                    'error' => $throwable->getMessage(),
+                ]);
+
+                return [
+                    'message' => 'No s’ha pogut actualitzar el Google Doc: ' . $throwable->getMessage(),
+                    'type' => 'error',
+                ];
+            }
+        }
+
         $this->auditAdminAction('unknown_action', ['action' => $action]);
 
         return [

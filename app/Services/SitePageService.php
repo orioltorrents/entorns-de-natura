@@ -16,10 +16,6 @@ class SitePageService
     {
         $page = $this->sitePage('que-es-entorns', getLanguage());
         if ($page === null) {
-            $page = $this->ensureLegacyAboutPage();
-        }
-
-        if ($page === null) {
             return null;
         }
 
@@ -34,10 +30,6 @@ class SitePageService
     public function syncPage(string $slug, string $languageCode = 'ca'): array
     {
         $page = $this->sitePage($slug, $languageCode);
-        if ($page === null && $slug === 'que-es-entorns' && $languageCode === 'ca') {
-            $page = $this->ensureLegacyAboutPage();
-        }
-
         if ($page === null) {
             throw new RuntimeException('No s’ha trobat la pàgina pública configurada.');
         }
@@ -102,13 +94,71 @@ class SitePageService
         }
     }
 
-    private function setting(string $key): ?string
+    public function updateGoogleFileId(string $slug, string $languageCode, string $googleFileId): array
     {
-        $stmt = $this->pdo()->prepare('SELECT `value` FROM settings WHERE `key` = :key LIMIT 1');
-        $stmt->execute(['key' => $key]);
-        $value = $stmt->fetchColumn();
+        $slug = trim($slug);
+        $languageCode = trim($languageCode) !== '' ? trim($languageCode) : 'ca';
+        $googleFileId = $this->extractGoogleDocumentId(trim($googleFileId));
 
-        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+        if ($slug === '') {
+            throw new InvalidArgumentException('No s’ha indicat cap pàgina pública.');
+        }
+
+        if ($googleFileId === '') {
+            throw new InvalidArgumentException('Cal indicar un ID o URL de Google Doc vàlid.');
+        }
+
+        $page = $this->sitePage($slug, $languageCode);
+        if ($page === null) {
+            throw new RuntimeException('No s’ha trobat la pàgina pública configurada.');
+        }
+
+        $currentGoogleFileId = trim((string) ($page['google_file_id'] ?? ''));
+        if ($currentGoogleFileId === $googleFileId) {
+            return [
+                'status' => 'unchanged',
+                'page_id' => (int) $page['id'],
+                'slug' => $slug,
+                'language_code' => $languageCode,
+            ];
+        }
+
+        $stmt = $this->pdo()->prepare(
+            'UPDATE site_pages
+             SET google_file_id = :google_file_id,
+                 content_json = NULL,
+                 plain_text = NULL,
+                 version_hash = NULL,
+                 last_synced_at = NULL,
+                 last_sync_status = "never",
+                 last_sync_error = NULL,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            'google_file_id' => $googleFileId,
+            'id' => (int) $page['id'],
+        ]);
+
+        return [
+            'status' => 'updated',
+            'page_id' => (int) $page['id'],
+            'slug' => $slug,
+            'language_code' => $languageCode,
+        ];
+    }
+
+    private function extractGoogleDocumentId(string $input): string
+    {
+        if (preg_match('#/document/d/([a-zA-Z0-9_-]+)#', $input, $matches) === 1) {
+            return $matches[1];
+        }
+
+        if (preg_match('/^[a-zA-Z0-9_-]+$/', $input) === 1) {
+            return $input;
+        }
+
+        return '';
     }
 
     private function sitePage(string $slug, string $languageCode): ?array
@@ -126,23 +176,6 @@ class SitePageService
         $page = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($page) ? $page : null;
-    }
-
-    private function ensureLegacyAboutPage(): ?array
-    {
-        $documentId = $this->setting('public_about_google_doc_id');
-        if ($documentId === null || $documentId === '') {
-            return null;
-        }
-
-        $stmt = $this->pdo()->prepare(
-            'INSERT INTO site_pages (slug, language_code, title, google_file_id, last_sync_status, is_active)
-             VALUES ("que-es-entorns", "ca", "Què és Entorns de Natura", :google_file_id, "never", 1)
-             ON DUPLICATE KEY UPDATE google_file_id = VALUES(google_file_id), updated_at = CURRENT_TIMESTAMP'
-        );
-        $stmt->execute(['google_file_id' => $documentId]);
-
-        return $this->sitePage('que-es-entorns', 'ca');
     }
 
     private function storedPageContent(array $page): ?array
@@ -450,9 +483,13 @@ class SitePageService
             }
 
             $style = $textRun->getTextStyle();
+            $link = $style?->getLink();
+            $linkUrl = $link !== null ? trim((string) ($link->getUrl() ?? '')) : '';
             $segments[] = [
                 'text' => $text,
                 'bold' => $style?->getBold() === true,
+                'italic' => $style?->getItalic() === true,
+                'link_url' => $linkUrl,
             ];
         }
 

@@ -1548,6 +1548,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                     <th scope="col">Idioma</th>
                                     <th scope="col">Google Doc</th>
                                     <th scope="col">Última sincronització</th>
+                                    <th scope="col">Contingut</th>
                                     <th scope="col">Estat</th>
                                     <th scope="col">Accions</th>
                                 </tr>
@@ -1566,6 +1567,16 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                         'failed' => 'status--inactive',
                                         default => '',
                                     };
+                                    $hasSyncedContent = (int) ($sitePage['content_json_length'] ?? 0) > 0;
+                                    $publicPageUrl = url((string) ($sitePage['language_code'] ?? 'ca') . '/' . (string) ($sitePage['slug'] ?? ''));
+                                    $googleFileId = trim((string) ($sitePage['google_file_id'] ?? ''));
+                                    $googleDocUrl = $googleFileId !== '' ? 'https://docs.google.com/document/d/' . rawurlencode($googleFileId) . '/edit' : '';
+                                    $lastSyncedAt = trim((string) ($sitePage['last_synced_at'] ?? ''));
+                                    $lastSyncedLabel = 'Mai';
+                                    if ($lastSyncedAt !== '') {
+                                        $lastSyncedTimestamp = strtotime($lastSyncedAt);
+                                        $lastSyncedLabel = $lastSyncedTimestamp !== false ? date('d/m/Y H:i', $lastSyncedTimestamp) : $lastSyncedAt;
+                                    }
                                     ?>
                                     <tr>
                                         <td>
@@ -1574,9 +1585,27 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                         </td>
                                         <td><?= htmlspecialchars((string) ($sitePage['language_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
-                                            <?= trim((string) ($sitePage['google_file_id'] ?? '')) !== '' ? 'Configurat' : 'No configurat' ?>
+                                            <form method="post" action="<?= url('admin') ?>#pagines-publiques" class="admin-site-page-source-form">
+                                                <input type="hidden" name="action" value="update_site_page_google_file">
+                                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                                <input type="hidden" name="slug" value="<?= htmlspecialchars((string) ($sitePage['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="language_code" value="<?= htmlspecialchars((string) ($sitePage['language_code'] ?? 'ca'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <label class="sr-only" for="site-page-google-file-<?= (int) ($sitePage['id'] ?? 0) ?>">Google Doc ID</label>
+                                                <input class="admin-site-page-source-form__input" id="site-page-google-file-<?= (int) ($sitePage['id'] ?? 0) ?>" type="text" name="google_file_id" value="<?= htmlspecialchars($googleFileId, ENT_QUOTES, 'UTF-8') ?>" placeholder="ID o URL de Google Doc">
+                                                <button class="button button--secondary" type="submit">Guardar</button>
+                                            </form>
+                                            <?php if ($googleDocUrl !== ''): ?>
+                                                <a class="admin-site-page-source-form__link" href="<?= htmlspecialchars($googleDocUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Obrir Google Doc</a>
+                                            <?php endif; ?>
                                         </td>
-                                        <td><?= htmlspecialchars((string) ($sitePage['last_synced_at'] ?? 'Mai'), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($lastSyncedLabel, ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <?php if ($hasSyncedContent): ?>
+                                                <span class="status status--active">Llegint de BD</span>
+                                            <?php else: ?>
+                                                <span class="status status--inactive">Sense contingut sincronitzat</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <span class="status <?= $syncStatusClass ?>"><?= htmlspecialchars($syncStatusLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php if (!empty($sitePage['last_sync_error'])): ?>
@@ -1584,6 +1613,8 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             <?php endif; ?>
                                         </td>
                                         <td>
+                                            <div class="admin-inline-actions">
+                                                <a class="button button--secondary" href="<?= htmlspecialchars($publicPageUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Veure pàgina</a>
                                             <form method="post" action="<?= url('admin') ?>#pagines-publiques" class="admin-inline-action">
                                                 <input type="hidden" name="action" value="sync_site_page">
                                                 <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
@@ -1591,6 +1622,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                 <input type="hidden" name="language_code" value="<?= htmlspecialchars((string) ($sitePage['language_code'] ?? 'ca'), ENT_QUOTES, 'UTF-8') ?>">
                                                 <button class="button button--secondary" type="submit">Sincronitzar</button>
                                             </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

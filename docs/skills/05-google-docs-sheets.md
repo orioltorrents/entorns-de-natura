@@ -13,6 +13,7 @@ La web ha de mostrar aquesta informació de manera controlada, segura i estructu
 ### Implementat
 
 - configuració base a `config/google.php`;
+- integració parcial amb Google Docs API mitjançant compte de servei per sincronitzar pàgines públiques globals a `site_pages`;
 - servei `GoogleSyncService` present com a stub de consulta, sense connexió real amb l'API;
 - estructura de base preparada per a fonts, documents sincronitzats, files importades, execucions i errors;
 - importació manual JSON de documents amb `DocumentSyncController` i `DocumentImportService`;
@@ -21,8 +22,8 @@ La web ha de mostrar aquesta informació de manera controlada, segura i estructu
 
 ### Encara previst
 
-- integració real amb API de Google;
-- OAuth o compte de servei i gestió de scopes;
+- integració real completa amb API de Google per a projectes, documents interns i Sheets;
+- OAuth d'usuari si més endavant cal sincronitzar contingut fora del compte de servei;
 - importació robusta directa de Docs i Sheets;
 - sanitització HTML, límits d'importació, logs, reintents i reprocessament d'errors;
 - definició definitiva del flux entre document origen, `google_sources`, `document_sources`, BD i vista final;
@@ -44,6 +45,54 @@ Web pública / alumnat / professorat / administració
 
 ---
 
+## Flux implementat per pàgines públiques globals
+
+Les pàgines públiques globals que no depenen d'una edició concreta poden usar `site_pages` com a taula final publicable.
+
+Flux actual:
+
+```text
+Google Doc
+        ↓
+acció manual d'admin
+        ↓
+SitePageService::syncPage()
+        ↓
+site_pages.content_json / plain_text / version_hash
+        ↓
+vista pública
+```
+
+Regles:
+
+- la web pública no llegeix Google Docs en directe;
+- Google Docs només s'invoca des d'accions d'administració o scripts de prova;
+- el Google Doc s'identifica a `site_pages.google_file_id`;
+- el contingut publicat és el JSON sincronitzat a `site_pages.content_json`;
+- si `content_json` és buit, la vista pot mostrar un fallback local no sincronitzat;
+- les credencials del compte de servei no es versionen.
+
+Configuració local necessària:
+
+```env
+GOOGLE_SYNC_ENABLED=true
+GOOGLE_SERVICE_ACCOUNT_PATH=storage/credentials/google-service-account.json
+GOOGLE_CA_BUNDLE_PATH=storage/certs/cacert.pem
+```
+
+Fitxers locals privats:
+
+```text
+storage/credentials/google-service-account.json
+storage/certs/cacert.pem
+```
+
+El document de Google s'ha de compartir amb el `client_email` del compte de servei com a lector.
+
+El render actual de Google Docs a pàgines públiques suporta títols, capçaleres, paràgrafs, negreta, cursiva, enllaços `http/https`, llistes numerades, llistes de pics i nivells bàsics d'indentació. Imatges i taules encara no formen part d'aquest render.
+
+---
+
 ## Nivells actuals
 
 L'estat del projecte s'ha de llegir en tres nivells diferents:
@@ -51,7 +100,8 @@ L'estat del projecte s'ha de llegir en tres nivells diferents:
 ```text
 1. Importació manual JSON de documents → implementada.
 2. Persistència Google Workspace       → taules preparades.
-3. Integració real amb API de Google   → pendent.
+3. API Google Docs per site_pages      → implementació parcial.
+4. API Google per projectes i Sheets   → pendent.
 ```
 
 La importació manual JSON no és encara sincronització amb l'API de Google. Serveix per carregar documents, fonts, fragments i regles de visibilitat a partir d'un payload controlat.

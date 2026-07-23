@@ -25,14 +25,5 @@ CREATE TABLE IF NOT EXISTS site_pages (
     KEY idx_site_pages_google_file_id (google_file_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO site_pages (slug, language_code, title, google_file_id, last_sync_status, is_active)
-SELECT 'que-es-entorns', 'ca', 'Què és Entorns de Natura', s.`value`, 'never', 1
-FROM settings s
-WHERE s.`key` = 'public_about_google_doc_id'
-  AND TRIM(COALESCE(s.`value`, '')) <> ''
-  AND NOT EXISTS (
-      SELECT 1
-      FROM site_pages sp
-      WHERE sp.slug = 'que-es-entorns'
-        AND sp.language_code = 'ca'
-  );
+INSERT IGNORE INTO site_pages (slug, language_code, title, google_file_id, last_sync_status, is_active)
+VALUES ('que-es-entorns', 'ca', 'Què és Entorns de Natura', NULL, 'never', 1);

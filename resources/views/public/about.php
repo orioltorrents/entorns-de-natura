@@ -17,7 +17,21 @@ if (!function_exists('publicAboutRenderSegments')) {
                 continue;
             }
 
-            $html .= ($segment['bold'] ?? false) === true ? '<strong>' . $text . '</strong>' : $text;
+            if (($segment['italic'] ?? false) === true) {
+                $text = '<em>' . $text . '</em>';
+            }
+
+            if (($segment['bold'] ?? false) === true) {
+                $text = '<strong>' . $text . '</strong>';
+            }
+
+            $linkUrl = trim((string) ($segment['link_url'] ?? ''));
+            if ($linkUrl !== '' && filter_var($linkUrl, FILTER_VALIDATE_URL) !== false && in_array(parse_url($linkUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {
+                $safeUrl = htmlspecialchars($linkUrl, ENT_QUOTES, 'UTF-8');
+                $text = '<a class="public-about__link" href="' . $safeUrl . '" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
+            }
+
+            $html .= $text;
         }
 
         return $html;
