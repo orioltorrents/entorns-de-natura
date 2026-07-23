@@ -17,6 +17,7 @@ class AdminAssessmentStructureService
                 p.name AS project_name,
                 p.slug AS project_slug,
                 ay.name AS academic_year_name,
+                pay.status AS project_academic_year_status,
                 ap.id AS phase_id,
                 ap.phase_key,
                 ap.title AS phase_title,
@@ -35,11 +36,13 @@ class AdminAssessmentStructureService
              FROM project_academic_year_phases payp
              INNER JOIN project_academic_years pay ON pay.id = payp.project_academic_year_id
              INNER JOIN projects p ON p.id = pay.project_id
-             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
-             INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
-             LEFT JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
-             LEFT JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
-             ORDER BY p.display_order, p.name, ay.id, payp.display_order, ap.id, paypt.display_order, at.id'
+              INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+              INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
+              LEFT JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
+              LEFT JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
+              WHERE ay.is_current = 1
+                AND pay.status IN ("pendent", "actiu")
+              ORDER BY p.display_order, p.name, ay.id, payp.display_order, ap.id, paypt.display_order, at.id'
         );
 
         $projects = [];
@@ -54,6 +57,7 @@ class AdminAssessmentStructureService
                     'name' => (string) $row['project_name'],
                     'slug' => (string) $row['project_slug'],
                     'academic_year_name' => (string) $row['academic_year_name'],
+                    'status' => (string) $row['project_academic_year_status'],
                     'phases' => [],
                 ];
             }

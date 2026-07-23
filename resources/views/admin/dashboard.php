@@ -1413,7 +1413,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                 </div>
             </div>
             <div id="avaluacio-content" class="admin-collapsible__content">
-            <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. La importació actualitza les plantilles i les assignacions per edició fent servir <code>project_slug</code>, <code>phase_key</code> i <code>source_column</code>.</p>
+            <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. Les fases i tasques es vinculen a una edició concreta fent servir <code>academic_year</code> i el projecte.</p>
             <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                 <input type="hidden" name="action" value="import_assessment_structure">
                 <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
@@ -1427,8 +1427,8 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                         <input type="file" name="tasks_file" accept=".csv,text/csv" required>
                     </label>
                 </div>
-                <p class="muted">Headers fases: project_slug, phase_key, title, description, section_type, display_order, is_active.</p>
-                <p class="muted">Headers tasques: project_slug, phase_key, source_column, title, description, weight_label, role_filter, display_order, is_visible.</p>
+                <p class="muted">Headers fases: academic_year, project, phase_key, phase_num, phase_name, phase_complet_name, phase_description, phase_comment, display_order, is_active.</p>
+                <p class="muted">Headers tasques: id, academic_year, project_slug, phase_key, task_name, title, description, weight_label, role_filter, display_order, is_visible.</p>
                 <button class="button" type="submit">Importar estructura</button>
             </form>
 

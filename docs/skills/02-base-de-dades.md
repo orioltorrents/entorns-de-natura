@@ -406,6 +406,68 @@ Norma clau:
 - les fases i tasques es defineixen una sola vegada i després s'assignen a cada edició de projecte amb les taules pont;
 - així no copies la mateixa estructura cada curs.
 
+### Importació de fases
+
+Les fases es poden importar des de CSV exportat de Google Sheets. El format actual espera aquests headers:
+
+```text
+academic_year,project,phase_key,phase_num,phase_name,phase_complet_name,phase_description,phase_comment,display_order,is_active
+```
+
+Mapeig:
+
+```text
+academic_year       -> academic_years.name, per exemple 2024-2025
+project             -> projects.slug, per exemple projecte-rius
+phase_key           -> assessment_phases.phase_key
+phase_complet_name  -> assessment_phases.title, titol visible a la web
+phase_description   -> assessment_phases.description
+display_order       -> assessment_phases.display_order i project_academic_year_phases.display_order
+is_active           -> assessment_phases.is_active i project_academic_year_phases.is_active
+```
+
+`phase_num` i `phase_name` poden servir a Sheets per construir `phase_complet_name` amb formules. L'importador usa `phase_complet_name` com a titol principal, `phase_name` com a fallback si el titol complet ve buit, i `phase_num` com a fallback de `display_order` si `display_order` ve buit.
+
+`phase_comment` queda ignorat de moment per evitar publicar comentaris interns a la web.
+
+Regla important: l'assignació de la fase es fa nomes per l'edició concreta resolta amb `academic_year + project`. No s'han d'actualitzar totes les edicions històriques del mateix projecte.
+
+### Visibilitat de fases per estat d'edició
+
+La gestió d'administració i la consulta de l'alumnat no tenen la mateixa regla:
+
+- l'admin gestiona fases i tasques només per edicions del curs actual amb estat `pendent` o `actiu`;
+- les edicions `realitzat` no apareixen al panell admin de gestió de fases, perquè ja no s'han d'obrir progressivament;
+- mentre una edició està `pendent` o `actiu`, l'alumnat només veu fases amb `project_academic_year_phases.is_active = 1` i tasques amb `project_academic_year_phase_tasks.is_visible = 1`;
+- quan una edició passa a `realitzat`, l'alumnat pot consultar totes les fases i totes les tasques de l'edició, encara que els flags `is_active` o `is_visible` estiguin desactivats.
+
+### Importació de tasques
+
+Les tasques es poden importar amb aquests headers:
+
+```text
+id,academic_year,project_slug,phase_key,task_name,title,description,weight_label,role_filter,display_order,is_visible
+```
+
+Mapeig:
+
+```text
+academic_year  -> academic_years.name, per exemple 2024-2025
+project_slug   -> projects.slug, per exemple projecte-rius
+phase_key      -> assessment_phases.phase_key
+task_name      -> assessment_tasks.source_column, clau tecnica de la tasca
+title          -> assessment_tasks.title, titol visible a la web
+description    -> assessment_tasks.description
+weight_label   -> assessment_tasks.weight_label
+role_filter    -> assessment_tasks.role_filter
+display_order  -> assessment_tasks.display_order i project_academic_year_phase_tasks.display_order
+is_visible     -> assessment_tasks.is_visible i project_academic_year_phase_tasks.is_visible
+```
+
+`id` queda ignorat perquè els identificadors interns els gestiona MySQL. `task_name` no es mostra com a titol principal: serveix com a clau estable per relacionar imports d'avaluació i evitar duplicats dins la mateixa fase. El titol visible és `title`.
+
+Igual que amb les fases, l'assignació de la tasca es fa nomes per l'edició concreta resolta amb `academic_year + project_slug`.
+
 ### Regla de model
 
 - `projects` és el catàleg base del projecte;

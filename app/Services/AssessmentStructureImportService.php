@@ -22,8 +22,8 @@ class AssessmentStructureImportService
             $phaseRows = $this->readCsvWithHeaders($phasesCsvPath);
             $taskRows = $this->readCsvWithHeaders($tasksCsvPath);
 
-            $this->validateHeaders($phaseRows['headers'], ['project_slug', 'phase_key', 'title', 'display_order', 'is_active'], 'assessment_phases');
-            $this->validateHeaders($taskRows['headers'], ['project_slug', 'phase_key', 'source_column', 'title', 'display_order', 'is_visible'], 'assessment_tasks');
+            $this->validateHeaders($phaseRows['headers'], ['academic_year', 'project', 'phase_key', 'phase_complet_name', 'display_order', 'is_active'], 'assessment_phases');
+            $this->validateHeaders($taskRows['headers'], ['academic_year', 'project_slug', 'phase_key', 'task_name', 'title', 'display_order', 'is_visible'], 'assessment_tasks');
 
             foreach ($phaseRows['rows'] as $rowNumber => $row) {
                 try {
@@ -54,16 +54,23 @@ class AssessmentStructureImportService
 
     private function importPhaseRow(array $row): void
     {
-        $projectSlug = trim((string) ($row['project_slug'] ?? ''));
+        $projectSlug = trim((string) ($row['project'] ?? ''));
+        $academicYear = trim((string) ($row['academic_year'] ?? ''));
         $phaseKey = trim((string) ($row['phase_key'] ?? ''));
-        $title = trim((string) ($row['title'] ?? ''));
+        $title = trim((string) ($row['phase_complet_name'] ?? ''));
+        if ($title === '') {
+            $title = trim((string) ($row['phase_name'] ?? ''));
+        }
 
-        if ($projectSlug === '' || $phaseKey === '' || $title === '') {
-            throw new RuntimeException('project_slug, phase_key i title son obligatoris.');
+        if ($academicYear === '' || $projectSlug === '' || $phaseKey === '' || $title === '') {
+            throw new RuntimeException('academic_year, project, phase_key i phase_complet_name son obligatoris.');
         }
 
         $projectId = $this->projectIdBySlug($projectSlug);
+        $projectAcademicYearId = $this->projectAcademicYearIdByProjectAndAcademicYear($projectId, $academicYear);
         $sectionType = $this->normalizeSectionType((string) ($row['section_type'] ?? 'phase'));
+        $displayOrder = $this->displayOrder($row['display_order'] ?? '', $row['phase_num'] ?? 0);
+        $isActive = $this->toBooleanInt($row['is_active'] ?? 1);
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO assessment_phases
@@ -82,42 +89,29 @@ class AssessmentStructureImportService
             'project_id' => $projectId,
             'phase_key' => $phaseKey,
             'title' => $title,
-            'description' => $this->nullableString($row['description'] ?? ''),
+            'description' => $this->nullableString($row['phase_description'] ?? ''),
             'section_type' => $sectionType,
-            'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
-            'is_active' => $this->toBooleanInt($row['is_active'] ?? 1),
+            'display_order' => $displayOrder,
+            'is_active' => $isActive,
         ]);
 
         $phaseId = $this->phaseIdByProjectAndKey($projectId, $phaseKey);
-        foreach ($this->projectAcademicYearIdsByProjectId($projectId) as $projectAcademicYearId) {
-            $bridgeStmt = $this->pdo->prepare(
-                'INSERT INTO project_academic_year_phases
-                    (project_academic_year_id, assessment_phase_id, display_order, is_active)
-                 VALUES
-                    (:project_academic_year_id, :assessment_phase_id, :display_order, :is_active)
-                 ON DUPLICATE KEY UPDATE
-                    display_order = VALUES(display_order),
-                    is_active = VALUES(is_active),
-                    updated_at = CURRENT_TIMESTAMP'
-            );
-            $bridgeStmt->execute([
-                'project_academic_year_id' => $projectAcademicYearId,
-                'assessment_phase_id' => $phaseId,
-                'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
-                'is_active' => $this->toBooleanInt($row['is_active'] ?? 1),
-            ]);
-        }
+        $this->upsertProjectAcademicYearPhase($projectAcademicYearId, $phaseId, $displayOrder, $isActive);
     }
 
     private function importTaskRow(array $row): void
     {
-        $projectSlug = trim((string) ($row['project_slug'] ?? ''));
+        $projectSlug = trim((string) ($row['project_slug'] ?? $row['project'] ?? ''));
+        $academicYear = trim((string) ($row['academic_year'] ?? ''));
         $phaseKey = trim((string) ($row['phase_key'] ?? ''));
-        $sourceColumn = trim((string) ($row['source_column'] ?? ''));
+        $sourceColumn = trim((string) ($row['task_name'] ?? $row['source_column'] ?? ''));
         $title = trim((string) ($row['title'] ?? ''));
+        if ($title === '') {
+            $title = $sourceColumn;
+        }
 
-        if ($projectSlug === '' || $phaseKey === '' || $sourceColumn === '' || $title === '') {
-            throw new RuntimeException('project_slug, phase_key, source_column i title son obligatoris.');
+        if ($academicYear === '' || $projectSlug === '' || $phaseKey === '' || $sourceColumn === '' || $title === '') {
+            throw new RuntimeException('academic_year, project_slug, phase_key, task_name i title son obligatoris.');
         }
 
         $projectId = $this->projectIdBySlug($projectSlug);
@@ -148,25 +142,24 @@ class AssessmentStructureImportService
             'is_visible' => $this->toBooleanInt($row['is_visible'] ?? 1),
         ]);
 
-        foreach ($this->projectAcademicYearIdsByProjectId($projectId) as $projectAcademicYearId) {
-            $projectAcademicYearPhaseId = $this->projectAcademicYearPhaseId($projectAcademicYearId, $phaseId);
-            $bridgeStmt = $this->pdo->prepare(
-                'INSERT INTO project_academic_year_phase_tasks
-                    (project_academic_year_phase_id, assessment_task_id, display_order, is_visible)
-                 VALUES
-                    (:project_academic_year_phase_id, :assessment_task_id, :display_order, :is_visible)
-                 ON DUPLICATE KEY UPDATE
-                    display_order = VALUES(display_order),
-                    is_visible = VALUES(is_visible),
-                    updated_at = CURRENT_TIMESTAMP'
-            );
-            $bridgeStmt->execute([
-                'project_academic_year_phase_id' => $projectAcademicYearPhaseId,
-                'assessment_task_id' => $this->taskIdByPhaseAndSourceColumn($phaseId, $sourceColumn),
-                'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
-                'is_visible' => $this->toBooleanInt($row['is_visible'] ?? 1),
-            ]);
-        }
+        $projectAcademicYearId = $this->projectAcademicYearIdByProjectAndAcademicYear($projectId, $academicYear);
+        $projectAcademicYearPhaseId = $this->projectAcademicYearPhaseId($projectAcademicYearId, $phaseId);
+        $bridgeStmt = $this->pdo->prepare(
+            'INSERT INTO project_academic_year_phase_tasks
+                (project_academic_year_phase_id, assessment_task_id, display_order, is_visible)
+             VALUES
+                (:project_academic_year_phase_id, :assessment_task_id, :display_order, :is_visible)
+             ON DUPLICATE KEY UPDATE
+                display_order = VALUES(display_order),
+                is_visible = VALUES(is_visible),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $bridgeStmt->execute([
+            'project_academic_year_phase_id' => $projectAcademicYearPhaseId,
+            'assessment_task_id' => $this->taskIdByPhaseAndSourceColumn($phaseId, $sourceColumn),
+            'display_order' => $this->toUnsignedInt($row['display_order'] ?? 0),
+            'is_visible' => $this->toBooleanInt($row['is_visible'] ?? 1),
+        ]);
     }
 
     private function readCsvWithHeaders(string $path): array
@@ -283,6 +276,49 @@ class AssessmentStructureImportService
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    private function projectAcademicYearIdByProjectAndAcademicYear(int $projectId, string $academicYear): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT pay.id
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+               AND ay.name = :academic_year
+             LIMIT 1'
+        );
+        $stmt->execute([
+            'project_id' => $projectId,
+            'academic_year' => $academicYear,
+        ]);
+
+        $projectAcademicYearId = $stmt->fetchColumn();
+        if ($projectAcademicYearId === false) {
+            throw new RuntimeException("No existeix cap edicio del projecte per al curs {$academicYear}.");
+        }
+
+        return (int) $projectAcademicYearId;
+    }
+
+    private function upsertProjectAcademicYearPhase(int $projectAcademicYearId, int $phaseId, int $displayOrder, int $isActive): void
+    {
+        $bridgeStmt = $this->pdo->prepare(
+            'INSERT INTO project_academic_year_phases
+                (project_academic_year_id, assessment_phase_id, display_order, is_active)
+             VALUES
+                (:project_academic_year_id, :assessment_phase_id, :display_order, :is_active)
+             ON DUPLICATE KEY UPDATE
+                display_order = VALUES(display_order),
+                is_active = VALUES(is_active),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $bridgeStmt->execute([
+            'project_academic_year_id' => $projectAcademicYearId,
+            'assessment_phase_id' => $phaseId,
+            'display_order' => $displayOrder,
+            'is_active' => $isActive,
+        ]);
+    }
+
     private function projectAcademicYearPhaseId(int $projectAcademicYearId, int $phaseId): int
     {
         $stmt = $this->pdo->prepare(
@@ -315,6 +351,13 @@ class AssessmentStructureImportService
     private function toUnsignedInt(mixed $value): int
     {
         return max(0, (int) $value);
+    }
+
+    private function displayOrder(mixed $displayOrder, mixed $fallback): int
+    {
+        $displayOrder = trim((string) $displayOrder);
+
+        return $this->toUnsignedInt($displayOrder !== '' ? $displayOrder : $fallback);
     }
 
     private function toBooleanInt(mixed $value): int

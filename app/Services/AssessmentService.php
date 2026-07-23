@@ -291,14 +291,17 @@ class AssessmentService
                 at.role_filter,
                 paypt.display_order AS task_order,
                 paypt.is_visible
-             FROM project_academic_year_phases payp
-             INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
-             INNER JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
-             INNER JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
-             WHERE payp.project_academic_year_id = :project_academic_year_id
-                AND payp.is_active = 1
-                AND paypt.is_visible = 1
-             ORDER BY payp.display_order, ap.id, paypt.display_order, at.id'
+              FROM project_academic_year_phases payp
+              INNER JOIN project_academic_years pay ON pay.id = payp.project_academic_year_id
+              INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
+              INNER JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
+              INNER JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
+              WHERE payp.project_academic_year_id = :project_academic_year_id
+                AND (
+                    pay.status = "realitzat"
+                    OR (payp.is_active = 1 AND paypt.is_visible = 1)
+                )
+              ORDER BY payp.display_order, ap.id, paypt.display_order, at.id'
         );
          $stmt->execute(['project_academic_year_id' => $projectAcademicYearId]);
 
