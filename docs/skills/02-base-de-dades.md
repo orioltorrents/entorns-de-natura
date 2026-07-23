@@ -114,6 +114,7 @@ project_asset_links
 
 project_teams
 project_team_members
+project_team_member_roles
 
 assessment_sources
 assessment_import_runs
@@ -217,6 +218,7 @@ Taules:
 web_roles
 user_web_roles
 project_roles
+project_team_member_roles
 ```
 
 Funció:
@@ -225,6 +227,7 @@ Funció:
 web_roles       → permisos generals d'accés a la web
 user_web_roles  → assignació de rols web als usuaris
 project_roles   → funcions dels membres dins d'un projecte
+project_team_member_roles → assignació d'un o més rols de projecte a cada pertinença d'equip
 ```
 
 Rols previstos:
@@ -246,6 +249,8 @@ student     = student
 ```
 
 És preferible assignar diversos rols web explícits a `user_web_roles`. Els rols de projecte no substitueixen els permisos generals de la web.
+
+Un membre d'equip pot tenir més d'un rol de projecte. Per mostrar, filtrar, comptar o importar rols múltiples, s'ha d'utilitzar `project_team_member_roles`. `project_team_members.project_role_id` és només el rol principal de compatibilitat i no s'ha d'usar com a única font funcional.
 
 ---
 
@@ -403,7 +408,8 @@ Norma clau:
 ### Equips de projecte
 
 - `project_teams` agrupa els equips per projecte i curs;
-- `project_team_members` lliga usuari, equip i rol de projecte;
+- `project_team_members` lliga usuari, equip i classe contextual dins l'edició;
+- `project_team_member_roles` lliga cada pertinença amb un o més rols de projecte;
 - un alumne pot tenir un equip diferent a cada projecte.
 
 ### Quan `project_id` és correcte

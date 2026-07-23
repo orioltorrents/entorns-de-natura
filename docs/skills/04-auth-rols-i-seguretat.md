@@ -35,9 +35,12 @@ users
 web_roles
 user_web_roles
 project_roles
+project_team_member_roles
 ```
 
-`web_roles` i `user_web_roles` controlen l'accés general a la web. `project_roles` descriu funcions dins d'equips o projectes i no substitueix els permisos web.
+`web_roles` i `user_web_roles` controlen l'accés general a la web. `project_roles` descriu funcions dins d'equips o projectes i no substitueix els permisos web. `project_team_member_roles` assigna un o més rols de projecte a cada pertinença d'equip.
+
+`project_team_members.project_role_id` es manté com a rol principal de compatibilitat. Les comprovacions contextuals, llistats i comptatges de rols de projecte han d'utilitzar `project_team_member_roles` quan es necessiti el model complet.
 
 ---
 

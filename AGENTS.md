@@ -291,6 +291,7 @@ project_asset_links
 
 project_teams
 project_team_members
+project_team_member_roles
 
 assessment_sources
 assessment_import_runs
@@ -330,8 +331,11 @@ database/schema.sql
 Equips de projecte:
 
 - `project_teams` agrupa els equips per projecte i curs;
-- `project_team_members` lliga usuari, equip i rol de projecte;
+- `project_team_members` lliga usuari, equip i classe contextual dins l'edició;
+- `project_team_member_roles` lliga cada pertinença amb un o més rols de projecte;
 - un alumne pot tenir un equip diferent a cada projecte.
+
+`project_team_members.project_role_id` es manté només com a rol principal de compatibilitat. Quan cal mostrar, filtrar, comptar o importar rols múltiples, la font correcta és `project_team_member_roles`. Això permet que un mateix membre compti com a `científic/a` i `cartògraf/a` dins la mateixa pertinença.
 
 `scripts/check-schema-coherence.php` s'ha d'executar després de canvis d'esquema per detectar camps legacy, relacions mal situades i índexs o uniques esperats.
 
@@ -388,6 +392,7 @@ users
 web_roles
 user_web_roles
 project_roles
+project_team_member_roles
 ```
 
 Rols web disponibles:
@@ -411,7 +416,7 @@ teacher     → professor
 student     → alumne
 ```
 
-És preferible assignar diversos rols web explícits a la taula `user_web_roles`. `project_roles` descriu funcions dins dels equips i no substitueix els permisos generals de la web.
+És preferible assignar diversos rols web explícits a la taula `user_web_roles`. `project_roles` descriu funcions dins dels equips i no substitueix els permisos generals de la web. Les assignacions de rols de projecte als membres d'equip s'han de consultar a `project_team_member_roles`, no només a `project_team_members.project_role_id`.
 
 Exemples:
 
@@ -486,6 +491,7 @@ project_academic_years
 project_class_assignments
 project_teams
 project_team_members
+project_team_member_roles
 ```
 
 Projectes inicials:
@@ -520,7 +526,7 @@ Projecte Orenetes  → 4ESOA
 Liquencity         → 4ESOB
 ```
 
-`project_class_assignments` relaciona una edició de projecte amb les classes. `project_teams` i `project_team_members` gestionen els equips i els rols de projecte de cada edició.
+`project_class_assignments` relaciona una edició de projecte amb les classes. `project_teams`, `project_team_members` i `project_team_member_roles` gestionen els equips, les pertinences i els rols de projecte de cada edició.
 
 ---
 

@@ -59,15 +59,15 @@ El nom canònic de la base de dades local és `entorns_de_natura`. La connexió 
 
 ### Ja present
 
-- `users`, `roles`, `user_roles`;
+- `users`, `web_roles`, `user_web_roles`, `project_roles`;
 - `academic_years`, `classes`, `class_members`, `class_member_history`, `class_teachers`;
-- `projects`, `project_translations`, `project_groups`, `project_academic_years`, `project_class_assignments`;
+- `projects`, `project_translations`, `project_academic_years`, `project_class_assignments`;
 - `project_assets`, `project_asset_links`;
 - `documents`, `document_sources`, `document_fragments`, `document_visibility_rules`;
 - `project_sections`, `project_section_roles`;
 - `assessment_sources`, `assessment_import_runs`, `assessment_records`, `assessment_import_errors`;
 - `assessment_phases`, `assessment_tasks`, `project_academic_year_phases`, `project_academic_year_phase_tasks`, `assessment_supports`, `assessment_task_resources`;
-- `project_teams`, `project_team_members`;
+- `project_teams`, `project_team_members`, `project_team_member_roles`;
 - `google_sources`, `synced_documents`, `synced_sheet_rows`, `google_sync_runs`, `google_sync_errors`;
 - `settings`;
 - `site_visits`.
@@ -81,6 +81,7 @@ El nom canònic de la base de dades local és `entorns_de_natura`. La connexió 
 - per deixar els documents completament lligats a l'edició, també cal aplicar `database/17_documents_project_id_cleanup.sql` si la base ve d'una versió anterior.
 - si la base ve d'una versió anterior, `assessment_records.project_id` també s'ha d'eliminar amb `database/18_assessment_records_project_id_cleanup.sql`.
 - `project_id` continua sent correcte en relacions de catàleg del projecte base, com `project_translations`, `project_asset_links` i `project_sections`; el que s'elimina és l'ús de `project_id` com a context de document, import o edició.
+- `project_team_member_roles` és la font per mostrar, filtrar i comptar múltiples rols de projecte per membre; `project_team_members.project_role_id` queda com a rol principal de compatibilitat.
 
 ### Documents
 
