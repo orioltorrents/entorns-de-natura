@@ -9,7 +9,8 @@ class PublicController
         private AuthService $authService,
         private AssessmentService $assessmentService,
         private DocumentService $documentService,
-        private ProjectSectionService $projectSectionService
+        private ProjectSectionService $projectSectionService,
+        private ProjectAccessService $projectAccessService
     ) {
     }
 
@@ -50,6 +51,10 @@ class PublicController
 
         $currentUser = $this->authService->user();
         $projectAcademicYear = $this->projectService->academicYearForProject((int) $project['id'], $projectAcademicYearId);
+        if ($this->shouldEnforceEditionAccess($currentUser) && !$this->canAccessEdition($currentUser, $project, $projectAcademicYear)) {
+            return $this->accessDenied();
+        }
+
         $projectSectionsData = $this->projectSectionService->visibleSectionsForProject($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-detail', [
@@ -80,6 +85,11 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
+        $projectAcademicYear = $this->projectService->academicYearForProject((int) $project['id'], $projectAcademicYearId);
+        if ($this->shouldEnforceEditionAccess($currentUser) && !$this->canAccessEdition($currentUser, $project, $projectAcademicYear)) {
+            return $this->accessDenied();
+        }
+
         $tasksData = $this->assessmentService->visibleTaskSectionsForProject($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-tasks', [
@@ -109,6 +119,11 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
+        $projectAcademicYear = $this->projectService->academicYearForProject((int) $project['id'], $projectAcademicYearId);
+        if ($this->shouldEnforceEditionAccess($currentUser) && !$this->canAccessEdition($currentUser, $project, $projectAcademicYear)) {
+            return $this->accessDenied();
+        }
+
         $notes = $this->resolveProjectNotes($slug, $currentUser, $projectAcademicYearId);
 
         if ($notes === null) {
@@ -151,6 +166,11 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
+        $projectAcademicYear = $this->projectService->academicYearForProject((int) $project['id'], $projectAcademicYearId);
+        if ($this->shouldEnforceEditionAccess($currentUser) && !$this->canAccessEdition($currentUser, $project, $projectAcademicYear)) {
+            return $this->accessDenied();
+        }
+
         $documentsData = $this->documentService->projectDocuments($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-documents', [
@@ -176,5 +196,46 @@ class PublicController
         }
 
         return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug, $projectAcademicYearId);
+    }
+
+    private function canAccessEdition(?array $currentUser, array $project, ?array $projectAcademicYear): bool
+    {
+        if ($projectAcademicYear === null) {
+            return false;
+        }
+
+        $requestedProjectAcademicYearId = isset($_GET['edicio']) ? (int) $_GET['edicio'] : 0;
+        if ($requestedProjectAcademicYearId > 0 && (int) $projectAcademicYear['id'] !== $requestedProjectAcademicYearId) {
+            return false;
+        }
+
+        return $this->projectAccessService->canAccessProjectAcademicYear(
+            $currentUser,
+            (int) $project['id'],
+            (int) $projectAcademicYear['id']
+        );
+    }
+
+    private function shouldEnforceEditionAccess(?array $currentUser): bool
+    {
+        if ($currentUser === null) {
+            return false;
+        }
+
+        $roles = array_values(array_map('strval', $currentUser['roles'] ?? []));
+        if (in_array('admin', $roles, true) || in_array('coordinator', $roles, true)) {
+            return false;
+        }
+
+        return in_array('student', $roles, true) || in_array('teacher', $roles, true) || in_array('guest_teacher', $roles, true);
+    }
+
+    private function accessDenied(): string
+    {
+        http_response_code(403);
+
+        return view('public.access-denied', [
+            'title' => 'Accés restringit',
+        ]);
     }
 }

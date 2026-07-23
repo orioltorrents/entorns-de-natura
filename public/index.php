@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/app/Helpers/view.php';
 require_once dirname(__DIR__) . '/app/Support/Router.php';
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssetService.php';
+require_once dirname(__DIR__) . '/app/Services/ProjectAccessService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectService.php';
 require_once dirname(__DIR__) . '/app/Services/AssessmentService.php';
@@ -16,6 +17,7 @@ require_once dirname(__DIR__) . '/app/Services/AssessmentStructureImportService.
 require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Services/DocumentImportService.php';
 require_once dirname(__DIR__) . '/app/Services/DocumentService.php';
+require_once dirname(__DIR__) . '/app/Services/LogService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectSectionService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
@@ -25,6 +27,7 @@ require_once dirname(__DIR__) . '/app/Controllers/AdminController.php';
 require_once dirname(__DIR__) . '/app/Controllers/DocumentSyncController.php';
 
 $authService = new AuthService();
+$projectAccessService = new ProjectAccessService();
 $projectAssignmentService = new ProjectAssignmentService();
 $projectService = new ProjectService();
 $assessmentService = new AssessmentService();
@@ -32,7 +35,7 @@ $analyticsService = new AnalyticsService();
 $documentImportService = new DocumentImportService();
 $documentService = new DocumentService();
 $projectSectionService = new ProjectSectionService();
-$controller = new PublicController($projectService, $authService, $assessmentService, $documentService, $projectSectionService);
+$controller = new PublicController($projectService, $authService, $assessmentService, $documentService, $projectSectionService, $projectAccessService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);
@@ -112,12 +115,16 @@ $router->post('/admin/impersonate-student', static function () use ($authService
 
     $studentId = isset($_POST['student_id']) ? (int) $_POST['student_id'] : 0;
     $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+    $actor = $authService->actorUser();
+    $actorId = $actor !== null ? (int) ($actor['id'] ?? 0) : 0;
 
     if ($studentId > 0 && $authService->verifyCsrfToken($csrfToken) && $authService->impersonateStudent($studentId)) {
+        (new LogService())->write('admin_action=impersonate_student actor_id=' . $actorId . ' target_student_id=' . $studentId);
         header('Location: ' . url('alumne'));
         exit;
     }
 
+    (new LogService())->write('admin_action=impersonate_student_failed actor_id=' . $actorId . ' target_student_id=' . $studentId);
     $_SESSION['admin_message'] = 'No s’ha pogut activar la vista com alumne.';
     $_SESSION['admin_message_type'] = 'error';
     header('Location: ' . url('admin'));
@@ -132,9 +139,15 @@ $router->post('/admin/stop-impersonation', static function () use ($authService)
     $authService->requireActorRole('admin');
 
     $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+    $actor = $authService->actorUser();
+    $actorId = $actor !== null ? (int) ($actor['id'] ?? 0) : 0;
 
     if ($authService->verifyCsrfToken($csrfToken)) {
+        $targetId = isset($_SESSION['impersonation']['target']['id']) ? (int) $_SESSION['impersonation']['target']['id'] : 0;
         $authService->stopImpersonating();
+        (new LogService())->write('admin_action=stop_impersonation actor_id=' . $actorId . ' target_student_id=' . $targetId);
+    } else {
+        (new LogService())->write('admin_action=stop_impersonation_csrf_failed actor_id=' . $actorId);
     }
 
     header('Location: ' . url('admin'));

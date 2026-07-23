@@ -1,5 +1,6 @@
 <?php
 ob_start();
+$csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="admin-layout">
     <aside class="admin-layout__sidebar">
@@ -420,6 +421,7 @@ ob_start();
                     <h2>Crear usuari</h2>
                     <form class="admin-form admin-form--users" method="post" action="<?= url('admin') ?>">
                         <input type="hidden" name="action" value="create_user">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                         <div class="form__grid">
                             <label>
                                 Nom
@@ -465,6 +467,7 @@ aiman@example.com,Aiman,Aliaga,1,24-25_4ESOA,projecte-rius,2024-2025,24-25_proje
 silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc_4ESOB-2,4ESOAB-1,cartògraf/a</code></pre>
                     <form class="admin-form admin-form--import" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                         <input type="hidden" name="action" value="import_students">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                         <label>
                             Fitxer CSV
                             <input type="file" name="students_file" accept=".csv,text/csv" required>
@@ -562,6 +565,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                     <?php if (!$isAdminUser): ?>
                                                         <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
                                                             <input type="hidden" name="action" value="toggle_user">
+                                                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                             <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
                                                             <button class="button button--secondary" type="submit">
                                                                 <?= ((int) $user['is_active'] === 1) ? 'Desactivar' : 'Activar' ?>
@@ -573,7 +577,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                     <?php if (!$isAdminUser && (int) $user['is_active'] === 1): ?>
                                                         <form method="post" action="<?= url('admin/impersonate-student') ?>" class="admin-inline-action">
                                                             <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
-                                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) ($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                             <button class="button button--secondary" type="submit">Veure com</button>
                                                         </form>
                                                     <?php endif; ?>
@@ -585,6 +589,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             <td colspan="5">
                                                 <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
                                                     <input type="hidden" name="action" value="update_student">
+                                                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                     <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
                                                     <div class="form__grid form__grid--compact">
                                                         <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($user['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
@@ -675,6 +680,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                 <div class="admin-actions">
                                                     <form method="post" action="<?= url('admin') ?>" class="admin-inline-action">
                                                         <input type="hidden" name="action" value="toggle_user">
+                                                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                         <input type="hidden" name="user_id" value="<?= $teacherId ?>">
                                                         <button class="button button--secondary" type="submit">
                                                             <?= ((int) $teacher['is_active'] === 1) ? 'Desactivar' : 'Activar' ?>
@@ -688,6 +694,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             <td colspan="4">
                                                 <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>">
                                                     <input type="hidden" name="action" value="update_student">
+                                                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                     <input type="hidden" name="student_id" value="<?= $teacherId ?>">
                                                     <div class="form__grid form__grid--compact">
                                                         <label>Nom<input type="text" name="name" value="<?= htmlspecialchars((string) ($teacher['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></label>
@@ -751,6 +758,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
                 <form class="admin-form admin-form--compact" method="post" action="<?= url('admin') ?>#classes">
                     <input type="hidden" name="action" value="sync_all_class_teachers">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                     <div class="admin-table__wrapper">
                         <table class="admin-table admin-table--compact">
                             <thead>
@@ -819,6 +827,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             <div id="projectes-content" class="admin-collapsible__content">
                 <form id="project-order-form" method="post" action="<?= url('admin') ?>#projectes-lista">
                     <input type="hidden" name="action" value="update_project_order">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                 </form>
                 <div class="admin-projects">
                     <?php foreach ($projects as $project): ?>
@@ -868,6 +877,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                     <button class="button button--secondary" form="project-order-form" type="submit">Guardar ordre</button>
                                     <form method="post" action="<?= url('admin') ?>#projectes-lista" class="admin-inline-action">
                                         <input type="hidden" name="action" value="toggle_project">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                         <input type="hidden" name="project_id" value="<?= $projectId ?>">
                                         <button class="button button--secondary" type="submit">
                                             <?= ((int) ($project['is_active'] ?? 0) === 1) ? 'Desactivar' : 'Activar' ?>
@@ -892,6 +902,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                     <?php if ($projectAcademicYearsForCard !== []): ?>
                                         <form class="project-admin-card__assign-form" method="post" action="<?= url('admin') ?>#projectes-lista">
                                             <input type="hidden" name="action" value="update_project_academic_year_statuses">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                             <input type="hidden" name="project_id" value="<?= $projectId ?>">
                                             <div class="admin-table__wrapper">
                                                 <table class="admin-table admin-table--compact">
@@ -955,6 +966,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
                                     <form class="project-admin-card__assign-form" method="post" action="<?= url('admin') ?>#projectes-lista" data-confirm="Es desaran els estats marcats per aquest projecte. Les files amb No assignat eliminaran l'assignació de la classe.">
                                         <input type="hidden" name="action" value="sync_project_class_assignments">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                         <input type="hidden" name="project_id" value="<?= $projectId ?>">
                                         <?php if ($availableAcademicYearLabels !== []): ?>
                                             <p class="muted">Edicions disponibles: <?= htmlspecialchars(implode(', ', $availableAcademicYearLabels), ENT_QUOTES, 'UTF-8') ?></p>
@@ -1265,6 +1277,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. La importació actualitza les plantilles i les assignacions per edició fent servir <code>project_slug</code>, <code>phase_key</code> i <code>source_column</code>.</p>
             <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
                 <input type="hidden" name="action" value="import_assessment_structure">
+                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                 <div class="form__grid">
                     <label>
                         assessment_phases.csv
@@ -1314,6 +1327,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                         </div>
                                         <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                             <input type="hidden" name="action" value="toggle_assessment_phase">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                             <input type="hidden" name="project_academic_year_phase_id" value="<?= (int) $phase['project_academic_year_phase_id'] ?>">
                                             <button class="button button--secondary" type="submit">
                                                 <?= ((int) $phase['is_active'] === 1) ? 'Desactivar fase' : 'Activar fase' ?>
@@ -1350,8 +1364,9 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                             <td><?= $task['role_filter'] !== '' ? htmlspecialchars((string) $task['role_filter'], ENT_QUOTES, 'UTF-8') : '<span class="muted">Tots</span>' ?></td>
                                                             <td><span class="status"><?= ((int) $task['is_visible'] === 1) ? 'Visible' : 'Amagada' ?></span></td>
                                                             <td>
-                                                                 <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
+                                                                  <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
                                                                     <input type="hidden" name="action" value="toggle_assessment_task">
+                                                                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                                     <input type="hidden" name="project_academic_year_phase_task_id" value="<?= (int) $task['project_academic_year_phase_task_id'] ?>">
                                                                     <button class="button button--secondary" type="submit">
                                                                         <?= ((int) $task['is_visible'] === 1) ? 'Amagar' : 'Mostrar' ?>

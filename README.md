@@ -26,7 +26,7 @@ Aquest `README.md` és la introducció breu del projecte. Els detalls s'han de m
 - rutes actuals per a portada, projectes, detall de projecte, login, logout i dashboards privats;
 - projectes carregats des de base de dades amb traduccions i assets associats;
 - fitxa pública de projecte amb selecció d'asset i bloc contextual de notes per alumnat autenticat;
-- login bàsic amb sessió, CSRF i control de rols;
+- login bàsic amb sessió, CSRF al login i a accions sensibles d'admin, auditoria bàsica i control de rols;
 - analítica de visites a `site_visits` i panell d'administració amb estadístiques;
 - capa de Google Workspace amb taules pròpies lligades a `project_academic_years`;
 - CSS actiu a `public/assets/css/styles.css` i JavaScript actiu a `public/assets/js/scripts.js`;

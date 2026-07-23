@@ -1,5 +1,6 @@
 <?php
 ob_start();
+$csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <section class="card admin-panel" id="document-sync">
     <div class="admin-panel__header">
@@ -34,6 +35,7 @@ ob_start();
     <?php endif; ?>
 
     <form class="form" method="post" action="<?= url('admin/sync-documents') ?>">
+        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
         <label class="form__field" for="json_payload">JSON</label>
         <textarea class="form__control" id="json_payload" name="json_payload" rows="24" style="font-family: monospace; min-height: 420px;"><?= htmlspecialchars((string) ($jsonPayload ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
 

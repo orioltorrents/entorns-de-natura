@@ -25,7 +25,7 @@ El projecte ja disposa d'una aplicació modular funcional. Té rutes públiques 
 - controladors per a web pública, autenticació, alumnat, professorat, administració i importació manual de documents;
 - serveis d'autenticació, projectes, assignacions, assets, seccions, documents, analítica, avaluació i Google Workspace;
 - layout compartit i vistes públiques, privades i d'administració;
-- login bàsic amb sessió, CSRF al formulari de login i control de rols web;
+- login bàsic amb sessió, CSRF al formulari de login, CSRF a accions sensibles d'admin i control de rols web;
 - projectes, edicions per curs, assignacions a classes i equips de projecte;
 - documents, fragments, regles de visibilitat i seccions per rol;
 - estructura d'avaluació, importació de registres i consulta bàsica de notes per alumnat autenticat;
@@ -360,6 +360,7 @@ Estats d'edició:
 - `project_class_assignments.status` controla l'estat d'una edició per classe i pot ser `pendent`, `actiu` o `realitzat`;
 - l'alumnat veu només edicions de l'any acadèmic actual amb estat `actiu` o `realitzat` i assignació de classe `actiu` o `realitzat`;
 - professorat, coordinació i administració veuen al dashboard edicions de l'any actual amb estat `pendent`, `actiu` o `realitzat`; `arxivat` queda fora dels dashboards normals.
+- `ProjectAccessService` reforça l'accés directe per URL: alumnat i professorat només poden obrir edicions assignades al seu context; admin i coordinació poden obrir edicions de projecte.
 
 - `documents` han d'anar per `project_academic_year_id`;
 - `assessment_sources` i `assessment_import_runs` han d'anar per `project_academic_year_id`;
@@ -691,9 +692,9 @@ public/test-db.php
 
 ## Autenticació
 
-El login bàsic amb email i contrasenya, sessió, comprovació d'usuari actiu, rols web i CSRF al formulari de login ja està implementat.
+El login bàsic amb email i contrasenya, sessió, comprovació d'usuari actiu, rols web, CSRF al formulari de login i CSRF a accions sensibles d'admin ja està implementat.
 
-El login amb Google i el reforç de CSRF per a la resta d'operacions sensibles continuen pendents.
+El login amb Google i l'extensió progressiva de CSRF a qualsevol nova operació sensible continuen pendents.
 
 Camps importants a `users`:
 

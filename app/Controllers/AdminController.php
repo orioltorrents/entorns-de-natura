@@ -340,91 +340,71 @@ class AdminController
             'message' => $message,
             'messageType' => $messageType,
             'importSummary' => $importSummary,
+            'csrfToken' => (new AuthService())->csrfToken(),
         ]);
     }
 
     private function handlePost(PDO $pdo): void
     {
-        $action = $_POST['action'] ?? '';
+        $action = (string) ($_POST['action'] ?? '');
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
+        $authService = new AuthService();
 
-        if ($action === 'create_user') {
-            $this->createUser($pdo);
+        if (!$authService->verifyCsrfToken($csrfToken)) {
+            $this->setMessage('La sessió del formulari ha caducat. Torna-ho a provar.', 'error');
+            $this->auditAdminAction('csrf_failed', ['action' => $action]);
             return;
         }
 
-        if ($action === 'toggle_user') {
-            $this->toggleUser($pdo);
+        $handlers = [
+            'create_user' => 'createUser',
+            'toggle_user' => 'toggleUser',
+            'update_student' => 'updateStudent',
+            'toggle_project' => 'toggleProject',
+            'update_project_order' => 'updateProjectOrder',
+            'assign_project_to_class' => 'assignProjectToClass',
+            'sync_project_class_assignments' => 'syncProjectClassAssignments',
+            'update_project_academic_year_statuses' => 'updateProjectAcademicYearStatuses',
+            'sync_class_teachers' => 'syncClassTeachers',
+            'sync_all_class_teachers' => 'syncAllClassTeachers',
+            'update_project_assignment_status' => 'updateProjectAssignmentStatus',
+            'delete_project_assignment' => 'deleteProjectAssignment',
+            'import_students' => 'importStudents',
+            'import_assessment_structure' => 'importAssessmentStructure',
+            'toggle_assessment_phase' => 'toggleAssessmentPhase',
+            'toggle_assessment_task' => 'toggleAssessmentTask',
+        ];
+
+        if (!isset($handlers[$action])) {
+            $this->setMessage('Acció d’administració no vàlida.', 'error');
+            $this->auditAdminAction('unknown_action', ['action' => $action]);
             return;
         }
 
-        if ($action === 'update_student') {
-            $this->updateStudent($pdo);
-            return;
+        $this->{$handlers[$action]}($pdo);
+        $this->auditAdminAction($action);
+    }
+
+    private function auditAdminAction(string $action, array $context = []): void
+    {
+        $actor = (new AuthService())->actorUser();
+        $actorId = $actor !== null ? (int) ($actor['id'] ?? 0) : 0;
+        $actorEmail = $actor !== null ? (string) ($actor['email'] ?? '') : '';
+        $parts = [
+            'admin_action=' . $action,
+            'actor_id=' . $actorId,
+        ];
+
+        if ($actorEmail !== '') {
+            $parts[] = 'actor_email=' . $actorEmail;
         }
 
-        if ($action === 'toggle_project') {
-            $this->toggleProject($pdo);
-            return;
+        foreach ($context as $key => $value) {
+            $safeKey = preg_replace('/[^a-zA-Z0-9_]/', '_', (string) $key);
+            $parts[] = $safeKey . '=' . str_replace(["\r", "\n"], ' ', (string) $value);
         }
 
-        if ($action === 'update_project_order') {
-            $this->updateProjectOrder($pdo);
-            return;
-        }
-
-        if ($action === 'assign_project_to_class') {
-            $this->assignProjectToClass($pdo);
-            return;
-        }
-
-        if ($action === 'sync_project_class_assignments') {
-            $this->syncProjectClassAssignments($pdo);
-            return;
-        }
-
-        if ($action === 'update_project_academic_year_statuses') {
-            $this->updateProjectAcademicYearStatuses($pdo);
-            return;
-        }
-
-        if ($action === 'sync_class_teachers') {
-            $this->syncClassTeachers($pdo);
-            return;
-        }
-
-        if ($action === 'sync_all_class_teachers') {
-            $this->syncAllClassTeachers($pdo);
-            return;
-        }
-
-        if ($action === 'update_project_assignment_status') {
-            $this->updateProjectAssignmentStatus($pdo);
-            return;
-        }
-
-        if ($action === 'delete_project_assignment') {
-            $this->deleteProjectAssignment($pdo);
-            return;
-        }
-
-        if ($action === 'import_students') {
-            $this->importStudents($pdo);
-            return;
-        }
-
-        if ($action === 'import_assessment_structure') {
-            $this->importAssessmentStructure($pdo);
-            return;
-        }
-
-        if ($action === 'toggle_assessment_phase') {
-            $this->toggleAssessmentPhase($pdo);
-            return;
-        }
-
-        if ($action === 'toggle_assessment_task') {
-            $this->toggleAssessmentTask($pdo);
-        }
+        (new LogService())->write(implode(' ', $parts));
     }
 
     private function assessmentStructure(PDO $pdo): array
