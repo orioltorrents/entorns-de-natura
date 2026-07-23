@@ -201,6 +201,7 @@ Serveis:
 ```text
 AnalyticsService
 AdminProjectService
+AdminUserService
 AssessmentService
 AssessmentStructureImportService
 AuthService

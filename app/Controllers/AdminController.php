@@ -373,10 +373,20 @@ class AdminController
             return;
         }
 
-        $handlers = [
+        $userHandlers = [
             'create_user' => 'createUser',
             'toggle_user' => 'toggleUser',
-            'update_student' => 'updateStudent',
+            'update_student' => 'updateUser',
+        ];
+
+        if (isset($userHandlers[$action])) {
+            $result = (new AdminUserService($pdo))->{$userHandlers[$action]}($_POST);
+            $this->setMessage((string) $result['message'], (string) $result['type']);
+            $this->auditAdminAction($action);
+            return;
+        }
+
+        $handlers = [
             'sync_class_teachers' => 'syncClassTeachers',
             'sync_all_class_teachers' => 'syncAllClassTeachers',
             'import_students' => 'importStudents',
@@ -582,166 +592,6 @@ class AdminController
         }
 
         $this->setMessage($message, 'success');
-    }
-
-    private function createUser(PDO $pdo): void
-    {
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $surname = trim((string) ($_POST['surname'] ?? ''));
-        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
-        $password = (string) ($_POST['password'] ?? '');
-        $isActive = isset($_POST['is_active']) ? 1 : 0;
-        $roles = $_POST['roles'] ?? [];
-
-        if ($name === '' || $email === '' || $password === '') {
-            $this->setMessage('Nom, email i contrasenya són obligatoris.', 'error');
-            return;
-        }
-
-        $existing = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
-        $existing->execute(['email' => $email]);
-        if ($existing->fetch()) {
-            $this->setMessage('Ja existeix un usuari amb aquest email.', 'error');
-            return;
-        }
-
-        $pdo->beginTransaction();
-
-        try {
-            $roleIds = [];
-
-            if (!empty($roles) && is_array($roles)) {
-                $roleIds = array_map('intval', $roles);
-            }
-
-            $mustChangePassword = $this->roleIdsContainRoleName($pdo, $roleIds, 'student') ? 1 : 0;
-
-            $stmt = $pdo->prepare(
-                'INSERT INTO users (name, surname, email, password_hash, must_change_password, is_active, created_at)
-                 VALUES (:name, :surname, :email, :password_hash, :must_change_password, :is_active, NOW())'
-            );
-
-            $stmt->execute([
-                'name' => $name,
-                'surname' => $surname,
-                'email' => $email,
-                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-                'must_change_password' => $mustChangePassword,
-                'is_active' => $isActive,
-            ]);
-
-            $userId = (int) $pdo->lastInsertId();
-
-            if ($roleIds !== []) {
-                $insertRoleStmt = $pdo->prepare('INSERT INTO user_web_roles (user_id, role_id) VALUES (:user_id, :role_id)');
-                foreach ($roleIds as $roleId) {
-                    $insertRoleStmt->execute(['user_id' => $userId, 'role_id' => $roleId]);
-                }
-            }
-
-            $pdo->commit();
-            $this->setMessage('Usuari creat correctament.', 'success');
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’ha pogut crear l’usuari.', 'error');
-        }
-    }
-
-    private function toggleUser(PDO $pdo): void
-    {
-        $userId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
-        if ($userId === null || $userId === false) {
-            $this->setMessage('Usuari no vàlid.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT is_active FROM users WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $userId]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user === false) {
-            $this->setMessage('No s’ha trobat l’usuari.', 'error');
-            return;
-        }
-
-        if ((int) $user['is_active'] === 1 && $this->userHasRole($pdo, (int) $userId, 'admin')) {
-            $this->setMessage('No es pot desactivar un usuari administrador.', 'error');
-            return;
-        }
-
-        $newState = ((int) $user['is_active'] === 1) ? 0 : 1;
-        $updateStmt = $pdo->prepare('UPDATE users SET is_active = :is_active WHERE id = :id');
-        $updateStmt->execute(['is_active' => $newState, 'id' => $userId]);
-
-        $this->setMessage('Estat d’usuari actualitzat.', 'success');
-    }
-
-    private function updateStudent(PDO $pdo): void
-    {
-        $userId = filter_input(INPUT_POST, 'student_id', FILTER_VALIDATE_INT);
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $surname = trim((string) ($_POST['surname'] ?? ''));
-        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
-
-        if ($userId === null || $userId === false || $name === '' || $email === '') {
-            $this->setMessage('Nom i email són obligatoris.', 'error');
-            return;
-        }
-
-        $isActive = isset($_POST['is_active']) ? 1 : 0;
-        if ($this->userHasRole($pdo, (int) $userId, 'admin')) {
-            $isActive = 1;
-        }
-        $gender = trim((string) ($_POST['gender'] ?? ''));
-        $article = trim((string) ($_POST['article'] ?? ''));
-        $inaturalistUserLogin = trim((string) ($_POST['inaturalist_user_login'] ?? ''));
-
-        $stmt = $pdo->prepare(
-            'UPDATE users
-             SET name = :name,
-                 surname = :surname,
-                 email = :email,
-                 is_active = :is_active,
-                 gender = :gender,
-                 article = :article,
-                 inaturalist_user_login = :inaturalist_user_login
-             WHERE id = :id'
-        );
-        $stmt->execute([
-            'name' => $name,
-            'surname' => $surname,
-            'email' => $email,
-            'is_active' => $isActive,
-            'gender' => $gender !== '' ? $gender : null,
-            'article' => $article !== '' ? $article : null,
-            'inaturalist_user_login' => $inaturalistUserLogin !== '' ? $inaturalistUserLogin : null,
-            'id' => $userId,
-        ]);
-
-        $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
-        $resolvedClassId = $classId === null || $classId === false ? null : (int) $classId;
-        $pdo->beginTransaction();
-
-        try {
-            $this->syncClassAssignment($pdo, $userId, $resolvedClassId, 'manual');
-
-            $roles = $_POST['roles'] ?? [];
-            if (is_array($roles)) {
-                $this->syncUserRoles($pdo, $userId, array_map('intval', $roles));
-            }
-
-            $pdo->commit();
-            $this->setMessage('Informació de l’alumne actualitzada.', 'success');
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’ha pogut actualitzar l’alumne.', 'error');
-        }
     }
 
     private function importStudents(PDO $pdo): void
