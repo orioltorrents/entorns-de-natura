@@ -48,6 +48,7 @@
 --   no cal executar-la en una reconstrucció neta perquè Google Workspace ja usa noms homogenis.
 -- - `42_project_academic_year_statuses.sql` és una migració no destructiva per a BD existents;
 --   en reconstrucció neta els valors nous ja són els esperats.
+-- - `43_site_pages.sql` afegeix pàgines públiques globals sincronitzables des de Google Docs.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -63,6 +64,7 @@ SOURCE database/10_project_sections.sql
 SOURCE database/24_assessment_project_year_phases.sql
 SOURCE database/25_assessment_project_year_phase_tasks.sql
 SOURCE database/29_google_workspace_tables.sql
+SOURCE database/43_site_pages.sql
 SOURCE database/32_project_teams.sql
 SOURCE database/39_project_team_member_roles.sql
 SOURCE database/38_ratpenats_project.sql

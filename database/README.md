@@ -71,6 +71,7 @@ Canvis incrementals recents per a bases existents:
 - `40_users_password_change_required.sql`: afegeix `must_change_password` i `password_changed_at` a `users` per forçar el canvi de contrasenya inicial.
 - `41_google_workspace_table_rename.sql`: renombra `synced_documents` i `synced_sheet_rows` a `google_documents` i `google_sheet_rows`, i afegeix `google_document_blocks`.
 - `42_project_academic_year_statuses.sql`: normalitza els estats d'edició de projecte a `pendent`, `actiu`, `realitzat` i `arxivat`.
+- `43_site_pages.sql`: afegeix pàgines públiques globals sincronitzables des de Google Docs, sense dependre d'una edició de projecte.
 
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
@@ -153,6 +154,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 ### Altres
 
 - `settings`
+- `site_pages`
 - `site_visits`
 
 ## Relacions importants
@@ -163,6 +165,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `assessment_phases` i `assessment_tasks` són definició base.
 - `project_academic_year_phases` i `project_academic_year_phase_tasks` controlen visibilitat i ordre per curs.
 - Google Workspace també treballa amb `project_academic_year_id`.
+- `site_pages` guarda contingut global del web que no depèn d'una edició acadèmica, com `/ca/que-es-entorns`.
 - Les taules `google_*` són capa d'origen i sincronització; no substitueixen les taules internes `documents_*`.
 - `documents`, `document_sources`, `document_fragments` i `document_visibility_rules` continuen sent la capa publicable que l'aplicació pot mostrar i filtrar segons permisos.
 - El contingut Google s'ha de validar, sanititzar i transformar cap a les taules finals quan calgui abans de publicar-lo.

@@ -14,12 +14,94 @@ class SitePageService
 
     public function aboutContent(): ?array
     {
-        $documentId = $this->setting('public_about_google_doc_id');
-        if ($documentId === null || $documentId === '') {
+        $page = $this->sitePage('que-es-entorns', getLanguage());
+        if ($page === null) {
+            $page = $this->ensureLegacyAboutPage();
+        }
+
+        if ($page === null) {
             return null;
         }
 
-        return $this->googleDocumentContent($documentId);
+        $storedContent = $this->storedPageContent($page);
+        if ($storedContent !== null) {
+            return $storedContent;
+        }
+
+        $documentId = trim((string) ($page['google_file_id'] ?? ''));
+
+        return $documentId !== '' ? $this->googleDocumentContent($documentId) : null;
+    }
+
+    public function syncPage(string $slug, string $languageCode = 'ca'): array
+    {
+        $page = $this->sitePage($slug, $languageCode);
+        if ($page === null && $slug === 'que-es-entorns' && $languageCode === 'ca') {
+            $page = $this->ensureLegacyAboutPage();
+        }
+
+        if ($page === null) {
+            throw new RuntimeException('No s’ha trobat la pàgina pública configurada.');
+        }
+
+        $documentId = trim((string) ($page['google_file_id'] ?? ''));
+        if ($documentId === '') {
+            throw new RuntimeException('La pàgina no té cap Google Doc configurat.');
+        }
+
+        try {
+            $content = $this->googleDocumentContent($documentId);
+            if ($content === null) {
+                throw new RuntimeException('No s’ha pogut obtenir contingut del Google Doc.');
+            }
+
+            $contentJson = json_encode($content['blocks'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            $plainText = $this->blocksText($content['blocks'] ?? []);
+            $versionHash = hash('sha256', $contentJson);
+
+            $stmt = $this->pdo()->prepare(
+                'UPDATE site_pages
+                 SET title = :title,
+                     content_json = :content_json,
+                     plain_text = :plain_text,
+                     version_hash = :version_hash,
+                     last_synced_at = CURRENT_TIMESTAMP,
+                     last_sync_status = "completed",
+                     last_sync_error = NULL,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id'
+            );
+            $stmt->execute([
+                'title' => (string) ($content['title'] ?? $page['title'] ?? 'Pàgina'),
+                'content_json' => $contentJson,
+                'plain_text' => $plainText,
+                'version_hash' => $versionHash,
+                'id' => (int) $page['id'],
+            ]);
+
+            return [
+                'status' => 'completed',
+                'page_id' => (int) $page['id'],
+                'slug' => $slug,
+                'language_code' => $languageCode,
+                'version_hash' => $versionHash,
+                'characters' => mb_strlen($plainText, 'UTF-8'),
+            ];
+        } catch (Throwable $throwable) {
+            $stmt = $this->pdo()->prepare(
+                'UPDATE site_pages
+                 SET last_sync_status = "failed",
+                     last_sync_error = :last_sync_error,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id'
+            );
+            $stmt->execute([
+                'last_sync_error' => $throwable->getMessage(),
+                'id' => (int) $page['id'],
+            ]);
+
+            throw $throwable;
+        }
     }
 
     private function setting(string $key): ?string
@@ -29,6 +111,64 @@ class SitePageService
         $value = $stmt->fetchColumn();
 
         return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    private function sitePage(string $slug, string $languageCode): ?array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, slug, language_code, title, google_file_id, content_json, plain_text, version_hash, last_synced_at, last_sync_status, last_sync_error, is_active
+             FROM site_pages
+             WHERE slug = :slug AND language_code = :language_code AND is_active = 1
+             LIMIT 1'
+        );
+        $stmt->execute([
+            'slug' => $slug,
+            'language_code' => $languageCode,
+        ]);
+        $page = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($page) ? $page : null;
+    }
+
+    private function ensureLegacyAboutPage(): ?array
+    {
+        $documentId = $this->setting('public_about_google_doc_id');
+        if ($documentId === null || $documentId === '') {
+            return null;
+        }
+
+        $stmt = $this->pdo()->prepare(
+            'INSERT INTO site_pages (slug, language_code, title, google_file_id, last_sync_status, is_active)
+             VALUES ("que-es-entorns", "ca", "Què és Entorns de Natura", :google_file_id, "never", 1)
+             ON DUPLICATE KEY UPDATE google_file_id = VALUES(google_file_id), updated_at = CURRENT_TIMESTAMP'
+        );
+        $stmt->execute(['google_file_id' => $documentId]);
+
+        return $this->sitePage('que-es-entorns', 'ca');
+    }
+
+    private function storedPageContent(array $page): ?array
+    {
+        $contentJson = trim((string) ($page['content_json'] ?? ''));
+        if ($contentJson === '') {
+            return null;
+        }
+
+        try {
+            $blocks = json_decode($contentJson, true, 512, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return null;
+        }
+
+        if (!is_array($blocks)) {
+            return null;
+        }
+
+        return [
+            'title' => (string) ($page['title'] ?? 'Pàgina'),
+            'blocks' => $blocks,
+            'last_synced_at' => $page['last_synced_at'] ?? null,
+        ];
     }
 
     private function googleDocumentContent(string $documentId): ?array
@@ -250,6 +390,18 @@ class SitePageService
         }
 
         return $text;
+    }
+
+    private function blocksText(array $blocks): string
+    {
+        $text = '';
+        foreach ($blocks as $block) {
+            if (is_array($block)) {
+                $text .= (string) ($block['text'] ?? '') . "\n";
+            }
+        }
+
+        return trim($text);
     }
 
     private function typedIndentLevel(string $text): int

@@ -23,6 +23,7 @@ class AdminDashboardService
         $projectAcademicYears = $this->projectAcademicYears();
         $projectAssignments = $this->projectAssignments();
         $projectTeamData = $this->projectTeamData($typicalProjectRoleNames);
+        $sitePages = $this->sitePages();
         $classMemberships = $this->classMemberships();
         $classTeachers = $this->classTeachers();
         $assessmentStructure = (new AdminAssessmentStructureService($this->pdo))->assessmentStructure();
@@ -98,6 +99,7 @@ class AdminDashboardService
             'projectAssignments' => $projectAssignments,
             'projectTeams' => array_values($projectTeamData['projectTeams']),
             'projectRoleGroups' => array_values($projectTeamData['projectRoleGroups']),
+            'sitePages' => $sitePages,
             'projectRoles' => $projectRoles,
             'projectMembersWithoutRole' => $projectMembersWithoutRole,
             'projectTeamMembershipCount' => $projectTeamMembershipCount,
@@ -119,6 +121,17 @@ class AdminDashboardService
               GROUP BY u.id, u.name, u.surname, u.email, u.is_active, u.created_at,
                        u.gender, u.article, u.inaturalist_user_login
               ORDER BY u.created_at DESC'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function sitePages(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT id, slug, language_code, title, google_file_id, last_synced_at, last_sync_status, last_sync_error, is_active
+               FROM site_pages
+              ORDER BY language_code, slug'
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

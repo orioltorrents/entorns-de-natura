@@ -34,6 +34,7 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <a href="#avaluacio">Fases i tasques</a>
+            <a href="#pagines-publiques">Pàgines públiques</a>
             <a href="<?= url('admin/sync-documents') ?>">Google Sync</a>
             <a href="#logs">Logs</a>
         </nav>
@@ -1523,6 +1524,82 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+            </div>
+        </div>
+
+        <div id="pagines-publiques" class="card admin-panel admin-collapsible is-collapsed">
+            <div class="admin-panel__header">
+                <h2>Pàgines públiques</h2>
+                <div class="admin-actions">
+                    <span class="status">Google Docs sincronitzats a base de dades</span>
+                    <button class="collapse-toggle" type="button" data-collapse="pagines-publiques-content">Mostrar</button>
+                </div>
+            </div>
+
+            <div id="pagines-publiques-content" class="admin-collapsible__content">
+                <p class="muted">Sincronitza pàgines globals com “Què és Entorns de Natura” perquè la web pública llegeixi el contingut des de la base de dades.</p>
+
+                <?php if (($sitePages ?? []) !== []): ?>
+                    <div class="admin-table__wrapper">
+                        <table class="admin-table admin-table--compact">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Pàgina</th>
+                                    <th scope="col">Idioma</th>
+                                    <th scope="col">Google Doc</th>
+                                    <th scope="col">Última sincronització</th>
+                                    <th scope="col">Estat</th>
+                                    <th scope="col">Accions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($sitePages as $sitePage): ?>
+                                    <?php
+                                    $syncStatus = (string) ($sitePage['last_sync_status'] ?? 'never');
+                                    $syncStatusLabel = match ($syncStatus) {
+                                        'completed' => 'Completada',
+                                        'failed' => 'Error',
+                                        default => 'Pendent',
+                                    };
+                                    $syncStatusClass = match ($syncStatus) {
+                                        'completed' => 'status--active',
+                                        'failed' => 'status--inactive',
+                                        default => '',
+                                    };
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($sitePage['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="muted"><?= htmlspecialchars((string) ($sitePage['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td><?= htmlspecialchars((string) ($sitePage['language_code'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <?= trim((string) ($sitePage['google_file_id'] ?? '')) !== '' ? 'Configurat' : 'No configurat' ?>
+                                        </td>
+                                        <td><?= htmlspecialchars((string) ($sitePage['last_synced_at'] ?? 'Mai'), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <span class="status <?= $syncStatusClass ?>"><?= htmlspecialchars($syncStatusLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if (!empty($sitePage['last_sync_error'])): ?>
+                                                <br><span class="muted"><?= htmlspecialchars((string) $sitePage['last_sync_error'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <form method="post" action="<?= url('admin') ?>#pagines-publiques" class="admin-inline-action">
+                                                <input type="hidden" name="action" value="sync_site_page">
+                                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                                <input type="hidden" name="slug" value="<?= htmlspecialchars((string) ($sitePage['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="language_code" value="<?= htmlspecialchars((string) ($sitePage['language_code'] ?? 'ca'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <button class="button button--secondary" type="submit">Sincronitzar</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <p class="muted">Encara no hi ha cap pàgina pública configurada a <code>site_pages</code>.</p>
+                <?php endif; ?>
             </div>
         </div>
 

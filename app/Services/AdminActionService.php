@@ -76,6 +76,43 @@ class AdminActionService
             return $result;
         }
 
+        if ($action === 'sync_site_page') {
+            $slug = trim((string) ($post['slug'] ?? ''));
+            $languageCode = trim((string) ($post['language_code'] ?? 'ca'));
+
+            if ($slug === '') {
+                return [
+                    'message' => 'No s’ha indicat cap pàgina pública per sincronitzar.',
+                    'type' => 'error',
+                ];
+            }
+
+            try {
+                $result = (new SitePageService())->syncPage($slug, $languageCode !== '' ? $languageCode : 'ca');
+                $this->auditAdminAction($action, [
+                    'slug' => $slug,
+                    'language_code' => $languageCode,
+                    'characters' => (int) ($result['characters'] ?? 0),
+                ]);
+
+                return [
+                    'message' => 'Pàgina pública sincronitzada correctament.',
+                    'type' => 'success',
+                ];
+            } catch (Throwable $throwable) {
+                $this->auditAdminAction($action . '_failed', [
+                    'slug' => $slug,
+                    'language_code' => $languageCode,
+                    'error' => $throwable->getMessage(),
+                ]);
+
+                return [
+                    'message' => 'No s’ha pogut sincronitzar la pàgina pública: ' . $throwable->getMessage(),
+                    'type' => 'error',
+                ];
+            }
+        }
+
         $this->auditAdminAction('unknown_action', ['action' => $action]);
 
         return [
