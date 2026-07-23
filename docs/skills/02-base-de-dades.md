@@ -161,9 +161,9 @@ Per actualitzar una base existent, no s'han d'executar totes les migracions indi
 
 ### Manteniment d'esquema
 
-Qualsevol comprovació o modificació dinàmica de l'esquema que l'aplicació necessiti executar s'ha de centralitzar en serveis dedicats, com `AdminSchemaMaintenanceService`. Els controladors web no poden contenir instruccions DDL com `CREATE TABLE`, `ALTER TABLE` o modificacions d'esquema equivalents.
+El manteniment d'esquema estable ha de viure als SQL de `database/` i seguir el procediment de `database/README.md`. Els controladors web no poden contenir instruccions DDL com `CREATE TABLE`, `ALTER TABLE` o modificacions d'esquema equivalents.
 
-Aquest servei és una ubicació temporal i controlada per a manteniment necessari en temps d'execució. Quan un canvi d'esquema sigui estable i segur per a totes les bases, s'ha de consolidar en SQL dins `database/` i documentar-lo seguint `database/README.md`.
+Les comprovacions dinàmiques d'esquema només s'han d'acceptar de manera excepcional i temporal, sempre fora dels controladors i amb un pla per consolidar-les a migracions. En l'estat actual, el manteniment que abans calia per `project_class_assignments`, `projects.display_order` i `project_team_member_roles` ja està cobert per `database/schema.sql` i les migracions corresponents.
 
 ---
 

@@ -5,7 +5,6 @@ class AdminController
     public function dashboard(): string
     {
         $pdo = $this->pdo();
-        (new AdminSchemaMaintenanceService($pdo))->ensureAdminSchema();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->handlePost($pdo);

@@ -205,7 +205,6 @@ AdminAssessmentStructureService
 AdminClassService
 AdminDashboardService
 AdminProjectService
-AdminSchemaMaintenanceService
 AdminStudentImportService
 AdminUserService
 AssessmentService

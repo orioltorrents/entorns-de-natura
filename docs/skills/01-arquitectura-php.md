@@ -173,7 +173,6 @@ AdminAssessmentStructureService.php
 AdminClassService.php
 AdminDashboardService.php
 AdminProjectService.php
-AdminSchemaMaintenanceService.php
 AdminStudentImportService.php
 AdminUserService.php
 AssessmentService.php
@@ -281,8 +280,9 @@ resources/views/layouts/footer.php
 
 Aquests punts descriuen l'estat real del codi i no s'han de presentar com a resolts:
 
-- resolt: `AdminController.php` ja no conté consultes SQL directes ni operacions DDL; les dades del dashboard es preparen a `AdminDashboardService`, el dispatch d'accions POST i l'auditoria admin es deleguen a `AdminActionService`, les accions d'administració de projectes es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService`, la importació CSV d'alumnes a `AdminStudentImportService`, la gestió d'estructura d'avaluació a `AdminAssessmentStructureService` i el manteniment temporal d'esquema a `AdminSchemaMaintenanceService`;
-- pendent: hi ha SQL complex i algunes operacions DDL en serveis d'administració, amb el manteniment d'esquema pendent de consolidar en migracions quan sigui segur;
+- resolt: `AdminController.php` ja no conté consultes SQL directes ni operacions DDL; les dades del dashboard es preparen a `AdminDashboardService`, el dispatch d'accions POST i l'auditoria admin es deleguen a `AdminActionService`, les accions d'administració de projectes es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService`, la importació CSV d'alumnes a `AdminStudentImportService` i la gestió d'estructura d'avaluació a `AdminAssessmentStructureService`;
+- resolt: el manteniment d'esquema que era temporal ja està consolidat als SQL de `database/` i no s'executa des de l'admin;
+- pendent: hi ha SQL complex en serveis d'administració que es pot continuar separant si aquests serveis creixen massa;
 - la càrrega de dependències es fa manualment des de `public/index.php` i fitxers relacionats;
 - no hi ha un autoloading efectiu que carregui classes de manera declarativa;
 - els models existents no són encara la capa principal d'accés a dades.
