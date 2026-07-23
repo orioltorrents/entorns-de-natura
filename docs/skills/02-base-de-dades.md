@@ -725,3 +725,9 @@ Després de canvis d'esquema, executa `scripts/check-schema-coherence.php` per d
 - camps legacy que encara no s'han eliminat;
 - relacions mal situades;
 - uniques i índexs que han de seguir existint.
+
+Per a la verificació completa de qualitat del projecte, incloent coherència d'esquema i controladors sense SQL/DDL, executa:
+
+```text
+php scripts/check-code-quality.php
+```

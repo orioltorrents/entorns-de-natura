@@ -2,5 +2,8 @@
   "name": "entorns-de-natura/app",
   "description": "Aplicació PHP per a Entorns de Natura",
   "type": "project",
-  "require": {}
+  "require": {},
+  "scripts": {
+    "check": "php scripts/check-code-quality.php"
+  }
 }

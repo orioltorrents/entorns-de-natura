@@ -77,6 +77,7 @@ El nom canònic de la base de dades local és `entorns_de_natura`. La connexió 
 - `site_visits` es garanteix des del servei d'analítica si encara no existeix.
 - `database/schema.sql` és l'autoritat executable per reconstruir una base neta; `database/README.md` documenta el procediment.
 - `scripts/check-schema-coherence.php` valida camps legacy i relacions mal situades després de canvis d'esquema.
+- `scripts/check-code-quality.php` executa les verificacions bàsiques: lint PHP, coherència d'esquema i controladors sense SQL/DDL directe.
 - si la base ja existia abans d'aquesta capa, també cal aplicar `database/09_document_tables_fix.sql`.
 - per deixar els documents completament lligats a l'edició, també cal aplicar `database/17_documents_project_id_cleanup.sql` si la base ve d'una versió anterior.
 - si la base ve d'una versió anterior, `assessment_records.project_id` també s'ha d'eliminar amb `database/18_assessment_records_project_id_cleanup.sql`.
@@ -192,6 +193,20 @@ Les fitxes públiques es generen amb una plantilla genèrica i es complementen a
 2. Engega Apache i MySQL a XAMPP.
 3. Obre `http://localhost/entorns-de-natura/public/`.
 4. Si no veus canvis de CSS, fes un refresh fort.
+
+## Verificació
+
+Abans de tancar canvis de codi, executa:
+
+```text
+php scripts/check-code-quality.php
+```
+
+També es pot executar amb Composer:
+
+```text
+composer check
+```
 
 ## Full de ruta
 

@@ -674,6 +674,7 @@ Criteris:
 - Posar la lògica complexa dins serveis.
 - Delegar la lògica de dades, accions de negoci i manteniment d'esquema a serveis dins `app/Services/`.
 - Fer que el codi sigui llegible abans que excessivament abstracte.
+- Abans de tancar canvis de codi, executar `php scripts/check-code-quality.php` quan sigui possible.
 
 ---
 

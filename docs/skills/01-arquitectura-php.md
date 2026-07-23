@@ -344,6 +344,14 @@ Exemples:
 - No posar consultes SQL ni DDL dins controladors; han de viure en serveis o migracions.
 - Escapar sortides HTML amb `htmlspecialchars`.
 
+Verificació recomanada abans de tancar canvis:
+
+```text
+php scripts/check-code-quality.php
+```
+
+Aquest script revisa sintaxi PHP, coherència d'esquema i que els controladors no continguin SQL ni DDL directe.
+
 ---
 
 ## Criteri principal
