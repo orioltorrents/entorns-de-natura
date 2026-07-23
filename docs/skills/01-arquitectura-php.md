@@ -29,7 +29,6 @@ El projecte és una aplicació PHP pròpia, sense frameworks grans, preparada pe
 
 - un router més formal i extensible;
 - decidir si els models actuals es converteixen en una capa real o es mantenen com a placeholders;
-- reduir la lògica i el SQL concentrats a `AdminController`;
 - incorporar un sistema d'autoloading o una càrrega de dependències més declarativa.
 
 ---
@@ -117,10 +116,14 @@ TeacherController.php
 Responsabilitats:
 
 - rebre la petició;
-- obtenir dades dels models o serveis;
+- validar les dades bàsiques de la petició;
+- delegar dades, accions de negoci i manteniment d'esquema als serveis;
 - decidir quina vista es carrega;
-- no contenir SQL complex;
+- no contenir consultes SQL directes;
+- no contenir operacions DDL de base de dades, com `CREATE TABLE` o `ALTER TABLE`;
 - no contenir HTML extens.
+
+Norma d'or: cap controlador pot contenir consultes SQL directes ni operacions DDL de base de dades. Els controladors han de ser prims i delegar tota la lògica de dades, accions de negoci i manteniment d'esquema als serveis ubicats a `app/Services/`.
 
 ---
 
@@ -165,6 +168,7 @@ Serveis actuals:
 
 ```text
 AnalyticsService.php
+AdminActionService.php
 AdminAssessmentStructureService.php
 AdminClassService.php
 AdminDashboardService.php
@@ -277,8 +281,8 @@ resources/views/layouts/footer.php
 
 Aquests punts descriuen l'estat real del codi i no s'han de presentar com a resolts:
 
-- `AdminController.php` continua tenint algunes responsabilitats tècniques pendents, però les dades del dashboard ja es preparen a `AdminDashboardService`; les accions d'administració de projectes ja es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService`, la importació CSV d'alumnes a `AdminStudentImportService`, la gestió d'estructura d'avaluació a `AdminAssessmentStructureService` i el manteniment temporal d'esquema a `AdminSchemaMaintenanceService`;
-- hi ha SQL complex i algunes operacions DDL en serveis d'administració, amb el manteniment d'esquema pendent de consolidar en migracions quan sigui segur;
+- resolt: `AdminController.php` ja no conté consultes SQL directes ni operacions DDL; les dades del dashboard es preparen a `AdminDashboardService`, el dispatch d'accions POST i l'auditoria admin es deleguen a `AdminActionService`, les accions d'administració de projectes es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService`, la importació CSV d'alumnes a `AdminStudentImportService`, la gestió d'estructura d'avaluació a `AdminAssessmentStructureService` i el manteniment temporal d'esquema a `AdminSchemaMaintenanceService`;
+- pendent: hi ha SQL complex i algunes operacions DDL en serveis d'administració, amb el manteniment d'esquema pendent de consolidar en migracions quan sigui segur;
 - la càrrega de dependències es fa manualment des de `public/index.php` i fitxers relacionats;
 - no hi ha un autoloading efectiu que carregui classes de manera declarativa;
 - els models existents no són encara la capa principal d'accés a dades.
@@ -337,6 +341,7 @@ Exemples:
 - Separar responsabilitats.
 - Fer servir PDO per a la base de dades.
 - Fer servir consultes preparades.
+- No posar consultes SQL ni DDL dins controladors; han de viure en serveis o migracions.
 - Escapar sortides HTML amb `htmlspecialchars`.
 
 ---

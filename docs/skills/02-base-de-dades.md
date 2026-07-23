@@ -159,6 +159,12 @@ La seqüència dels `SOURCE`, la classificació dels ajustos incrementals i els 
 
 Per actualitzar una base existent, no s'han d'executar totes les migracions indiscriminadament. Cal identificar l'estat de partida, fer una còpia de seguretat i aplicar només els ajustos posteriors que corresponguin.
 
+### Manteniment d'esquema
+
+Qualsevol comprovació o modificació dinàmica de l'esquema que l'aplicació necessiti executar s'ha de centralitzar en serveis dedicats, com `AdminSchemaMaintenanceService`. Els controladors web no poden contenir instruccions DDL com `CREATE TABLE`, `ALTER TABLE` o modificacions d'esquema equivalents.
+
+Aquest servei és una ubicació temporal i controlada per a manteniment necessari en temps d'execució. Quan un canvi d'esquema sigui estable i segur per a totes les bases, s'ha de consolidar en SQL dins `database/` i documentar-lo seguint `database/README.md`.
+
 ---
 
 ## Normes generals

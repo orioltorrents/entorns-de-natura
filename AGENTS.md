@@ -200,6 +200,7 @@ Serveis:
 
 ```text
 AnalyticsService
+AdminActionService
 AdminAssessmentStructureService
 AdminClassService
 AdminDashboardService
@@ -663,6 +664,7 @@ Criteris:
 - Fer servir `declare(strict_types=1);` en fitxers PHP nous.
 - Fer servir PDO per accedir a la base de dades.
 - Fer servir consultes preparades.
+- No posar consultes SQL ni operacions DDL (`CREATE TABLE`, `ALTER TABLE`, etc.) dins controladors.
 - No concatenar dades d’usuari directament en SQL.
 - Escapar sortides HTML amb `htmlspecialchars`.
 - Separar controladors, models, serveis i vistes.
@@ -671,6 +673,7 @@ Criteris:
 - No barrejar lògica de negoci dins les vistes.
 - Mantenir els controladors simples.
 - Posar la lògica complexa dins serveis.
+- Delegar la lògica de dades, accions de negoci i manteniment d'esquema a serveis dins `app/Services/`.
 - Fer que el codi sigui llegible abans que excessivament abstracte.
 
 ---
