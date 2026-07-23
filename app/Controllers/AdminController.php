@@ -613,9 +613,17 @@ class AdminController
         $pdo->beginTransaction();
 
         try {
+            $roleIds = [];
+
+            if (!empty($roles) && is_array($roles)) {
+                $roleIds = array_map('intval', $roles);
+            }
+
+            $mustChangePassword = $this->roleIdsContainRoleName($pdo, $roleIds, 'student') ? 1 : 0;
+
             $stmt = $pdo->prepare(
-                'INSERT INTO users (name, surname, email, password_hash, is_active, created_at)
-                 VALUES (:name, :surname, :email, :password_hash, :is_active, NOW())'
+                'INSERT INTO users (name, surname, email, password_hash, must_change_password, is_active, created_at)
+                 VALUES (:name, :surname, :email, :password_hash, :must_change_password, :is_active, NOW())'
             );
 
             $stmt->execute([
@@ -623,15 +631,11 @@ class AdminController
                 'surname' => $surname,
                 'email' => $email,
                 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'must_change_password' => $mustChangePassword,
                 'is_active' => $isActive,
             ]);
 
             $userId = (int) $pdo->lastInsertId();
-            $roleIds = [];
-
-            if (!empty($roles) && is_array($roles)) {
-                $roleIds = array_map('intval', $roles);
-            }
 
             if ($roleIds !== []) {
                 $insertRoleStmt = $pdo->prepare('INSERT INTO user_web_roles (user_id, role_id) VALUES (:user_id, :role_id)');
@@ -1485,8 +1489,8 @@ class AdminController
 
         $passwordHash = $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : password_hash('Entorns2026!', PASSWORD_DEFAULT);
         $insertStmt = $pdo->prepare(
-            'INSERT INTO users (name, surname, email, password_hash, is_active, created_at)
-             VALUES (:name, :surname, :email, :password_hash, 1, NOW())'
+            'INSERT INTO users (name, surname, email, password_hash, must_change_password, is_active, created_at)
+             VALUES (:name, :surname, :email, :password_hash, 1, 1, NOW())'
         );
         $insertStmt->execute([
             'name' => $name,
@@ -1496,6 +1500,21 @@ class AdminController
         ]);
 
         return (int) $pdo->lastInsertId();
+    }
+
+    private function roleIdsContainRoleName(PDO $pdo, array $roleIds, string $roleName): bool
+    {
+        $roleIds = array_values(array_filter(array_map('intval', $roleIds), static fn (int $roleId): bool => $roleId > 0));
+
+        if ($roleIds === []) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($roleIds), '?'));
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM web_roles WHERE id IN (' . $placeholders . ') AND name = ?');
+        $stmt->execute([...$roleIds, $roleName]);
+
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     private function setRolesForUser(PDO $pdo, int $userId, string $rolesInput): void

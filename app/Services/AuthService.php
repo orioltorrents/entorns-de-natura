@@ -41,6 +41,7 @@ class AuthService
             'surname' => (string) ($user['surname'] ?? ''),
             'email' => (string) $user['email'],
             'roles' => $roles,
+            'must_change_password' => (int) ($user['must_change_password'] ?? 0) === 1,
         ];
 
         $this->markLastLogin((int) $user['id']);
@@ -122,6 +123,74 @@ class AuthService
         exit;
     }
 
+    public function mustChangePassword(): bool
+    {
+        return $this->check()
+            && !$this->isImpersonating()
+            && (bool) ($_SESSION['user']['must_change_password'] ?? false);
+    }
+
+    public function requirePasswordChangeCompleted(): void
+    {
+        if (!$this->mustChangePassword()) {
+            return;
+        }
+
+        header('Location: ' . url('canviar-contrasenya'));
+        exit;
+    }
+
+    public function changeRequiredPassword(string $currentPassword, string $newPassword, string $confirmPassword): ?string
+    {
+        $user = $this->actorUser();
+
+        if ($user === null) {
+            return 'Cal iniciar sessió.';
+        }
+
+        if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') {
+            return 'Tots els camps són obligatoris.';
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return 'La nova contrasenya i la repetició no coincideixen.';
+        }
+
+        if (strlen($newPassword) < 8) {
+            return 'La nova contrasenya ha de tenir com a mínim 8 caràcters.';
+        }
+
+        if ($currentPassword === $newPassword) {
+            return 'La nova contrasenya ha de ser diferent de la contrasenya inicial.';
+        }
+
+        $storedUser = $this->findActiveUserWithPasswordById((int) $user['id']);
+
+        if ($storedUser === null || empty($storedUser['password_hash'])) {
+            return 'No s’ha pogut validar l’usuari.';
+        }
+
+        if (!password_verify($currentPassword, (string) $storedUser['password_hash'])) {
+            return 'La contrasenya actual no és correcta.';
+        }
+
+        $stmt = $this->pdo()->prepare(
+            'UPDATE users
+             SET password_hash = :password_hash,
+                 must_change_password = 0,
+                 password_changed_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+            'id' => (int) $user['id'],
+        ]);
+
+        $_SESSION['user']['must_change_password'] = false;
+
+        return null;
+    }
+
     public function isImpersonating(): bool
     {
         return $this->check()
@@ -168,6 +237,10 @@ class AuthService
 
     public function redirectPathForCurrentUser(): string
     {
+        if ($this->mustChangePassword()) {
+            return 'canviar-contrasenya';
+        }
+
         if ($this->hasRole('admin')) {
             return 'admin';
         }
@@ -202,11 +275,30 @@ class AuthService
     {
         $stmt = $this->pdo()->prepare(
             'SELECT id, name, surname, email, password_hash, is_active
+                    , must_change_password
              FROM users
              WHERE email = :email
              LIMIT 1'
         );
         $stmt->execute(['email' => $email]);
+        $user = $stmt->fetch();
+
+        if ($user === false || (int) $user['is_active'] !== 1) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    private function findActiveUserWithPasswordById(int $userId): ?array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, password_hash, is_active
+             FROM users
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $stmt->execute(['id' => $userId]);
         $user = $stmt->fetch();
 
         if ($user === false || (int) $user['is_active'] !== 1) {

@@ -98,6 +98,7 @@ code {
 .page-header,
 .page-header--default { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
 .hero, .auth-card, .card { background: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); }
+.auth-card__intro { color: #34433b; line-height: 1.6; }
 .hero,
 .hero--home { display: flex; flex-direction: column; justify-content: center; gap: 1rem; min-height: auto; padding: 3rem 0 4rem; }
 .public-home {

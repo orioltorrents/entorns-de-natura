@@ -64,6 +64,10 @@ Canvis històrics ja absorbits pels fitxers de reconstrucció neta:
 - `30` i `31`: `classes` i `student_profiles` ja tenen les columnes actuals;
 - `33` a `35`: la neteja de rols acadèmics, perfils i historial de classe ja és a l'esquema base.
 
+Canvis incrementals recents per a bases existents:
+
+- `40_users_password_change_required.sql`: afegeix `must_change_password` i `password_changed_at` a `users` per forçar el canvi de contrasenya inicial.
+
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
 ## Taules principals

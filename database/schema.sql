@@ -42,6 +42,8 @@
 -- - `34_student_profiles_cleanup.sql` redueix `student_profiles` al nucli mínim.
 -- - `35_class_member_history.sql` afegeix l'historial de canvis de classe i reforça la unicitat actual.
 -- - `38_ratpenats_project.sql` afegeix el projecte Ratpenats del curs 2023-2024.
+-- - `40_users_password_change_required.sql` és una migració no destructiva per a BD existents;
+--   no cal executar-la en una reconstrucció neta perquè users ja inclou aquests camps.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql

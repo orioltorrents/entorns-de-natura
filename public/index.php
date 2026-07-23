@@ -49,6 +49,11 @@ $requestUri = '/' . trim($requestUri, '/');
 $currentUser = $authService->user();
 $analyticsService->recordVisit($requestUri, $_SERVER, $currentUser['id'] ?? null);
 
+if ($authService->mustChangePassword() && !in_array($requestUri, ['/canviar-contrasenya', '/logout'], true)) {
+    header('Location: ' . url('canviar-contrasenya'));
+    exit;
+}
+
 switch ($requestUri) {
     case '/':
     case '/ca':
@@ -74,6 +79,10 @@ switch ($requestUri) {
         $authController->logout();
         break;
 
+    case '/canviar-contrasenya':
+        echo $authController->changePassword();
+        break;
+
     case '/dashboard':
         if (!$authService->check()) {
             header('Location: ' . url('login'));
@@ -85,16 +94,19 @@ switch ($requestUri) {
 
     case '/alumne':
         $authService->requireRole('student');
+        $authService->requirePasswordChangeCompleted();
         echo $studentController->dashboard();
         break;
 
     case '/professor':
         $authService->requireRole('teacher');
+        $authService->requirePasswordChangeCompleted();
         echo $teacherController->dashboard();
         break;
 
     case '/admin':
         $authService->requireRole('admin');
+        $authService->requirePasswordChangeCompleted();
         echo $adminController->dashboard();
         break;
 

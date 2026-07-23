@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     google_id VARCHAR(255) NULL,
     password_hash VARCHAR(255) NULL,
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
+    password_changed_at TIMESTAMP NULL DEFAULT NULL,
     avatar_url VARCHAR(500) NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     last_login_at TIMESTAMP NULL DEFAULT NULL,

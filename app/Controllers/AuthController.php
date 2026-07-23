@@ -34,6 +34,28 @@ class AuthController
         exit;
     }
 
+    public function changePassword(): string
+    {
+        if (!$this->authService->check()) {
+            header('Location: ' . url('login'));
+            exit;
+        }
+
+        if (!$this->authService->mustChangePassword()) {
+            $this->redirectToDashboard();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            return $this->handleChangePassword();
+        }
+
+        return view('auth.change-password', [
+            'title' => 'Canviar contrasenya',
+            'csrfToken' => $this->authService->csrfToken(),
+            'error' => null,
+        ]);
+    }
+
     private function handleLogin(): string
     {
         $email = (string) ($_POST['email'] ?? '');
@@ -58,6 +80,36 @@ class AuthController
             'csrfToken' => $this->authService->csrfToken(),
             'error' => $error,
             'email' => $email,
+        ]);
+    }
+
+    private function handleChangePassword(): string
+    {
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
+
+        if (!$this->authService->verifyCsrfToken($csrfToken)) {
+            return $this->changePasswordView('La sessió ha caducat. Torna-ho a provar.');
+        }
+
+        $error = $this->authService->changeRequiredPassword(
+            (string) ($_POST['current_password'] ?? ''),
+            (string) ($_POST['new_password'] ?? ''),
+            (string) ($_POST['new_password_confirmation'] ?? '')
+        );
+
+        if ($error === null) {
+            $this->redirectToDashboard();
+        }
+
+        return $this->changePasswordView($error);
+    }
+
+    private function changePasswordView(string $error): string
+    {
+        return view('auth.change-password', [
+            'title' => 'Canviar contrasenya',
+            'csrfToken' => $this->authService->csrfToken(),
+            'error' => $error,
         ]);
     }
 
