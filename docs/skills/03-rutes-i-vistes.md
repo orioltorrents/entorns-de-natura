@@ -11,6 +11,7 @@ El projecte ha de funcionar com una aplicació PHP modular.
 ### Implementat
 
 - entrada única a `public/index.php`;
+- router declaratiu propi a `app/Support/Router.php` amb rutes `GET`, `POST` i `ANY`;
 - rutes públiques per portada, llistat de projectes, detall de projecte, tasques, notes, documents i login;
 - rutes privades per a alumnat, professorat, administració i sincronització manual de documents;
 - vistes ja creades a `resources/views/public`, `auth`, `students`, `teachers` i `admin`;
@@ -18,7 +19,6 @@ El projecte ha de funcionar com una aplicació PHP modular.
 
 ### Encara previst
 
-- un router més net i declaratiu;
 - fer que el prefix d'idioma governi completament l'idioma intern;
 - una vista 404 dedicada;
 - afinar la vista de projecte per més contextos d'accés sense duplicar fitxers.
@@ -47,30 +47,34 @@ Totes les peticions principals han de passar per aquest fitxer.
 
 ## Rutes actuals
 
-El router actual és a `public/index.php`. Aquesta és la matriu de rutes que es poden mantenir ara:
+El router actual és `app/Support/Router.php` i les rutes es registren a `public/index.php`. Aquesta és la matriu de rutes que es poden mantenir ara:
 
 | Ruta | Mètode | Controlador | Accés | Vista |
 | --- | --- | --- | --- | --- |
-| `/` | Qualsevol | `PublicController::home()` | Públic | `public.home` |
-| `/ca` | Qualsevol | `PublicController::home()` | Públic | `public.home` |
-| `/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
-| `/ca/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
-| `/es/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
-| `/en/projectes` | Qualsevol | `PublicController::projects()` | Públic | `public.projects` |
-| `/{ca|es|en}/projectes/{slug}` | Qualsevol | `PublicController::projectDetail()` | Públic amb blocs contextuals | `public.project-detail` |
-| `/{ca|es|en}/projectes/{slug}/tasques` | Qualsevol | `PublicController::projectTasks()` | Públic amb blocs contextuals | `public.project-tasks` |
-| `/{ca|es|en}/projectes/{slug}/notes` | Qualsevol | `PublicController::projectNotes()` | Ruta pública, contingut restringit a alumnat autenticat | `public.project-notes` |
-| `/{ca|es|en}/projectes/{slug}/documents` | Qualsevol | `PublicController::projectDocuments()` | Públic amb documents filtrats per context | `public.project-documents` |
+| `/` | GET | `PublicController::home()` | Públic | `public.home` |
+| `/ca` | GET | `PublicController::home()` | Públic | `public.home` |
+| `/ca/que-es-entorns` | GET | `PublicController::about()` | Públic | `public.about` |
+| `/projectes` | GET | `PublicController::projects()` | Públic | `public.projects` |
+| `/ca/projectes` | GET | `PublicController::projects()` | Públic | `public.projects` |
+| `/es/projectes` | GET | `PublicController::projects()` | Públic | `public.projects` |
+| `/en/projectes` | GET | `PublicController::projects()` | Públic | `public.projects` |
+| `/{ca|es|en}/projectes/{slug}` | GET | `PublicController::projectDetail()` | Públic amb blocs contextuals | `public.project-detail` |
+| `/{ca|es|en}/projectes/{slug}/tasques` | GET | `PublicController::projectTasks()` | Públic amb blocs contextuals | `public.project-tasks` |
+| `/{ca|es|en}/projectes/{slug}/notes` | GET | `PublicController::projectNotes()` | Ruta pública, contingut restringit a alumnat autenticat | `public.project-notes` |
+| `/{ca|es|en}/projectes/{slug}/documents` | GET | `PublicController::projectDocuments()` | Públic amb documents filtrats per context | `public.project-documents` |
 | `/login` | GET/POST | `AuthController::login()` | Públic | `auth.login` |
 | `/logout` | Qualsevol | `AuthController::logout()` | Sessió, si existeix | Sense vista |
-| `/dashboard` | Qualsevol | `AuthController::redirectToDashboard()` | Usuari autenticat | Redirecció |
+| `/canviar-contrasenya` | GET/POST | `AuthController::changePassword()` | Usuari amb canvi obligatori | `auth.change-password` |
+| `/dashboard` | GET | `AuthController::redirectToDashboard()` | Usuari autenticat | Redirecció |
 | `/alumne` | Qualsevol | `StudentController::dashboard()` | `student` | `students.dashboard` |
 | `/professor` | Qualsevol | `TeacherController::dashboard()` | `teacher` | `teachers.dashboard` |
 | `/admin` | Qualsevol | `AdminController::dashboard()` | `admin` | `admin.dashboard` |
+| `/admin/impersonate-student` | POST | `AuthService::impersonateStudent()` | Actor `admin` | Redirecció |
+| `/admin/stop-impersonation` | POST | `AuthService::stopImpersonating()` | Actor `admin` | Redirecció |
 | `/admin/sync-documents` | GET | `DocumentSyncController::index()` | `admin` | `admin.document-sync` |
 | `/admin/sync-documents` | POST | `DocumentSyncController::store()` | `admin` | `admin.document-sync` |
 
-Nota: moltes rutes accepten qualsevol mètode perquè el router actual no restringeix explícitament GET/POST fora de casos concrets. Formalitzar mètodes HTTP és una millora pendent.
+Nota: el router retorna `404` quan no troba cap ruta i `405` quan la ruta existeix però el mètode HTTP no és permès. Algunes rutes es mantenen com a `ANY` perquè el controlador actual encara gestiona formularis i pantalla al mateix endpoint.
 
 Una ruta pot ser pública i, alhora, contenir blocs protegits. Per exemple, la ruta de notes existeix públicament, però la informació de notes només s'ha de mostrar a l'alumnat autenticat corresponent.
 

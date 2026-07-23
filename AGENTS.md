@@ -21,6 +21,7 @@ El projecte ja disposa d'una aplicació modular funcional. Té rutes públiques 
 ### Implementat
 
 - front controller a `public/index.php` i wrapper arrel a `index.php`;
+- router declaratiu propi a `app/Support/Router.php`;
 - controladors per a web pública, autenticació, alumnat, professorat, administració i importació manual de documents;
 - serveis d'autenticació, projectes, assignacions, assets, seccions, documents, analítica, avaluació i Google Workspace;
 - layout compartit i vistes públiques, privades i d'administració;
@@ -33,7 +34,6 @@ El projecte ja disposa d'una aplicació modular funcional. Té rutes públiques 
 
 ### Pendent o parcial
 
-- router més formal i declaratiu;
 - integració real amb les API de Google Docs i Google Sheets;
 - sistema complet de rúbriques, criteris, puntuacions i observacions;
 - permisos més fins segons el context i l'assignació del professorat;
@@ -888,12 +888,11 @@ quina alternativa menys destructiva hi ha
 Les bases d'arquitectura, connexió PDO, projectes des de la base de dades, layout, login, rols i dashboards ja estan implementades. Les prioritats pendents són:
 
 ```text
-1. Formalitzar el router i els mètodes HTTP.
-2. Reforçar CSRF, sessions, auditoria i permisos contextuals.
-3. Reduir la lògica i el SQL concentrats a l'administració.
-4. Integrar realment Google Docs i Google Sheets.
-5. Completar rúbriques, criteris, puntuacions i observacions.
-6. Ampliar proves automatitzades i verificacions de seguretat.
+1. Reforçar CSRF, sessions, auditoria i permisos contextuals.
+2. Reduir la lògica i el SQL concentrats a l'administració.
+3. Integrar realment Google Docs i Google Sheets.
+4. Completar rúbriques, criteris, puntuacions i observacions.
+5. Ampliar proves automatitzades i verificacions de seguretat.
 ```
 
 ---

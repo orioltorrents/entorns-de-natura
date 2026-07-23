@@ -19,6 +19,7 @@ Aquest `README.md` és la introducció breu del projecte. Els detalls s'han de m
 
 - aplicació PHP modular amb `app/`, `config/`, `public/`, `resources/`, `database/` i `storage/`;
 - entrada única des de `public/index.php`;
+- router declaratiu propi a `app/Support/Router.php`;
 - connexió PDO centralitzada a `config/database.php` i configuració amb `.env`;
 - vistes públiques, d'autenticació, d'alumnat, de professorat i d'administració;
 - layout comú a `resources/views/layouts/app.php` amb cache-busting per CSS i JS;
@@ -33,7 +34,6 @@ Aquest `README.md` és la introducció breu del projecte. Els detalls s'han de m
 
 ### Encara previst
 
-- sistema de rutes més formal i escalable que el `switch` actual;
 - ampliació de rutes multidioma a `es` i `en`;
 - sincronització real amb Google Docs i Google Sheets;
 - rúbriques, notes completes i observacions d'aula;

@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/app/Helpers/lang.php';
 require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
+require_once dirname(__DIR__) . '/app/Support/Router.php';
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssetService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssignmentService.php';
@@ -55,126 +56,97 @@ if ($authService->mustChangePassword() && !in_array($requestUri, ['/canviar-cont
     exit;
 }
 
-switch ($requestUri) {
-    case '/':
-    case '/ca':
-        echo $controller->home();
-        break;
+$router = new Router();
+$languageProjectConstraints = ['lang' => 'ca|es|en', 'slug' => '[a-z0-9-]+'];
 
-    case '/ca/que-es-entorns':
-        echo $controller->about();
-        break;
+$router->get('/', static fn (): string => $controller->home());
+$router->get('/ca', static fn (): string => $controller->home());
+$router->get('/ca/que-es-entorns', static fn (): string => $controller->about());
 
-    case '/projectes':
-    case '/ca/projectes':
-    case '/es/projectes':
-    case '/en/projectes':
-        echo $controller->projects();
-        break;
-
-    case '/login':
-        echo $authController->login();
-        break;
-
-    case '/logout':
-        $authController->logout();
-        break;
-
-    case '/canviar-contrasenya':
-        echo $authController->changePassword();
-        break;
-
-    case '/dashboard':
-        if (!$authService->check()) {
-            header('Location: ' . url('login'));
-            exit;
-        }
-
-        $authController->redirectToDashboard();
-        break;
-
-    case '/alumne':
-        $authService->requireRole('student');
-        $authService->requirePasswordChangeCompleted();
-        echo $studentController->dashboard();
-        break;
-
-    case '/professor':
-        $authService->requireRole('teacher');
-        $authService->requirePasswordChangeCompleted();
-        echo $teacherController->dashboard();
-        break;
-
-    case '/admin':
-        $authService->requireRole('admin');
-        $authService->requirePasswordChangeCompleted();
-        echo $adminController->dashboard();
-        break;
-
-    case '/admin/impersonate-student':
-        $authService->requireActorRole('admin');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . url('admin'));
-            exit;
-        }
-
-        $studentId = isset($_POST['student_id']) ? (int) $_POST['student_id'] : 0;
-        $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
-
-        if ($studentId > 0 && $authService->verifyCsrfToken($csrfToken) && $authService->impersonateStudent($studentId)) {
-            header('Location: ' . url('alumne'));
-            exit;
-        }
-
-        $_SESSION['admin_message'] = 'No s’ha pogut activar la vista com alumne.';
-        $_SESSION['admin_message_type'] = 'error';
-        header('Location: ' . url('admin'));
-        exit;
-
-    case '/admin/stop-impersonation':
-        $authService->requireActorRole('admin');
-
-        $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $authService->verifyCsrfToken($csrfToken)) {
-            $authService->stopImpersonating();
-        }
-
-        header('Location: ' . url('admin'));
-        exit;
-
-    case '/admin/sync-documents':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            echo $documentSyncController->store();
-            break;
-        }
-
-        echo $documentSyncController->index();
-        break;
-
-    default:
-        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/tasques$#', $requestUri, $matches) === 1) {
-            echo $controller->projectTasks($matches[2], $projectAcademicYearId);
-            break;
-        }
-
-        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/notes$#', $requestUri, $matches) === 1) {
-            echo $controller->projectNotes($matches[2], $projectAcademicYearId);
-            break;
-        }
-
-        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/documents$#', $requestUri, $matches) === 1) {
-            echo $controller->projectDocuments($matches[2], $projectAcademicYearId);
-            break;
-        }
-
-        if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)$#', $requestUri, $matches) === 1) {
-            echo $controller->projectDetail($matches[2], $projectAcademicYearId);
-            break;
-        }
-
-        http_response_code(404);
-        echo 'Pagina no trobada';
-        break;
+foreach (['/projectes', '/ca/projectes', '/es/projectes', '/en/projectes'] as $projectsRoute) {
+    $router->get($projectsRoute, static fn (): string => $controller->projects());
 }
+
+$router->any('/login', static fn (): string => $authController->login());
+$router->any('/logout', static function () use ($authController): void {
+    $authController->logout();
+});
+$router->any('/canviar-contrasenya', static fn (): string => $authController->changePassword());
+
+$router->get('/dashboard', static function () use ($authService, $authController): void {
+    if (!$authService->check()) {
+        header('Location: ' . url('login'));
+        exit;
+    }
+
+    $authController->redirectToDashboard();
+});
+
+$router->any('/alumne', static function () use ($authService, $studentController): string {
+    $authService->requireRole('student');
+    $authService->requirePasswordChangeCompleted();
+
+    return $studentController->dashboard();
+});
+
+$router->any('/professor', static function () use ($authService, $teacherController): string {
+    $authService->requireRole('teacher');
+    $authService->requirePasswordChangeCompleted();
+
+    return $teacherController->dashboard();
+});
+
+$router->any('/admin', static function () use ($authService, $adminController): string {
+    $authService->requireRole('admin');
+    $authService->requirePasswordChangeCompleted();
+
+    return $adminController->dashboard();
+});
+
+$router->get('/admin/impersonate-student', static function (): void {
+    header('Location: ' . url('admin'));
+    exit;
+});
+$router->post('/admin/impersonate-student', static function () use ($authService): void {
+    $authService->requireActorRole('admin');
+
+    $studentId = isset($_POST['student_id']) ? (int) $_POST['student_id'] : 0;
+    $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+
+    if ($studentId > 0 && $authService->verifyCsrfToken($csrfToken) && $authService->impersonateStudent($studentId)) {
+        header('Location: ' . url('alumne'));
+        exit;
+    }
+
+    $_SESSION['admin_message'] = 'No s’ha pogut activar la vista com alumne.';
+    $_SESSION['admin_message_type'] = 'error';
+    header('Location: ' . url('admin'));
+    exit;
+});
+
+$router->get('/admin/stop-impersonation', static function (): void {
+    header('Location: ' . url('admin'));
+    exit;
+});
+$router->post('/admin/stop-impersonation', static function () use ($authService): void {
+    $authService->requireActorRole('admin');
+
+    $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+
+    if ($authService->verifyCsrfToken($csrfToken)) {
+        $authService->stopImpersonating();
+    }
+
+    header('Location: ' . url('admin'));
+    exit;
+});
+
+$router->get('/admin/sync-documents', static fn (): string => $documentSyncController->index());
+$router->post('/admin/sync-documents', static fn (): string => $documentSyncController->store());
+
+$router->get('/{lang}/projectes/{slug}/tasques', static fn (array $params): string => $controller->projectTasks((string) $params['slug'], $projectAcademicYearId), $languageProjectConstraints);
+$router->get('/{lang}/projectes/{slug}/notes', static fn (array $params): string => $controller->projectNotes((string) $params['slug'], $projectAcademicYearId), $languageProjectConstraints);
+$router->get('/{lang}/projectes/{slug}/documents', static fn (array $params): string => $controller->projectDocuments((string) $params['slug'], $projectAcademicYearId), $languageProjectConstraints);
+$router->get('/{lang}/projectes/{slug}', static fn (array $params): string => $controller->projectDetail((string) $params['slug'], $projectAcademicYearId), $languageProjectConstraints);
+
+$router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $requestUri);
