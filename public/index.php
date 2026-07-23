@@ -17,6 +17,7 @@ require_once dirname(__DIR__) . '/app/Services/AssessmentStructureImportService.
 require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminAssessmentStructureService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminClassService.php';
+require_once dirname(__DIR__) . '/app/Services/AdminDashboardService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminProjectService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminStudentImportService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminUserService.php';

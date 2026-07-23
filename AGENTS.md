@@ -202,6 +202,7 @@ Serveis:
 AnalyticsService
 AdminAssessmentStructureService
 AdminClassService
+AdminDashboardService
 AdminProjectService
 AdminStudentImportService
 AdminUserService
