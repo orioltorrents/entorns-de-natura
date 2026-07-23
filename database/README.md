@@ -160,6 +160,9 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `assessment_phases` i `assessment_tasks` són definició base.
 - `project_academic_year_phases` i `project_academic_year_phase_tasks` controlen visibilitat i ordre per curs.
 - Google Workspace també treballa amb `project_academic_year_id`.
+- Les taules `google_*` són capa d'origen i sincronització; no substitueixen les taules internes `documents_*`.
+- `documents`, `document_sources`, `document_fragments` i `document_visibility_rules` continuen sent la capa publicable que l'aplicació pot mostrar i filtrar segons permisos.
+- El contingut Google s'ha de validar, sanititzar i transformar cap a les taules finals quan calgui abans de publicar-lo.
 
 ## Validació
 

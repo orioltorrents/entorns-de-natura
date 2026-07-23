@@ -673,6 +673,10 @@ Norma clau:
 - la unitat funcional és `project_academic_years` quan el contingut és contextual;
 - `google_sources` i els resultats sincronitzats han d'anar lligats a `project_academic_year_id`;
 - no publicar dades directament des de Google sense validació i sense passar per la BD.
+- `google_*` és capa d'origen i sincronització; `documents_*` és capa interna publicable;
+- no eliminar `documents`, `document_sources`, `document_fragments` ni `document_visibility_rules` mentre `DocumentService` continuï llegint-les;
+- per Docs, el flux recomanat és `google_sources` → `google_documents` → `google_document_blocks` → `documents` / `document_fragments` / `document_visibility_rules`;
+- per Sheets, el flux recomanat és `google_sources` → `google_sheet_rows` → `assessment_records` o altres taules finals validades.
 
 ---
 

@@ -772,6 +772,13 @@ Funció de les taules preparades:
 - `google_sync_runs`: registrar execucions de sincronització.
 - `google_sync_errors`: registrar errors de sincronització.
 
+Regla de capes:
+
+- `google_*` és la capa d'origen i sincronització amb Google Workspace;
+- `documents_*` és la capa interna publicable de l'aplicació;
+- no eliminar `documents`, `document_sources`, `document_fragments` ni `document_visibility_rules` mentre `DocumentService` continuï llegint-les;
+- el contingut Google no s'ha de publicar directament sense validació, sanitització i transformació quan calgui.
+
 Regla:
 
 - `project_id` és correcte per a relacions de catàleg del projecte base, com `project_translations` o `project_asset_links`;

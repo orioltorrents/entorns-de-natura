@@ -245,6 +245,36 @@ document_visibility_rules
 
 `document_sources` descriu fonts associades als documents interns de l'aplicació. `google_sources` descriu possibles fonts de Google Workspace per edició de projecte. La relació definitiva entre totes dues capes encara és una decisió pendent.
 
+Regla clau: les taules `google_*` no substitueixen les taules `documents_*`.
+
+```text
+google_*    -> capa d'origen i sincronització amb Google Workspace
+documents_* -> capa interna publicable de l'aplicació
+```
+
+El contingut de Google Docs no s'ha de mostrar directament a la web final sense validació, sanitització i transformació quan calgui. La capa `documents`, `document_fragments` i `document_visibility_rules` continua sent la font que l'aplicació pot publicar, filtrar i mostrar segons permisos.
+
+Flux recomanat per Docs:
+
+```text
+Google Docs
+→ google_sources
+→ google_documents
+→ google_document_blocks
+→ documents / document_fragments / document_visibility_rules
+→ web pública / alumnat / professorat / administració
+```
+
+Flux recomanat per Sheets:
+
+```text
+Google Sheets
+→ google_sources
+→ google_sheet_rows
+→ assessment_records o altres taules finals
+→ web privada o dashboards
+```
+
 ---
 
 ## `google_sources`
