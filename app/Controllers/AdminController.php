@@ -386,9 +386,19 @@ class AdminController
             return;
         }
 
-        $handlers = [
+        $classHandlers = [
             'sync_class_teachers' => 'syncClassTeachers',
             'sync_all_class_teachers' => 'syncAllClassTeachers',
+        ];
+
+        if (isset($classHandlers[$action])) {
+            $result = (new AdminClassService($pdo))->{$classHandlers[$action]}($_POST);
+            $this->setMessage((string) $result['message'], (string) $result['type']);
+            $this->auditAdminAction($action);
+            return;
+        }
+
+        $handlers = [
             'import_students' => 'importStudents',
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',
@@ -745,140 +755,6 @@ class AdminController
         ];
 
         $this->setMessage($message, 'success');
-    }
-
-    private function syncClassTeachers(PDO $pdo): void
-    {
-        $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
-        $teacherIds = $_POST['teacher_ids'] ?? [];
-
-        if ($classId === null || $classId === false) {
-            $this->setMessage('Classe no vàlida.', 'error');
-            return;
-        }
-
-        if (!is_array($teacherIds)) {
-            $teacherIds = [];
-        }
-
-        $teacherIds = array_values(array_unique(array_filter(array_map(
-            static fn ($teacherId): int => (int) $teacherId,
-            $teacherIds
-        ), static fn (int $teacherId): bool => $teacherId > 0)));
-
-         $classStmt = $pdo->prepare('SELECT id, class_name AS name FROM classes WHERE id = :id LIMIT 1');
-        $classStmt->execute(['id' => (int) $classId]);
-        $class = $classStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($class === false) {
-            $this->setMessage('No s’ha trobat la classe.', 'error');
-            return;
-        }
-
-        $validTeacherIds = [];
-        if ($teacherIds !== []) {
-            $placeholders = implode(',', array_fill(0, count($teacherIds), '?'));
-            $stmt = $pdo->prepare(
-                "SELECT DISTINCT u.id
-                 FROM users u
-                  INNER JOIN user_web_roles ur ON ur.user_id = u.id
-                  INNER JOIN web_roles r ON r.id = ur.role_id
-                 WHERE r.name = 'teacher'
-                   AND u.id IN ($placeholders)"
-            );
-            $stmt->execute($teacherIds);
-            $validTeacherIds = array_map(static fn (array $row): int => (int) $row['id'], $stmt->fetchAll(PDO::FETCH_ASSOC));
-        }
-
-        $pdo->beginTransaction();
-
-        try {
-            $deleteStmt = $pdo->prepare('DELETE FROM class_teachers WHERE class_id = :class_id');
-            $deleteStmt->execute(['class_id' => (int) $classId]);
-
-            if ($validTeacherIds !== []) {
-                $insertStmt = $pdo->prepare('INSERT INTO class_teachers (class_id, user_id) VALUES (:class_id, :user_id)');
-                foreach ($validTeacherIds as $teacherId) {
-                    $insertStmt->execute([
-                        'class_id' => (int) $classId,
-                        'user_id' => $teacherId,
-                    ]);
-                }
-            }
-
-            $pdo->commit();
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’ha pogut actualitzar el professorat de la classe.', 'error');
-            return;
-        }
-
-        $this->setMessage('Professorat actualitzat per a ' . (string) $class['name'] . '.', 'success');
-    }
-
-    private function syncAllClassTeachers(PDO $pdo): void
-    {
-        $assignments = $_POST['teacher_ids_by_class'] ?? [];
-        if (!is_array($assignments)) {
-            $assignments = [];
-        }
-
-        $classRows = $pdo->query('SELECT id FROM classes')->fetchAll(PDO::FETCH_ASSOC);
-        $classIds = array_map(static fn (array $row): int => (int) $row['id'], $classRows);
-
-        $teacherRows = $pdo->query(
-            "SELECT DISTINCT u.id
-               FROM users u
-               INNER JOIN user_web_roles ur ON ur.user_id = u.id
-               INNER JOIN web_roles r ON r.id = ur.role_id
-              WHERE r.name = 'teacher'"
-        )->fetchAll(PDO::FETCH_ASSOC);
-        $validTeacherIds = array_flip(array_map(static fn (array $row): int => (int) $row['id'], $teacherRows));
-
-        $pdo->beginTransaction();
-
-        try {
-            $deleteStmt = $pdo->prepare('DELETE FROM class_teachers WHERE class_id = :class_id');
-            $insertStmt = $pdo->prepare('INSERT INTO class_teachers (class_id, user_id) VALUES (:class_id, :user_id)');
-            $savedClasses = 0;
-            $savedAssignments = 0;
-
-            foreach ($classIds as $classId) {
-                $rawTeacherIds = $assignments[(string) $classId] ?? $assignments[$classId] ?? [];
-                if (!is_array($rawTeacherIds)) {
-                    $rawTeacherIds = [];
-                }
-
-                $teacherIds = array_values(array_unique(array_filter(array_map(
-                    static fn ($teacherId): int => (int) $teacherId,
-                    $rawTeacherIds
-                ), static fn (int $teacherId): bool => $teacherId > 0 && isset($validTeacherIds[$teacherId]))));
-
-                $deleteStmt->execute(['class_id' => $classId]);
-
-                foreach ($teacherIds as $teacherId) {
-                    $insertStmt->execute([
-                        'class_id' => $classId,
-                        'user_id' => $teacherId,
-                    ]);
-                    $savedAssignments++;
-                }
-
-                $savedClasses++;
-            }
-
-            $pdo->commit();
-            $this->setMessage('Professorat actualitzat per a ' . $savedClasses . ' classes amb ' . $savedAssignments . ' assignacions.', 'success');
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’ha pogut actualitzar el professorat de totes les classes.', 'error');
-        }
     }
 
     private function setMessage(string $message, string $type): void
