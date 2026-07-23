@@ -28,9 +28,7 @@ class SitePageService
             return $storedContent;
         }
 
-        $documentId = trim((string) ($page['google_file_id'] ?? ''));
-
-        return $documentId !== '' ? $this->googleDocumentContent($documentId) : null;
+        return null;
     }
 
     public function syncPage(string $slug, string $languageCode = 'ca'): array
