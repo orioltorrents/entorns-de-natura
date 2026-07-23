@@ -6,6 +6,10 @@ require_once dirname(__DIR__) . '/app/Helpers/lang.php';
 require_once dirname(__DIR__) . '/app/Helpers/route.php';
 require_once dirname(__DIR__) . '/app/Helpers/view.php';
 
+if (is_file(dirname(__DIR__) . '/vendor/autoload.php')) {
+    require_once dirname(__DIR__) . '/vendor/autoload.php';
+}
+
 require_once dirname(__DIR__) . '/app/Support/Router.php';
 require_once dirname(__DIR__) . '/app/Services/AuthService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectAssetService.php';
@@ -26,6 +30,7 @@ require_once dirname(__DIR__) . '/app/Services/DocumentImportService.php';
 require_once dirname(__DIR__) . '/app/Services/DocumentService.php';
 require_once dirname(__DIR__) . '/app/Services/LogService.php';
 require_once dirname(__DIR__) . '/app/Services/ProjectSectionService.php';
+require_once dirname(__DIR__) . '/app/Services/SitePageService.php';
 require_once dirname(__DIR__) . '/app/Controllers/PublicController.php';
 require_once dirname(__DIR__) . '/app/Controllers/AuthController.php';
 require_once dirname(__DIR__) . '/app/Controllers/StudentController.php';
@@ -42,7 +47,8 @@ $analyticsService = new AnalyticsService();
 $documentImportService = new DocumentImportService();
 $documentService = new DocumentService();
 $projectSectionService = new ProjectSectionService();
-$controller = new PublicController($projectService, $authService, $assessmentService, $documentService, $projectSectionService, $projectAccessService);
+$sitePageService = new SitePageService();
+$controller = new PublicController($projectService, $authService, $assessmentService, $documentService, $projectSectionService, $projectAccessService, $sitePageService);
 $authController = new AuthController($authService);
 $studentController = new StudentController($authService, $projectAssignmentService);
 $teacherController = new TeacherController($authService, $projectAssignmentService);

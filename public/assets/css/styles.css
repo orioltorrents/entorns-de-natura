@@ -173,7 +173,23 @@ code {
     padding: 2rem;
 }
 .public-about__title { margin-top: 0; }
+.public-about__subtitle { color: #1f3f2d; font-size: 1.35rem; margin: 2rem 0 0.75rem; }
+.public-about__heading { color: #294b37; line-height: 1.35; }
+.public-about__heading--level-3 { font-size: 1.18rem; margin: 1.5rem 0 0.5rem; }
+.public-about__heading--level-4 { font-size: 1.05rem; margin: 1.25rem 0 0.4rem; }
 .public-about__text { color: #34433b; font-size: 1.08rem; line-height: 1.7; }
+.public-about__list { color: #34433b; font-size: 1.08rem; line-height: 1.7; margin: 0.75rem 0 1.5rem; padding-left: 1.35rem; }
+.public-about__list--unordered { margin-left: 1.25rem; }
+.public-about__list .public-about__list { font-size: 1rem; margin: 0.45rem 0 0.65rem; padding-left: 1.45rem; }
+.public-about__list--level-1 { margin-left: 1.25rem; }
+.public-about__list--level-2 { margin-left: 2.5rem; }
+.public-about__list--level-3 { margin-left: 3.75rem; }
+.public-about__list-item { margin: 0.35rem 0; }
+.public-about__list-item--title,
+.public-about__list-item--heading_1 { color: #1f3f2d; font-size: 1.25rem; font-weight: 700; margin-top: 0.7rem; }
+.public-about__list-item--heading_2 { color: #1f3f2d; font-size: 1.15rem; font-weight: 700; margin-top: 0.6rem; }
+.public-about__list-item--heading_3,
+.public-about__list-item--heading_4 { color: #294b37; font-weight: 700; margin-top: 0.45rem; }
 
 .public-home-collaborators {
     width: min(1120px, calc(100% - 32px));
@@ -750,13 +766,13 @@ code {
 .admin-layout {
     display: grid;
     gap: 1.5rem;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: 230px minmax(0, 1fr);
     align-items: start;
 }
 .admin-layout__sidebar {
     position: sticky;
     top: 1rem;
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 20px;
     background: linear-gradient(180deg, #23432d 0%, #315c3c 100%);
     color: white;
@@ -780,6 +796,7 @@ code {
 .admin-layout__nav a.active,
 .admin-layout__nav a:hover { background: rgba(255,255,255,.14); transform: translateX(2px); }
 .admin-layout__nav-group { display: grid; gap: .35rem; }
+.admin-layout__nav-group.is-open .admin-layout__nav-toggle { background: rgba(255,255,255,.14); }
 .admin-layout__nav-toggle {
     align-items: center;
     background: rgba(255,255,255,.08);
@@ -799,7 +816,20 @@ code {
 .admin-layout__nav-toggle::after { content: '▾'; font-size: .8rem; opacity: .8; }
 .admin-layout__nav-toggle:hover { background: rgba(255,255,255,.14); transform: translateX(2px); }
 .admin-layout__nav-toggle[aria-expanded="true"]::after { content: '▴'; }
-.admin-layout__submenu { display: grid; gap: .3rem; padding-left: .7rem; }
+.admin-layout__submenu {
+    display: grid;
+    gap: .3rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding-left: .7rem;
+    transform: translateY(-2px);
+    transition: max-height .24s ease, opacity .18s ease, transform .18s ease;
+}
+.admin-layout__nav-group.is-open .admin-layout__submenu {
+    opacity: 1;
+    transform: translateY(0);
+}
 .admin-layout__submenu a {
     background: rgba(255,255,255,.06);
     font-size: .92rem;
@@ -818,6 +848,9 @@ code {
     grid-template-columns: repeat(4, minmax(220px, 1fr));
     margin-bottom: .5rem;
 }
+.admin-summary-shell .admin-summary { margin-bottom: 0; }
+.admin-summary-shell .admin-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.admin-summary-shell:not(.is-collapsed) .admin-collapsible__content { overflow: visible; }
 .admin-summary__card {
     background: linear-gradient(180deg, #fff 0%, #fbfdf8 100%);
     border: 1px solid var(--border);
@@ -827,6 +860,7 @@ code {
     padding: 1.25rem;
     position: relative;
     overflow: hidden;
+    min-width: 0;
     transition: transform .2s ease, box-shadow .2s ease;
 }
 .admin-summary__card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
@@ -957,6 +991,52 @@ code {
 }
 .admin-summary__value { color: #1f2d1f; font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
 .admin-summary__desc { color: #6d7a6b; font-size: .85rem; }
+.admin-summary__desc--inline { display: inline-flex; gap: .35rem; white-space: nowrap; }
+.admin-summary__state--active { color: #2f7d42; font-weight: 800; }
+.admin-summary__state--inactive { color: #b03a2e; font-weight: 800; }
+.admin-summary__breakdown {
+    display: grid;
+    gap: .35rem;
+    margin-top: .65rem;
+    width: 100%;
+}
+.admin-summary__breakdown-row {
+    align-items: center;
+    color: #5f6d5d;
+    display: grid;
+    font-size: .85rem;
+    gap: .45rem;
+    grid-template-columns: 2rem 1fr;
+}
+.admin-summary__breakdown-count {
+    align-items: center;
+    background: #2f5d3a;
+    border-radius: 999px;
+    color: white;
+    display: inline-flex;
+    font-size: .7rem;
+    font-weight: 800;
+    justify-content: center;
+    line-height: 1;
+    min-width: 1.65rem;
+    padding: .22rem .42rem;
+    text-align: center;
+}
+.admin-summary__breakdown-label {
+    font-weight: 600;
+    min-width: 0;
+    white-space: nowrap;
+}
+.admin-summary__breakdown-row--inactive { color: #b03a2e; }
+.admin-summary__breakdown-row--inactive .admin-summary__breakdown-count { background: #b03a2e; color: white; }
+.admin-summary__breakdown-row--inactive .admin-summary__breakdown-label { color: #b03a2e; }
+.admin-summary__breakdown-title {
+    color: #47624a;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
 .admin-summary__roles {
     display: flex;
     flex-wrap: wrap;
@@ -981,21 +1061,21 @@ code {
     text-align: left;
     white-space: nowrap;
 }
-.admin-summary__role-badge small {
-    background: #2f5d3a;
-    border-radius: 999px;
-    color: white;
-    font-size: .7rem;
-    flex-shrink: 0;
-    font-weight: 700;
-    line-height: 1;
-    padding: .2rem .45rem;
-}
-.admin-summary__role-badge span {
+.admin-summary__role-badge-label {
     min-width: 0;
 }
 .admin-summary__role-badge--active { background: #e7efdf; color: #2f5d3a; }
 .admin-summary__role-badge--muted { background: #f1f2ef; color: #647263; }
+.admin-summary__role-badge-status {
+    background: #2f5d3a;
+    border-radius: 999px;
+    color: white;
+    font-size: .68rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: .18rem .42rem;
+    text-transform: uppercase;
+}
 
 .admin-panel {
     border: 1px solid var(--border);

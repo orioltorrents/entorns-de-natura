@@ -11,8 +11,8 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
         <nav class="admin-layout__nav">
             <a class="active" href="#panell">Resum</a>
             <a href="#analytics">Visites</a>
-            <div class="admin-layout__nav-group">
-                <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="usuaris-submenu" aria-expanded="false">
+            <div class="admin-layout__nav-group" data-nav-group>
+                <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="usuaris-submenu" aria-expanded="false" aria-controls="usuaris-submenu">
                     Usuaris
                 </button>
                 <div class="admin-layout__submenu" id="usuaris-submenu" hidden>
@@ -23,9 +23,16 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <a href="#classes">Classes</a>
-            <a href="#projectes-lista">Projectes</a>
-            <a href="#equips">Equips</a>
-            <a href="#rols">Rols</a>
+            <div class="admin-layout__nav-group" data-nav-group>
+                <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="projectes-submenu" aria-expanded="false" aria-controls="projectes-submenu">
+                    Projectes
+                </button>
+                <div class="admin-layout__submenu" id="projectes-submenu" hidden>
+                    <a href="#projectes-lista">Llista i assignacions</a>
+                    <a href="#equips">Equips</a>
+                    <a href="#rols">Rols de projecte</a>
+                </div>
+            </div>
             <a href="#avaluacio">Fases i tasques</a>
             <a href="<?= url('admin/sync-documents') ?>">Google Sync</a>
             <a href="#logs">Logs</a>
@@ -44,8 +51,85 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
         $inactiveUsersCount = count($users) - $activeUsersCount;
         $activeProjectsCount = count(array_filter($projects, static fn (array $project): bool => (int) ($project['is_active'] ?? 0) === 1));
         $inactiveProjectsCount = count($projects) - $activeProjectsCount;
+        $projectSlugsById = [];
+        $projectNamesById = [];
+        $projectActiveByName = [];
+        foreach ($projects as $project) {
+            $projectId = (int) ($project['id'] ?? 0);
+            $projectName = (string) ($project['name'] ?? $project['slug'] ?? 'Projecte');
+            $projectSlugsById[$projectId] = (string) ($project['slug'] ?? '');
+            $projectNamesById[$projectId] = $projectName;
+            $projectActiveByName[$projectName] = (int) ($project['is_active'] ?? 0) === 1;
+        }
+        $completedEditionsByProject = [];
+        foreach ($projects as $project) {
+            $projectName = (string) ($project['name'] ?? $project['slug'] ?? 'Projecte');
+            $completedEditionsByProject[$projectName] = 0;
+        }
+
+        foreach (($projectAcademicYears ?? []) as $projectAcademicYear) {
+            $projectId = (int) ($projectAcademicYear['project_id'] ?? 0);
+            $editionStatus = strtolower(trim((string) ($projectAcademicYear['status'] ?? '')));
+            if ($editionStatus !== 'pendent') {
+                $projectName = $projectNamesById[$projectId] ?? 'Projecte';
+                $completedEditionsByProject[$projectName] = (int) ($completedEditionsByProject[$projectName] ?? 0) + 1;
+            }
+        }
+        $completedEditionsByProject = array_filter($completedEditionsByProject, static fn (int $count): bool => $count > 0);
+        $projectTeamsByAcademicYear = [];
+        foreach (($projectTeams ?? []) as $projectTeam) {
+            $academicYearName = trim((string) ($projectTeam['academic_year_name'] ?? ''));
+            if ($academicYearName === '') {
+                $academicYearName = 'Sense any assignat';
+            }
+
+            $projectTeamsByAcademicYear[$academicYearName] = (int) ($projectTeamsByAcademicYear[$academicYearName] ?? 0) + 1;
+        }
+        ksort($projectTeamsByAcademicYear, SORT_NATURAL);
+        $userYearBreakdown = static function (array $usersToCount): array {
+            $breakdown = [];
+
+            foreach ($usersToCount as $userToCount) {
+                $academicYear = is_array($userToCount['academic_year'] ?? null)
+                    ? trim((string) ($userToCount['academic_year']['name'] ?? ''))
+                    : '';
+
+                if ($academicYear === '') {
+                    $academicYear = 'Sense any assignat';
+                }
+
+                $breakdown[$academicYear] = (int) ($breakdown[$academicYear] ?? 0) + 1;
+            }
+
+            uksort($breakdown, static function (string $left, string $right): int {
+                if ($left === 'Sense any assignat') {
+                    return 1;
+                }
+
+                if ($right === 'Sense any assignat') {
+                    return -1;
+                }
+
+                return strnatcmp($left, $right);
+            });
+
+            return $breakdown;
+        };
+        $usersByAcademicYear = $userYearBreakdown($users);
+        $activeUsersByAcademicYear = $userYearBreakdown(array_values(array_filter($users, static fn (array $user): bool => (int) $user['is_active'] === 1)));
+        $inactiveUsersByAcademicYear = $userYearBreakdown(array_values(array_filter($users, static fn (array $user): bool => (int) $user['is_active'] !== 1)));
         ?>
-        <div class="admin-summary">
+        <section id="resum" class="card admin-panel admin-collapsible admin-summary-shell">
+            <div class="admin-panel__header">
+                <h2>Resum</h2>
+                <div class="admin-actions">
+                    <span class="status">Indicadors generals del sistema</span>
+                    <button class="collapse-toggle" type="button" data-collapse="resum-content">Amagar</button>
+                </div>
+            </div>
+
+            <div id="resum-content" class="admin-collapsible__content">
+                <div class="admin-summary">
             <div class="admin-summary__card">
                 <div class="admin-summary__icon">🛡️</div>
                 <div class="admin-summary__body">
@@ -54,8 +138,8 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <div class="admin-summary__roles">
                         <?php foreach ($roles as $role): ?>
                             <span class="admin-summary__role-badge">
-                                <small><?= (int) $role['user_count'] ?></small>
-                                <span><?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="admin-summary__breakdown-count"><?= (int) $role['user_count'] ?></span>
+                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?></span>
                             </span>
                         <?php endforeach; ?>
                     </div>
@@ -70,6 +154,9 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                         <?php foreach (($academicYears ?? []) as $academicYear): ?>
                             <span class="admin-summary__role-badge <?= ((int) ($academicYear['is_current'] ?? 0) === 1) ? 'admin-summary__role-badge--active' : '' ?>">
                                 <?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?>
+                                <?php if ((int) ($academicYear['is_current'] ?? 0) === 1): ?>
+                                    <span class="admin-summary__role-badge-status">actiu</span>
+                                <?php endif; ?>
                             </span>
                         <?php endforeach; ?>
                     </div>
@@ -80,7 +167,22 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 <div class="admin-summary__body">
                     <span class="admin-summary__label">Projectes</span>
                     <span class="admin-summary__value"><?= count($projects) ?></span>
-                    <span class="admin-summary__desc"><?= $activeProjectsCount ?> actius · <?= $inactiveProjectsCount ?> inactius</span>
+                    <span class="admin-summary__desc admin-summary__desc--inline">
+                        <span class="admin-summary__state admin-summary__state--active"><?= $activeProjectsCount ?> actius</span>
+                        <span aria-hidden="true">·</span>
+                        <span class="admin-summary__state admin-summary__state--inactive"><?= $inactiveProjectsCount ?> inactius</span>
+                    </span>
+                    <?php if ($completedEditionsByProject !== []): ?>
+                        <div class="admin-summary__breakdown" aria-label="Vegades que s'ha fet cada projecte, sense comptar pendents">
+                            <?php foreach ($completedEditionsByProject as $projectName => $count): ?>
+                                <?php $projectStateClass = ($projectActiveByName[$projectName] ?? false) ? '' : ' admin-summary__breakdown-row--inactive'; ?>
+                                <span class="admin-summary__breakdown-row<?= $projectStateClass ?>">
+                                    <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                    <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $projectName, ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="admin-summary__card">
@@ -88,7 +190,17 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 <div class="admin-summary__body">
                     <span class="admin-summary__label">Equips</span>
                     <span class="admin-summary__value"><?= count($projectTeams ?? []) ?></span>
-                    <span class="admin-summary__desc"><?= (int) ($projectTeamMembershipCount ?? 0) ?> pertinences d’alumnes</span>
+                    <span class="admin-summary__desc"><?= (int) ($projectTeamMembershipCount ?? 0) ?> assignacions alumne-equip</span>
+                    <?php if ($projectTeamsByAcademicYear !== []): ?>
+                        <div class="admin-summary__breakdown" aria-label="Equips per any acadèmic">
+                            <?php foreach ($projectTeamsByAcademicYear as $academicYearName => $count): ?>
+                                <span class="admin-summary__breakdown-row">
+                                    <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                    <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="admin-summary__card">
@@ -99,12 +211,12 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <div class="admin-summary__roles">
                         <?php foreach (($projectRoles ?? []) as $projectRole): ?>
                             <span class="admin-summary__role-badge">
-                                <small><?= (int) $projectRole['member_count'] ?></small>
-                                <span><?= htmlspecialchars((string) $projectRole['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="admin-summary__breakdown-count"><?= (int) $projectRole['member_count'] ?></span>
+                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $projectRole['name'], ENT_QUOTES, 'UTF-8') ?></span>
                             </span>
                         <?php endforeach; ?>
                         <?php if ((int) ($projectMembersWithoutRole ?? 0) > 0): ?>
-                            <span class="admin-summary__role-badge admin-summary__role-badge--muted"><small><?= (int) $projectMembersWithoutRole ?></small> <span>Sense rol</span></span>
+                            <span class="admin-summary__role-badge admin-summary__role-badge--muted"><span class="admin-summary__breakdown-count"><?= (int) $projectMembersWithoutRole ?></span> <span class="admin-summary__role-badge-label">Sense rol</span></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -115,6 +227,14 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <span class="admin-summary__label">Usuaris</span>
                     <span class="admin-summary__value"><?= count($users) ?></span>
                     <span class="admin-summary__desc">Registrats al sistema</span>
+                    <div class="admin-summary__breakdown" aria-label="Usuaris per any acadèmic">
+                        <?php foreach ($usersByAcademicYear as $academicYearName => $count): ?>
+                            <span class="admin-summary__breakdown-row">
+                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
             <div class="admin-summary__card admin-summary__card--good">
@@ -123,6 +243,14 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <span class="admin-summary__label">Usuaris actius</span>
                     <span class="admin-summary__value"><?= $activeUsersCount ?></span>
                     <span class="admin-summary__desc">Usuaris amb accés actiu</span>
+                    <div class="admin-summary__breakdown" aria-label="Usuaris actius per any acadèmic">
+                        <?php foreach ($activeUsersByAcademicYear as $academicYearName => $count): ?>
+                            <span class="admin-summary__breakdown-row">
+                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
             <div class="admin-summary__card admin-summary__card--muted">
@@ -131,9 +259,19 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <span class="admin-summary__label">Usuaris inactius</span>
                     <span class="admin-summary__value"><?= $inactiveUsersCount ?></span>
                     <span class="admin-summary__desc">Usuaris desactivats</span>
+                    <div class="admin-summary__breakdown" aria-label="Usuaris inactius per any acadèmic">
+                        <?php foreach ($inactiveUsersByAcademicYear as $academicYearName => $count): ?>
+                            <span class="admin-summary__breakdown-row">
+                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
-        </div>
+                </div>
+            </div>
+        </section>
 
         <div id="analytics" class="card admin-panel admin-collapsible is-collapsed">
             <div class="admin-panel__header">

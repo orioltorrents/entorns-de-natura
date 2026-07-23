@@ -107,16 +107,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-nav-group-toggle]').forEach((toggle) => {
         const targetId = toggle.getAttribute('data-nav-group-toggle');
         const submenu = targetId ? document.getElementById(targetId) : null;
-        if (!submenu) return;
+        const group = toggle.closest('[data-nav-group]');
+        if (!submenu || !group) return;
+
+        const submenuLinks = Array.from(submenu.querySelectorAll('a[href^="#"]'));
+        const submenuHasHash = () => submenuLinks.some((link) => link.getAttribute('href') === window.location.hash);
+        const setOpen = (isOpen) => {
+            group.classList.toggle('is-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            submenu.hidden = false;
+            submenu.style.maxHeight = isOpen ? submenu.scrollHeight + 'px' : '0px';
+        };
+
+        submenu.hidden = false;
+        setOpen(submenuHasHash());
 
         toggle.addEventListener('click', () => {
-            const isHidden = submenu.hasAttribute('hidden');
-            if (isHidden) {
-                submenu.removeAttribute('hidden');
-            } else {
-                submenu.setAttribute('hidden', '');
+            setOpen(!group.classList.contains('is-open'));
+        });
+
+        submenuLinks.forEach((link) => {
+            link.addEventListener('click', () => setOpen(true));
+        });
+
+        window.addEventListener('hashchange', () => {
+            if (submenuHasHash()) {
+                setOpen(true);
             }
-            toggle.setAttribute('aria-expanded', String(isHidden));
         });
     });
 

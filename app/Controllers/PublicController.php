@@ -10,7 +10,8 @@ class PublicController
         private AssessmentService $assessmentService,
         private DocumentService $documentService,
         private ProjectSectionService $projectSectionService,
-        private ProjectAccessService $projectAccessService
+        private ProjectAccessService $projectAccessService,
+        private SitePageService $sitePageService
     ) {
     }
 
@@ -25,6 +26,7 @@ class PublicController
     {
         return view('public.about', [
             'title' => 'Què és Entorns de Natura',
+            'aboutContent' => $this->sitePageService->aboutContent(),
         ]);
     }
 

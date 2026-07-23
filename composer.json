@@ -2,7 +2,9 @@
   "name": "entorns-de-natura/app",
   "description": "Aplicació PHP per a Entorns de Natura",
   "type": "project",
-  "require": {},
+  "require": {
+    "google/apiclient": "^2.19"
+  },
   "scripts": {
     "check": "php scripts/check-code-quality.php"
   }
