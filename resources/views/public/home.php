@@ -11,28 +11,9 @@ ob_start();
         <h1 class="hero__title public-home__title"><?= htmlspecialchars(trans('home_title'), ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="hero__text public-home__text"><?= htmlspecialchars(trans('home_intro'), ENT_QUOTES, 'UTF-8') ?></p>
         <div class="actions hero__actions public-home__actions">
-            <a class="button" href="<?= url('login') ?>"><?= htmlspecialchars(trans('login'), ENT_QUOTES, 'UTF-8') ?></a>
-            <a class="button button--secondary" href="<?= url('ca/projectes') ?>"><?= htmlspecialchars(trans('projects'), ENT_QUOTES, 'UTF-8') ?></a>
+            <a class="button" href="<?= url('ca/que-es-entorns') ?>">Entra</a>
         </div>
     </div>
-
-    <aside class="public-home__panel" aria-label="Punts destacats">
-        <div class="public-home__panel-item">
-            <span class="public-home__panel-label">Projectes</span>
-            <strong class="public-home__panel-title">Rius, agroecologia i biodiversitat</strong>
-            <p>Continguts reals i seguiment per classes.</p>
-        </div>
-        <div class="public-home__panel-item">
-            <span class="public-home__panel-label">Espais privats</span>
-            <strong class="public-home__panel-title">Alumnes i professorat</strong>
-            <p>Accés separat per rols i visualització clara.</p>
-        </div>
-        <div class="public-home__panel-item">
-            <span class="public-home__panel-label">Base modular</span>
-            <strong class="public-home__panel-title">Pensada per créixer</strong>
-            <p>Preparada per rúbriques, notes i Google Workspace.</p>
-        </div>
-    </aside>
 </section>
 
 <?php

@@ -20,6 +20,13 @@ class PublicController
         ]);
     }
 
+    public function about(): string
+    {
+        return view('public.about', [
+            'title' => 'Què és Entorns de Natura',
+        ]);
+    }
+
     public function projects(): string
     {
         return view('public.projects', [

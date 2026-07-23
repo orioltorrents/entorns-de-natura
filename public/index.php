@@ -55,6 +55,10 @@ switch ($requestUri) {
         echo $controller->home();
         break;
 
+    case '/ca/que-es-entorns':
+        echo $controller->about();
+        break;
+
     case '/projectes':
     case '/ca/projectes':
     case '/es/projectes':

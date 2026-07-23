@@ -3,10 +3,12 @@
         <a href="<?= url('') ?>">Entorns de Natura</a>
     </div>
     <nav class="site-header__nav">
-        <a class="site-header__nav-link" href="<?= url('ca/projectes') ?>"><?= htmlspecialchars(trans('projects'), ENT_QUOTES, 'UTF-8') ?></a>
-
         <?php if (!empty($_SESSION['user'])): ?>
-            <?php $roles = $_SESSION['user']['roles'] ?? []; ?>
+            <?php
+            $roles = $_SESSION['user']['roles'] ?? [];
+            $displayName = trim((string) ($_SESSION['user']['name'] ?? '') . ' ' . (string) ($_SESSION['user']['surname'] ?? ''));
+            $displayName = $displayName !== '' ? $displayName : (string) ($_SESSION['user']['email'] ?? '');
+            ?>
             <?php if (in_array('student', $roles, true)): ?>
                 <a class="site-header__nav-link" href="<?= url('alumne') ?>">Alumne</a>
             <?php endif; ?>
@@ -15,6 +17,9 @@
             <?php endif; ?>
             <?php if (in_array('admin', $roles, true)): ?>
                 <a class="site-header__nav-link" href="<?= url('admin') ?>">Admin</a>
+            <?php endif; ?>
+            <?php if ($displayName !== ''): ?>
+                <span class="site-header__user">Connectat: <?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?></span>
             <?php endif; ?>
             <a class="site-header__nav-link" href="<?= url('logout') ?>">Surt</a>
         <?php else: ?>
