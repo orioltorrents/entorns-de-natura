@@ -76,12 +76,28 @@ class AuthService
 
     public function user(): ?array
     {
+        if ($this->isImpersonating()) {
+            return $_SESSION['impersonation']['target'];
+        }
+
+        return $this->check() ? $_SESSION['user'] : null;
+    }
+
+    public function actorUser(): ?array
+    {
         return $this->check() ? $_SESSION['user'] : null;
     }
 
     public function hasRole(string $role): bool
     {
         $user = $this->user();
+
+        return $user !== null && in_array($role, $user['roles'], true);
+    }
+
+    public function hasActorRole(string $role): bool
+    {
+        $user = $this->actorUser();
 
         return $user !== null && in_array($role, $user['roles'], true);
     }
@@ -94,6 +110,60 @@ class AuthService
 
         header('Location: ' . url('login'));
         exit;
+    }
+
+    public function requireActorRole(string $role): void
+    {
+        if ($this->hasActorRole($role)) {
+            return;
+        }
+
+        header('Location: ' . url('login'));
+        exit;
+    }
+
+    public function isImpersonating(): bool
+    {
+        return $this->check()
+            && isset($_SESSION['impersonation']['target']['id'], $_SESSION['impersonation']['target']['roles'])
+            && is_array($_SESSION['impersonation']['target']['roles']);
+    }
+
+    public function impersonateStudent(int $studentId): bool
+    {
+        if (!$this->hasActorRole('admin')) {
+            return false;
+        }
+
+        $student = $this->findActiveUserById($studentId);
+
+        if ($student === null) {
+            return false;
+        }
+
+        $roles = $this->rolesForUser((int) $student['id']);
+
+        if (!in_array('student', $roles, true)) {
+            return false;
+        }
+
+        $_SESSION['impersonation'] = [
+            'target' => [
+                'id' => (int) $student['id'],
+                'name' => (string) $student['name'],
+                'surname' => (string) ($student['surname'] ?? ''),
+                'email' => (string) $student['email'],
+                'roles' => $roles,
+            ],
+            'started_at' => time(),
+        ];
+
+        return true;
+    }
+
+    public function stopImpersonating(): void
+    {
+        unset($_SESSION['impersonation']);
     }
 
     public function redirectPathForCurrentUser(): string
@@ -137,6 +207,24 @@ class AuthService
              LIMIT 1'
         );
         $stmt->execute(['email' => $email]);
+        $user = $stmt->fetch();
+
+        if ($user === false || (int) $user['is_active'] !== 1) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    private function findActiveUserById(int $userId): ?array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT id, name, surname, email, is_active
+             FROM users
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $stmt->execute(['id' => $userId]);
         $user = $stmt->fetch();
 
         if ($user === false || (int) $user['is_active'] !== 1) {

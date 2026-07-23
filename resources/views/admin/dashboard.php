@@ -570,6 +570,13 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                     <?php else: ?>
                                                         <span class="status">Admin protegit</span>
                                                     <?php endif; ?>
+                                                    <?php if (!$isAdminUser && (int) $user['is_active'] === 1): ?>
+                                                        <form method="post" action="<?= url('admin/impersonate-student') ?>" class="admin-inline-action">
+                                                            <input type="hidden" name="student_id" value="<?= (int) $user['id'] ?>">
+                                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) ($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                            <button class="button button--secondary" type="submit">Veure com</button>
+                                                        </form>
+                                                    <?php endif; ?>
                                                     <button class="button" type="button" data-target="student-<?= (int) $user['id'] ?>">Editar</button>
                                                 </div>
                                             </td>

@@ -98,6 +98,39 @@ switch ($requestUri) {
         echo $adminController->dashboard();
         break;
 
+    case '/admin/impersonate-student':
+        $authService->requireActorRole('admin');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . url('admin'));
+            exit;
+        }
+
+        $studentId = isset($_POST['student_id']) ? (int) $_POST['student_id'] : 0;
+        $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+
+        if ($studentId > 0 && $authService->verifyCsrfToken($csrfToken) && $authService->impersonateStudent($studentId)) {
+            header('Location: ' . url('alumne'));
+            exit;
+        }
+
+        $_SESSION['admin_message'] = 'No s’ha pogut activar la vista com alumne.';
+        $_SESSION['admin_message_type'] = 'error';
+        header('Location: ' . url('admin'));
+        exit;
+
+    case '/admin/stop-impersonation':
+        $authService->requireActorRole('admin');
+
+        $csrfToken = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $authService->verifyCsrfToken($csrfToken)) {
+            $authService->stopImpersonating();
+        }
+
+        header('Location: ' . url('admin'));
+        exit;
+
     case '/admin/sync-documents':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo $documentSyncController->store();
