@@ -8,8 +8,9 @@ ob_start();
         <a class="button" href="<?= url('ca/projectes') ?>">Torna als projectes</a>
     </section>
 <?php else: ?>
+    <?php $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : ''; ?>
     <article class="public-project-detail">
-        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) ?>">Torna al projecte</a></p>
+        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) . $editionQuery ?>">Torna al projecte</a></p>
         <div class="public-project-detail__hero">
             <div>
                 <p class="public-project-detail__eyebrow">Projecte</p>

@@ -21,9 +21,18 @@ $gradeAchievementClass = static function (array $grade): string {
         <a class="button" href="<?= url('ca/projectes') ?>">Torna als projectes</a>
     </section>
 <?php else: ?>
-    <?php $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : ''; ?>
+    <?php
+    $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : '';
+    $currentRoles = array_values(array_map('strval', $currentUser['roles'] ?? []));
+    $projectsBackHref = url('ca/projectes');
+    if (in_array('teacher', $currentRoles, true)) {
+        $projectsBackHref = url('professor');
+    } elseif (in_array('student', $currentRoles, true)) {
+        $projectsBackHref = url('alumne');
+    }
+    ?>
     <article class="public-project-detail">
-        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
+        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= htmlspecialchars($projectsBackHref, ENT_QUOTES, 'UTF-8') ?>">Projectes</a></p>
         <?php $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null); ?>
         <div class="public-project-detail__hero">
             <?php if (!empty($projectAsset['logo_path'])): ?>
@@ -38,7 +47,12 @@ $gradeAchievementClass = static function (array $grade): string {
                     <p class="lead public-project-detail__lead public-project-detail__lead--hero"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
                 <?php endif; ?>
             </div>
-            <span class="public-project-detail__status status">actiu</span>
+            <div class="public-project-detail__meta">
+                <?php if (!empty($projectAcademicYear['academic_year_name'])): ?>
+                    <span class="public-project-detail__status status">Curs <?= htmlspecialchars((string) $projectAcademicYear['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                <?php endif; ?>
+                <span class="public-project-detail__status status"><?= htmlspecialchars((string) ($projectAcademicYear['status'] ?? 'actiu'), ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
         </div>
     </article>
 

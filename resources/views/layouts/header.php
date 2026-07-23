@@ -25,10 +25,10 @@
             $displayName = $displayName !== '' ? $displayName : (string) ($headerUser['email'] ?? '');
             ?>
             <?php if (in_array('student', $roles, true)): ?>
-                <a class="site-header__nav-link" href="<?= url('alumne') ?>">Alumne</a>
+                <a class="site-header__nav-link" href="<?= url('alumne') ?>">Projectes</a>
             <?php endif; ?>
             <?php if (in_array('teacher', $roles, true)): ?>
-                <a class="site-header__nav-link" href="<?= url('professor') ?>">Professorat</a>
+                <a class="site-header__nav-link" href="<?= url('professor') ?>">Projectes</a>
             <?php endif; ?>
             <?php if (in_array('admin', $roles, true)): ?>
                 <a class="site-header__nav-link" href="<?= url('admin') ?>">Admin</a>

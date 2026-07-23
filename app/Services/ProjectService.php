@@ -74,6 +74,43 @@ class ProjectService
         return $project;
     }
 
+    public function academicYearForProject(int $projectId, ?int $projectAcademicYearId = null): ?array
+    {
+        if ($projectAcademicYearId !== null && $projectAcademicYearId > 0) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT pay.id, pay.project_id, pay.academic_year_id, pay.status, ay.name AS academic_year_name
+                 FROM project_academic_years pay
+                 INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+                 WHERE pay.id = :id
+                   AND pay.project_id = :project_id
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                'id' => $projectAcademicYearId,
+                'project_id' => $projectId,
+            ]);
+            $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($projectAcademicYear !== false) {
+                return $projectAcademicYear;
+            }
+        }
+
+        $stmt = $this->pdo()->prepare(
+            'SELECT pay.id, pay.project_id, pay.academic_year_id, pay.status, ay.name AS academic_year_name
+             FROM project_academic_years pay
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             WHERE pay.project_id = :project_id
+               AND ay.is_current = 1
+             ORDER BY ay.id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(['project_id' => $projectId]);
+        $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $projectAcademicYear !== false ? $projectAcademicYear : null;
+    }
+
     private function pdo(): PDO
     {
         return require dirname(__DIR__, 2) . '/config/database.php';

@@ -877,7 +877,15 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
                                 <div class="project-admin-card__assignments">
                                     <div class="project-admin-card__assignments-header">
-                                        <strong>Edicions acadèmiques</strong>
+                                        <strong>
+                                            <span class="admin-help">
+                                                Edicions acadèmiques
+                                                <button class="admin-help__trigger" type="button" aria-label="Ajuda sobre les edicions acadèmiques" aria-describedby="project-academic-years-help-<?= $projectId ?>">?</button>
+                                                <span class="admin-help__tooltip" id="project-academic-years-help-<?= $projectId ?>" role="tooltip">
+                                                    Cada edició és la versió d'un projecte per a un curs concret. Controla si aquest curs queda pendent, visible, completat o arxivat.
+                                                </span>
+                                            </span>
+                                        </strong>
                                         <span class="status"><?= count($projectAcademicYearsForCard) ?> edicions</span>
                                     </div>
 
@@ -890,7 +898,18 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                     <thead>
                                                         <tr>
                                                             <th scope="col">Curs</th>
-                                                            <th scope="col">Estat edició</th>
+                                                            <th scope="col">
+                                                                <span class="admin-help">
+                                                                    Estat edició
+                                                                    <button class="admin-help__trigger" type="button" aria-label="Ajuda sobre els estats d'edició" aria-describedby="project-edition-status-help-<?= $projectId ?>">?</button>
+                                                                    <span class="admin-help__tooltip" id="project-edition-status-help-<?= $projectId ?>" role="tooltip">
+                                                                        <strong>Pendent:</strong> visible per al professorat, però encara no per a l'alumnat.<br>
+                                                                        <strong>Actiu:</strong> visible per al professorat i l'alumnat assignat.<br>
+                                                                        <strong>Realitzat:</strong> visible per al professorat i l'alumnat assignat; indica que el projecte ja està completat.<br>
+                                                                        <strong>Arxivat:</strong> queda guardat però no apareix al dashboard del professorat; només hi surten edicions pendents, actives o realitzades.
+                                                                    </span>
+                                                                </span>
+                                                            </th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -922,7 +941,15 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
                                 <div class="project-admin-card__assignments">
                                     <div class="project-admin-card__assignments-header">
-                                        <strong>Assignacions</strong>
+                                        <strong>
+                                            <span class="admin-help">
+                                                Assignacions
+                                                <button class="admin-help__trigger" type="button" aria-label="Ajuda sobre les assignacions" aria-describedby="project-assignments-help-<?= $projectId ?>">?</button>
+                                                <span class="admin-help__tooltip" id="project-assignments-help-<?= $projectId ?>" role="tooltip">
+                                                    Les assignacions indiquen quines classes treballen cada projecte en cada curs i amb quin estat: pendent, actiu, realitzat o no assignat.
+                                                </span>
+                                            </span>
+                                        </strong>
                                         <span class="status"><?= count($projectAssignmentsForCard) ?> classes</span>
                                     </div>
 

@@ -21,15 +21,19 @@ $gradeAchievementClass = static function (array $grade): string {
         <a class="button" href="<?= url('ca/projectes') ?>">Torna als projectes</a>
     </section>
 <?php elseif (!empty($accessDenied)): ?>
+    <?php $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : ''; ?>
     <section class="page-header">
         <h1>Accés restringit</h1>
         <p>No tens permís per veure aquestes notes.</p>
-        <a class="button" href="<?= url(getLanguage() . '/projectes/' . $project['slug']) ?>">Torna al projecte</a>
+        <a class="button" href="<?= url(getLanguage() . '/projectes/' . $project['slug']) . $editionQuery ?>">Torna al projecte</a>
     </section>
 <?php else: ?>
-    <?php $projectAcademicYear = $notes['projectAcademicYear'] ?? null; ?>
+    <?php
+    $projectAcademicYear = $notes['projectAcademicYear'] ?? null;
+    $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : '';
+    ?>
     <article class="public-project-detail">
-        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) ?>">Torna al projecte</a></p>
+        <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) . $editionQuery ?>">Torna al projecte</a></p>
         <div class="public-project-detail__hero">
             <div>
                 <p class="public-project-detail__eyebrow">Projecte<?php if (!empty($projectAcademicYear['academic_year_name'])): ?> · <?= htmlspecialchars((string) $projectAcademicYear['academic_year_name'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>

@@ -49,6 +49,7 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
+        $projectAcademicYear = $this->projectService->academicYearForProject((int) $project['id'], $projectAcademicYearId);
         $projectSectionsData = $this->projectSectionService->visibleSectionsForProject($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-detail', [
@@ -58,6 +59,7 @@ class PublicController
             'projectSectionsContext' => $projectSectionsData['context'] ?? [],
             'currentUser' => $currentUser,
             'projectAcademicYearId' => $projectAcademicYearId,
+            'projectAcademicYear' => $projectAcademicYear,
         ]);
     }
 
@@ -86,6 +88,7 @@ class PublicController
             'tasks' => $tasksData['sections'] ?? [],
             'context' => $tasksData['context'] ?? [],
             'currentUser' => $currentUser,
+            'projectAcademicYearId' => $projectAcademicYearId,
         ]);
     }
 
@@ -117,6 +120,7 @@ class PublicController
                 'notes' => null,
                 'currentUser' => $currentUser,
                 'accessDenied' => true,
+                'projectAcademicYearId' => $projectAcademicYearId,
             ]);
         }
 
@@ -126,6 +130,7 @@ class PublicController
             'notes' => $notes,
             'currentUser' => $currentUser,
             'accessDenied' => false,
+            'projectAcademicYearId' => $projectAcademicYearId,
         ]);
     }
 
@@ -154,6 +159,7 @@ class PublicController
             'projectAcademicYear' => $documentsData['projectAcademicYear'] ?? null,
             'documents' => $documentsData['documents'] ?? [],
             'context' => $documentsData['context'] ?? [],
+            'projectAcademicYearId' => $projectAcademicYearId,
         ]);
     }
 
