@@ -242,7 +242,7 @@ class AdminController
               ORDER BY c.class_name, u.name, u.surname'
         );
         $classTeachers = $classTeachersStmt->fetchAll(PDO::FETCH_ASSOC);
-        $assessmentStructure = $this->assessmentStructure($pdo);
+        $assessmentStructure = (new AdminAssessmentStructureService($pdo))->assessmentStructure();
 
         $roleMap = [];
         foreach ($userRoles as $row) {
@@ -409,20 +409,26 @@ class AdminController
             return;
         }
 
-        $handlers = [
+        $assessmentHandlers = [
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',
             'toggle_assessment_task' => 'toggleAssessmentTask',
         ];
 
-        if (!isset($handlers[$action])) {
-            $this->setMessage('Acció d’administració no vàlida.', 'error');
-            $this->auditAdminAction('unknown_action', ['action' => $action]);
+        if (isset($assessmentHandlers[$action])) {
+            $service = new AdminAssessmentStructureService($pdo);
+            $method = $assessmentHandlers[$action];
+            $result = $action === 'import_assessment_structure'
+                ? $service->{$method}($_FILES)
+                : $service->{$method}($_POST);
+
+            $this->setMessage((string) $result['message'], (string) $result['type']);
+            $this->auditAdminAction($action);
             return;
         }
 
-        $this->{$handlers[$action]}($pdo);
-        $this->auditAdminAction($action);
+        $this->setMessage('Acció d’administració no vàlida.', 'error');
+        $this->auditAdminAction('unknown_action', ['action' => $action]);
     }
 
     private function auditAdminAction(string $action, array $context = []): void
@@ -445,173 +451,6 @@ class AdminController
         }
 
         (new LogService())->write(implode(' ', $parts));
-    }
-
-    private function assessmentStructure(PDO $pdo): array
-    {
-        $stmt = $pdo->query(
-            'SELECT
-                pay.id AS project_academic_year_id,
-                p.id AS project_id,
-                p.name AS project_name,
-                p.slug AS project_slug,
-                ay.name AS academic_year_name,
-                ap.id AS phase_id,
-                ap.phase_key,
-                ap.title AS phase_title,
-                ap.section_type,
-                payp.display_order AS phase_order,
-                payp.is_active,
-                payp.id AS project_academic_year_phase_id,
-                at.id AS task_id,
-                at.source_column,
-                at.title AS task_title,
-                at.weight_label,
-                at.role_filter,
-                paypt.display_order AS task_order,
-                paypt.is_visible,
-                paypt.id AS project_academic_year_phase_task_id
-             FROM project_academic_year_phases payp
-             INNER JOIN project_academic_years pay ON pay.id = payp.project_academic_year_id
-             INNER JOIN projects p ON p.id = pay.project_id
-             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
-             INNER JOIN assessment_phases ap ON ap.id = payp.assessment_phase_id
-             LEFT JOIN project_academic_year_phase_tasks paypt ON paypt.project_academic_year_phase_id = payp.id
-             LEFT JOIN assessment_tasks at ON at.id = paypt.assessment_task_id
-             ORDER BY p.display_order, p.name, ay.id, payp.display_order, ap.id, paypt.display_order, at.id'
-        );
-
-        $projects = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $projectAcademicYearId = (int) $row['project_academic_year_id'];
-            $phaseId = (int) $row['phase_id'];
-
-            if (!isset($projects[$projectAcademicYearId])) {
-                $projects[$projectAcademicYearId] = [
-                    'id' => $projectAcademicYearId,
-                    'project_id' => (int) $row['project_id'],
-                    'name' => (string) $row['project_name'],
-                    'slug' => (string) $row['project_slug'],
-                    'academic_year_name' => (string) $row['academic_year_name'],
-                    'phases' => [],
-                ];
-            }
-
-            if (!isset($projects[$projectAcademicYearId]['phases'][$phaseId])) {
-                $projects[$projectAcademicYearId]['phases'][$phaseId] = [
-                    'id' => $phaseId,
-                    'project_academic_year_phase_id' => (int) $row['project_academic_year_phase_id'],
-                    'phase_key' => (string) $row['phase_key'],
-                    'title' => (string) $row['phase_title'],
-                    'section_type' => (string) $row['section_type'],
-                    'display_order' => (int) $row['phase_order'],
-                    'is_active' => (int) $row['is_active'],
-                    'tasks' => [],
-                ];
-            }
-
-            if ($row['task_id'] !== null) {
-                $projects[$projectAcademicYearId]['phases'][$phaseId]['tasks'][] = [
-                    'id' => (int) $row['task_id'],
-                    'project_academic_year_phase_task_id' => (int) $row['project_academic_year_phase_task_id'],
-                    'source_column' => (string) $row['source_column'],
-                    'title' => (string) $row['task_title'],
-                    'weight_label' => $row['weight_label'] !== null ? (string) $row['weight_label'] : '',
-                    'role_filter' => $row['role_filter'] !== null ? (string) $row['role_filter'] : '',
-                    'display_order' => (int) $row['task_order'],
-                    'is_visible' => (int) $row['is_visible'],
-                ];
-            }
-        }
-
-        foreach ($projects as &$project) {
-            $project['phases'] = array_values($project['phases']);
-        }
-        unset($project);
-
-        return array_values($projects);
-    }
-
-    private function toggleAssessmentPhase(PDO $pdo): void
-    {
-        $projectAcademicYearPhaseId = filter_input(INPUT_POST, 'project_academic_year_phase_id', FILTER_VALIDATE_INT);
-        if ($projectAcademicYearPhaseId === null || $projectAcademicYearPhaseId === false) {
-            $this->setMessage('Fase no vàlida.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT is_active FROM project_academic_year_phases WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $projectAcademicYearPhaseId]);
-        $phase = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($phase === false) {
-            $this->setMessage('No s’ha trobat la fase.', 'error');
-            return;
-        }
-
-        $newState = ((int) $phase['is_active'] === 1) ? 0 : 1;
-        $update = $pdo->prepare('UPDATE project_academic_year_phases SET is_active = :is_active WHERE id = :id');
-        $update->execute(['is_active' => $newState, 'id' => (int) $projectAcademicYearPhaseId]);
-
-        $this->setMessage('Estat de la fase actualitzat.', 'success');
-    }
-
-    private function toggleAssessmentTask(PDO $pdo): void
-    {
-        $projectAcademicYearPhaseTaskId = filter_input(INPUT_POST, 'project_academic_year_phase_task_id', FILTER_VALIDATE_INT);
-        if ($projectAcademicYearPhaseTaskId === null || $projectAcademicYearPhaseTaskId === false) {
-            $this->setMessage('Tasca no vàlida.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT is_visible FROM project_academic_year_phase_tasks WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $projectAcademicYearPhaseTaskId]);
-        $task = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($task === false) {
-            $this->setMessage('No s’ha trobat la tasca.', 'error');
-            return;
-        }
-
-        $newState = ((int) $task['is_visible'] === 1) ? 0 : 1;
-        $update = $pdo->prepare('UPDATE project_academic_year_phase_tasks SET is_visible = :is_visible WHERE id = :id');
-        $update->execute(['is_visible' => $newState, 'id' => (int) $projectAcademicYearPhaseTaskId]);
-
-        $this->setMessage('Visibilitat de la tasca actualitzada.', 'success');
-    }
-
-    private function importAssessmentStructure(PDO $pdo): void
-    {
-        if (!isset($_FILES['phases_file'], $_FILES['tasks_file'])
-            || !is_uploaded_file($_FILES['phases_file']['tmp_name'])
-            || !is_uploaded_file($_FILES['tasks_file']['tmp_name'])
-        ) {
-            $this->setMessage('Cal pujar els CSV assessment_phases i assessment_tasks.', 'error');
-            return;
-        }
-
-        try {
-            $importer = new AssessmentStructureImportService($pdo);
-            $result = $importer->importFromCsv(
-                (string) $_FILES['phases_file']['tmp_name'],
-                (string) $_FILES['tasks_file']['tmp_name']
-            );
-        } catch (Throwable $e) {
-            $this->setMessage('No s’ha pogut importar l’estructura d’avaluació: ' . $e->getMessage(), 'error');
-            return;
-        }
-
-        $message = 'Estructura importada: '
-            . (int) $result['phases_imported'] . ' fases i '
-            . (int) $result['tasks_imported'] . ' tasques.';
-
-        if (!empty($result['errors'])) {
-            $message .= ' Errors: ' . implode(' | ', array_slice($result['errors'], 0, 5));
-            $this->setMessage($message, 'error');
-            return;
-        }
-
-        $this->setMessage($message, 'success');
     }
 
     private function setMessage(string $message, string $type): void

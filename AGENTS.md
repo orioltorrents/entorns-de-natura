@@ -200,6 +200,7 @@ Serveis:
 
 ```text
 AnalyticsService
+AdminAssessmentStructureService
 AdminClassService
 AdminProjectService
 AdminStudentImportService

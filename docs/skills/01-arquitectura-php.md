@@ -165,6 +165,7 @@ Serveis actuals:
 
 ```text
 AnalyticsService.php
+AdminAssessmentStructureService.php
 AdminClassService.php
 AdminProjectService.php
 AdminStudentImportService.php
@@ -274,7 +275,7 @@ resources/views/layouts/footer.php
 
 Aquests punts descriuen l'estat real del codi i no s'han de presentar com a resolts:
 
-- `AdminController.php` continua sent gran, però les accions d'administració de projectes ja es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService` i la importació CSV d'alumnes a `AdminStudentImportService`;
+- `AdminController.php` continua sent gran, però les accions d'administració de projectes ja es deleguen a `AdminProjectService`, les accions manuals d'usuaris a `AdminUserService`, les assignacions de professorat a classes a `AdminClassService`, la importació CSV d'alumnes a `AdminStudentImportService` i la gestió d'estructura d'avaluació a `AdminAssessmentStructureService`;
 - hi ha SQL complex i algunes operacions DDL dins del controlador d'administració;
 - la càrrega de dependències es fa manualment des de `public/index.php` i fitxers relacionats;
 - no hi ha un autoloading efectiu que carregui classes de manera declarativa;
