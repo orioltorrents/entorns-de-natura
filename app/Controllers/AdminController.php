@@ -356,19 +356,29 @@ class AdminController
             return;
         }
 
-        $handlers = [
-            'create_user' => 'createUser',
-            'toggle_user' => 'toggleUser',
-            'update_student' => 'updateStudent',
+        $projectHandlers = [
             'toggle_project' => 'toggleProject',
             'update_project_order' => 'updateProjectOrder',
             'assign_project_to_class' => 'assignProjectToClass',
             'sync_project_class_assignments' => 'syncProjectClassAssignments',
             'update_project_academic_year_statuses' => 'updateProjectAcademicYearStatuses',
-            'sync_class_teachers' => 'syncClassTeachers',
-            'sync_all_class_teachers' => 'syncAllClassTeachers',
             'update_project_assignment_status' => 'updateProjectAssignmentStatus',
             'delete_project_assignment' => 'deleteProjectAssignment',
+        ];
+
+        if (isset($projectHandlers[$action])) {
+            $result = (new AdminProjectService($pdo))->{$projectHandlers[$action]}($_POST);
+            $this->setMessage((string) $result['message'], (string) $result['type']);
+            $this->auditAdminAction($action);
+            return;
+        }
+
+        $handlers = [
+            'create_user' => 'createUser',
+            'toggle_user' => 'toggleUser',
+            'update_student' => 'updateStudent',
+            'sync_class_teachers' => 'syncClassTeachers',
+            'sync_all_class_teachers' => 'syncAllClassTeachers',
             'import_students' => 'importStudents',
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',
@@ -885,356 +895,6 @@ class AdminController
         ];
 
         $this->setMessage($message, 'success');
-    }
-
-    private function toggleProject(PDO $pdo): void
-    {
-        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
-        if ($projectId === null || $projectId === false) {
-            $this->setMessage('Projecte no vàlid.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT is_active FROM projects WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $projectId]);
-        $project = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($project === false) {
-            $this->setMessage('No s’ha trobat el projecte.', 'error');
-            return;
-        }
-
-        $newState = ((int) $project['is_active'] === 1) ? 0 : 1;
-        $updateStmt = $pdo->prepare('UPDATE projects SET is_active = :is_active WHERE id = :id');
-        $updateStmt->execute(['is_active' => $newState, 'id' => $projectId]);
-
-        $this->setMessage('Estat del projecte actualitzat.', 'success');
-    }
-
-    private function updateProjectOrder(PDO $pdo): void
-    {
-        $orders = $_POST['display_order'] ?? [];
-        if (!is_array($orders)) {
-            $this->setMessage('Ordre de projectes no vàlid.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('UPDATE projects SET display_order = :display_order WHERE id = :id');
-        $updated = 0;
-
-        $pdo->beginTransaction();
-
-        try {
-            foreach ($orders as $projectId => $displayOrder) {
-                $id = filter_var($projectId, FILTER_VALIDATE_INT);
-                if ($id === false || $id === null) {
-                    continue;
-                }
-
-                $order = filter_var($displayOrder, FILTER_VALIDATE_INT);
-                if ($order === false || $order === null || $order < 0) {
-                    $order = 0;
-                }
-
-                $stmt->execute([
-                    'display_order' => (int) $order,
-                    'id' => (int) $id,
-                ]);
-                $updated++;
-            }
-
-            $pdo->commit();
-            $this->setMessage('Ordre dels projectes actualitzat (' . $updated . ').', 'success');
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’ha pogut actualitzar l’ordre dels projectes.', 'error');
-        }
-    }
-
-    private function assignProjectToClass(PDO $pdo): void
-    {
-        $classId = filter_input(INPUT_POST, 'class_id', FILTER_VALIDATE_INT);
-        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
-        $status = $this->normalizeProjectAssignmentStatus((string) ($_POST['status'] ?? 'actiu'));
-        $allowedStatuses = ['pendent', 'actiu', 'realitzat'];
-
-        if ($classId === null || $classId === false || $projectId === null || $projectId === false) {
-            $this->setMessage('Classe o projecte no vÃ lid.', 'error');
-            return;
-        }
-
-        if (!in_array($status, $allowedStatuses, true)) {
-            $this->setMessage('Estat de lâ€™assignaciÃ³ no vÃ lid.', 'error');
-            return;
-        }
-
-        $projectAcademicYearStmt = $pdo->prepare(
-            'SELECT pay.id
-             FROM project_academic_years pay
-             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
-             WHERE pay.project_id = :project_id
-             ORDER BY ay.id DESC
-             LIMIT 1'
-        );
-        $projectAcademicYearStmt->execute([
-            'project_id' => (int) $projectId,
-        ]);
-        $projectAcademicYearId = $projectAcademicYearStmt->fetchColumn();
-
-        if ($projectAcademicYearId === false) {
-            $this->setMessage('Aquest projecte no té cap edició acadèmica vinculada.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare(
-            'INSERT INTO project_class_assignments (project_academic_year_id, class_id, status, created_at)
-             VALUES (:project_academic_year_id, :class_id, :status, NOW())
-             ON DUPLICATE KEY UPDATE status = VALUES(status), project_academic_year_id = VALUES(project_academic_year_id)'
-        );
-        $stmt->execute([
-            'project_academic_year_id' => (int) $projectAcademicYearId,
-            'class_id' => (int) $classId,
-            'status' => $status,
-        ]);
-
-        $this->setMessage('Projecte assignat a la classe correctament.', 'success');
-    }
-
-    private function syncProjectClassAssignments(PDO $pdo): void
-    {
-        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
-        $classStatusesInput = $_POST['class_statuses'] ?? [];
-        $allowedInputs = ['pendent', 'actiu', 'realitzat', 'no_assignat'];
-
-        if ($projectId === null || $projectId === false) {
-            $this->setMessage('Projecte no vàlid.', 'error');
-            return;
-        }
-
-        if (!is_array($classStatusesInput)) {
-            $classStatusesInput = [];
-        }
-
-        $classStatuses = [];
-        foreach ($classStatusesInput as $classId => $rawStatus) {
-            $classId = (int) $classId;
-            $status = $this->normalizeProjectAssignmentStatus((string) $rawStatus);
-            if ($classId <= 0 || !in_array($status, $allowedInputs, true)) {
-                $this->setMessage('Assignacions de projecte no vàlides.', 'error');
-                return;
-            }
-
-            $classStatuses[$classId] = $status;
-        }
-
-        $projectStmt = $pdo->prepare('SELECT id, name FROM projects WHERE id = :id LIMIT 1');
-        $projectStmt->execute(['id' => (int) $projectId]);
-        $project = $projectStmt->fetch(PDO::FETCH_ASSOC);
-        if ($project === false) {
-            $this->setMessage('No s’ha trobat el projecte.', 'error');
-            return;
-        }
-
-        $classStmt = $pdo->prepare('SELECT id, academic_year_id, class_code FROM classes WHERE id = :id LIMIT 1');
-        $projectYearStmt = $pdo->prepare(
-            'SELECT id
-               FROM project_academic_years
-              WHERE project_id = :project_id
-                AND academic_year_id = :academic_year_id
-              LIMIT 1'
-        );
-
-        $assignmentsToInsert = [];
-        $missingClassCodes = [];
-
-        foreach ($classStatuses as $classId => $status) {
-            $classStmt->execute(['id' => $classId]);
-            $class = $classStmt->fetch(PDO::FETCH_ASSOC);
-            if ($class === false) {
-                continue;
-            }
-
-            $projectYearStmt->execute([
-                'project_id' => (int) $projectId,
-                'academic_year_id' => (int) $class['academic_year_id'],
-            ]);
-            $projectAcademicYearId = $projectYearStmt->fetchColumn();
-
-            if ($projectAcademicYearId === false) {
-                $missingClassCodes[] = (string) $class['class_code'];
-                continue;
-            }
-
-            if ($status === 'no_assignat') {
-                continue;
-            }
-
-            $assignmentsToInsert[] = [
-                'project_academic_year_id' => (int) $projectAcademicYearId,
-                'class_id' => $classId,
-                'status' => $status,
-            ];
-        }
-
-        if ($missingClassCodes !== []) {
-            $this->setMessage(
-                'No s’han desat canvis. Aquest projecte no té edició per a: ' . implode(', ', $missingClassCodes) . '.',
-                'error'
-            );
-            return;
-        }
-
-        $pdo->beginTransaction();
-
-        try {
-            $deleteStmt = $pdo->prepare(
-                'DELETE pca
-                   FROM project_class_assignments pca
-                   INNER JOIN project_academic_years pay ON pay.id = pca.project_academic_year_id
-                  WHERE pay.project_id = :project_id'
-            );
-            $deleteStmt->execute(['project_id' => (int) $projectId]);
-
-            $insertStmt = $pdo->prepare(
-                'INSERT INTO project_class_assignments (project_academic_year_id, class_id, status, created_at)
-                 VALUES (:project_academic_year_id, :class_id, :status, NOW())'
-            );
-
-            $assigned = 0;
-
-            foreach ($assignmentsToInsert as $assignment) {
-                $insertStmt->execute([
-                    'project_academic_year_id' => $assignment['project_academic_year_id'],
-                    'class_id' => $assignment['class_id'],
-                    'status' => $assignment['status'],
-                ]);
-                $assigned++;
-            }
-
-            $pdo->commit();
-            $message = 'Assignacions de ' . (string) $project['name'] . ' actualitzades: ' . $assigned . ' classes.';
-            $this->setMessage($message, 'success');
-        } catch (Throwable $exception) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            $this->setMessage('No s’han pogut actualitzar les assignacions del projecte.', 'error');
-        }
-    }
-
-    private function updateProjectAcademicYearStatuses(PDO $pdo): void
-    {
-        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
-        $statusesInput = $_POST['project_academic_year_statuses'] ?? [];
-        $allowedStatuses = ['pendent', 'actiu', 'realitzat', 'arxivat'];
-
-        if ($projectId === null || $projectId === false) {
-            $this->setMessage('Projecte no vàlid.', 'error');
-            return;
-        }
-
-        if (!is_array($statusesInput)) {
-            $this->setMessage('Estats d’edició no vàlids.', 'error');
-            return;
-        }
-
-        $projectYearIds = [];
-        foreach ($statusesInput as $projectAcademicYearId => $rawStatus) {
-            $projectAcademicYearId = (int) $projectAcademicYearId;
-            $status = $this->normalizeProjectAcademicYearStatus((string) $rawStatus);
-
-            if ($projectAcademicYearId <= 0 || !in_array($status, $allowedStatuses, true)) {
-                $this->setMessage('Estats d’edició no vàlids.', 'error');
-                return;
-            }
-
-            $projectYearIds[$projectAcademicYearId] = $status;
-        }
-
-        if ($projectYearIds === []) {
-            $this->setMessage('No hi ha edicions per actualitzar.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare(
-            'UPDATE project_academic_years
-             SET status = :status
-             WHERE id = :id
-               AND project_id = :project_id'
-        );
-
-        $updated = 0;
-        foreach ($projectYearIds as $projectAcademicYearId => $status) {
-            $stmt->execute([
-                'status' => $status,
-                'id' => $projectAcademicYearId,
-                'project_id' => (int) $projectId,
-            ]);
-            $updated += $stmt->rowCount();
-        }
-
-        $this->setMessage('Estats d’edició actualitzats (' . $updated . ').', 'success');
-    }
-
-    private function updateProjectAssignmentStatus(PDO $pdo): void
-    {
-        $assignmentId = filter_input(INPUT_POST, 'assignment_id', FILTER_VALIDATE_INT);
-        $status = $this->normalizeProjectAssignmentStatus((string) ($_POST['status'] ?? 'actiu'));
-        $allowedStatuses = ['pendent', 'actiu', 'realitzat'];
-
-        if ($assignmentId === null || $assignmentId === false) {
-            $this->setMessage('AssignaciÃ³ no vÃ lida.', 'error');
-            return;
-        }
-
-        if (!in_array($status, $allowedStatuses, true)) {
-            $this->setMessage('Estat de lâ€™assignaciÃ³ no vÃ lid.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT status FROM project_class_assignments WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $assignmentId]);
-        $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($assignment === false) {
-            $this->setMessage('No sâ€™ha trobat lâ€™assignaciÃ³.', 'error');
-            return;
-        }
-
-        $updateStmt = $pdo->prepare('UPDATE project_class_assignments SET status = :status WHERE id = :id');
-        $updateStmt->execute([
-            'status' => $status,
-            'id' => (int) $assignmentId,
-        ]);
-
-        $this->setMessage('Estat de lâ€™assignaciÃ³ actualitzat.', 'success');
-    }
-
-    private function deleteProjectAssignment(PDO $pdo): void
-    {
-        $assignmentId = filter_input(INPUT_POST, 'assignment_id', FILTER_VALIDATE_INT);
-
-        if ($assignmentId === null || $assignmentId === false) {
-            $this->setMessage('Assignació no vàlida.', 'error');
-            return;
-        }
-
-        $stmt = $pdo->prepare('SELECT id FROM project_class_assignments WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $assignmentId]);
-
-        if ($stmt->fetch(PDO::FETCH_ASSOC) === false) {
-            $this->setMessage('No s’ha trobat l’assignació.', 'error');
-            return;
-        }
-
-        $deleteStmt = $pdo->prepare('DELETE FROM project_class_assignments WHERE id = :id');
-        $deleteStmt->execute(['id' => (int) $assignmentId]);
-
-        $this->setMessage('Assignació eliminada correctament.', 'success');
     }
 
     private function syncClassTeachers(PDO $pdo): void
@@ -2155,28 +1815,6 @@ class AdminController
         }
 
         return $matches[0];
-    }
-
-    private function normalizeProjectAssignmentStatus(string $status): string
-    {
-        $normalized = strtolower(trim($status));
-
-        return match ($normalized) {
-            'planned', 'previst', 'pendent' => 'pendent',
-            'active', 'actiu' => 'actiu',
-            'completed', 'completat', 'realitzat' => 'realitzat',
-            default => $normalized,
-        };
-    }
-
-    private function normalizeProjectAcademicYearStatus(string $status): string
-    {
-        $normalized = $this->normalizeProjectAssignmentStatus($status);
-
-        return match ($normalized) {
-            'archived', 'archive', 'arxiu', 'arxivat' => 'arxivat',
-            default => $normalized,
-        };
     }
 
     private function userExistsByEmail(PDO $pdo, string $email): bool

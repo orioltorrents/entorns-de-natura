@@ -200,6 +200,7 @@ Serveis:
 
 ```text
 AnalyticsService
+AdminProjectService
 AssessmentService
 AssessmentStructureImportService
 AuthService
@@ -207,6 +208,7 @@ DocumentImportService
 DocumentService
 GoogleSyncService
 LogService
+ProjectAccessService
 ProjectAssetService
 ProjectAssignmentService
 ProjectSectionService

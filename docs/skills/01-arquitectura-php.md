@@ -270,7 +270,7 @@ resources/views/layouts/footer.php
 
 Aquests punts descriuen l'estat real del codi i no s'han de presentar com a resolts:
 
-- `AdminController.php` és excessivament gran i concentra massa responsabilitats;
+- `AdminController.php` continua sent gran, però les accions d'administració de projectes ja es deleguen a `AdminProjectService`;
 - hi ha SQL complex i algunes operacions DDL dins del controlador d'administració;
 - la càrrega de dependències es fa manualment des de `public/index.php` i fitxers relacionats;
 - no hi ha un autoloading efectiu que carregui classes de manera declarativa;
