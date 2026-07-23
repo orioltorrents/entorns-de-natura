@@ -877,6 +877,51 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
                                 <div class="project-admin-card__assignments">
                                     <div class="project-admin-card__assignments-header">
+                                        <strong>Edicions acadèmiques</strong>
+                                        <span class="status"><?= count($projectAcademicYearsForCard) ?> edicions</span>
+                                    </div>
+
+                                    <?php if ($projectAcademicYearsForCard !== []): ?>
+                                        <form class="project-admin-card__assign-form" method="post" action="<?= url('admin') ?>#projectes-lista">
+                                            <input type="hidden" name="action" value="update_project_academic_year_statuses">
+                                            <input type="hidden" name="project_id" value="<?= $projectId ?>">
+                                            <div class="admin-table__wrapper">
+                                                <table class="admin-table admin-table--compact">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">Curs</th>
+                                                            <th scope="col">Estat edició</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($projectAcademicYearsForCard as $projectAcademicYear): ?>
+                                                            <?php
+                                                            $editionStatus = strtolower(trim((string) ($projectAcademicYear['status'] ?? 'actiu')));
+                                                            $editionStatus = in_array($editionStatus, ['pendent', 'actiu', 'realitzat', 'arxivat'], true) ? $editionStatus : 'actiu';
+                                                            ?>
+                                                            <tr>
+                                                                <td><?= htmlspecialchars((string) $projectAcademicYear['academic_year_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                                                <td>
+                                                                    <select name="project_academic_year_statuses[<?= (int) $projectAcademicYear['id'] ?>]">
+                                                                        <?php foreach (['pendent' => 'Pendent', 'actiu' => 'Actiu', 'realitzat' => 'Realitzat', 'arxivat' => 'Arxivat'] as $statusValue => $statusLabel): ?>
+                                                                            <option value="<?= htmlspecialchars($statusValue, ENT_QUOTES, 'UTF-8') ?>" <?= $editionStatus === $statusValue ? 'selected' : '' ?>><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <button class="button button--secondary" type="submit">Guardar estats d’edició</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <p class="muted">Aquest projecte encara no té edicions acadèmiques configurades.</p>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="project-admin-card__assignments">
+                                    <div class="project-admin-card__assignments-header">
                                         <strong>Assignacions</strong>
                                         <span class="status"><?= count($projectAssignmentsForCard) ?> classes</span>
                                     </div>

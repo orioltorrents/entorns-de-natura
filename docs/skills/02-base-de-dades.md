@@ -406,6 +406,14 @@ Norma clau:
 - `project_academic_years` és la unitat funcional quan una dada depèn del curs concret;
 - si una entitat canvia per edició, no s'ha de resoldre només amb `projects`.
 
+### Estats d'edició
+
+- `project_academic_years.status` controla l'estat global d'una edició i pot ser `pendent`, `actiu`, `realitzat` o `arxivat`;
+- `project_class_assignments.status` controla l'estat d'aquesta edició per classe i pot ser `pendent`, `actiu` o `realitzat`;
+- l'alumnat veu només edicions de l'any acadèmic actual amb estat d'edició i assignació `actiu` o `realitzat`;
+- professorat, coordinació i administració veuen als dashboards edicions de l'any actual amb estat `pendent`, `actiu` o `realitzat`;
+- `arxivat` queda fora dels dashboards normals i serveix per conservar històric sense mostrar-lo en el treball diari.
+
 ### Equips de projecte
 
 - `project_teams` agrupa els equips per projecte i curs;

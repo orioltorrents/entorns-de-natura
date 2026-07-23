@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class DocumentService
 {
-    public function projectDocuments(string $projectSlug, ?array $currentUser = null): array
+    public function projectDocuments(string $projectSlug, ?array $currentUser = null, ?int $projectAcademicYearId = null): array
     {
         $pdo = $this->pdo();
         $project = $this->projectBySlug($projectSlug);
@@ -19,14 +19,14 @@ class DocumentService
         }
 
         $projectId = (int) $project['id'];
-        $projectAcademicYear = $this->projectAcademicYearForProject($projectId);
+        $projectAcademicYear = $this->projectAcademicYearForProject($projectId, $projectAcademicYearId);
         $documents = $this->fetchDocuments((int) $projectAcademicYear['id']);
         $documentIds = array_map(static fn (array $document): int => (int) $document['id'], $documents);
         $sourcesByDocument = $this->groupRowsByDocumentId($this->fetchSources($documentIds));
         $fragmentsByDocument = $this->groupRowsByDocumentId($this->fetchFragments($documentIds));
         $rulesByDocument = $this->groupRulesByDocumentId($this->fetchRules($documentIds));
 
-        $context = $this->buildContext($currentUser, $projectId, $documents, $rulesByDocument);
+        $context = $this->buildContext($currentUser, $projectId, $documents, $rulesByDocument, (int) $projectAcademicYear['id']);
 
         foreach ($documents as &$document) {
             $documentId = (int) $document['id'];
@@ -56,7 +56,7 @@ class DocumentService
         ];
     }
 
-    private function buildContext(?array $currentUser, ?int $projectId, array $documents, array $rulesByDocument): array
+    private function buildContext(?array $currentUser, ?int $projectId, array $documents, array $rulesByDocument, ?int $projectAcademicYearId = null): array
     {
         $context = [
             'user' => $currentUser,
@@ -82,7 +82,7 @@ class DocumentService
         $context['is_student'] = in_array('student', $context['roles'], true);
         $context['class_ids'] = $this->userClassIds((int) $currentUser['id']);
         $context['teacher_class_ids'] = $this->userTeacherClassIds((int) $currentUser['id']);
-        $context['project_class_ids'] = $projectId !== null ? $this->projectClassIds($projectId) : [];
+        $context['project_class_ids'] = $projectId !== null ? $this->projectClassIds($projectId, $projectAcademicYearId) : [];
         $context['is_assigned_teacher'] = $context['is_teacher'] && array_intersect($context['teacher_class_ids'], $context['project_class_ids']) !== [];
 
         return $context;
@@ -304,8 +304,24 @@ class DocumentService
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function projectClassIds(int $projectId): array
+    private function projectClassIds(int $projectId, ?int $projectAcademicYearId = null): array
     {
+        if ($projectAcademicYearId !== null && $projectAcademicYearId > 0) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT project_class_assignments.class_id
+                 FROM project_class_assignments
+                 INNER JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+                 WHERE project_academic_years.project_id = :project_id
+                   AND project_academic_years.id = :project_academic_year_id'
+            );
+            $stmt->execute([
+                'project_id' => $projectId,
+                'project_academic_year_id' => $projectAcademicYearId,
+            ]);
+
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        }
+
         $stmt = $this->pdo()->prepare(
             'SELECT project_class_assignments.class_id
              FROM project_class_assignments
@@ -317,13 +333,34 @@ class DocumentService
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function projectAcademicYearForProject(int $projectId): array
+    private function projectAcademicYearForProject(int $projectId, ?int $projectAcademicYearId = null): array
     {
+        if ($projectAcademicYearId !== null && $projectAcademicYearId > 0) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT pay.id, pay.project_id, pay.academic_year_id, ay.name AS academic_year_name
+                 FROM project_academic_years pay
+                 INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+                 WHERE pay.id = :id
+                   AND pay.project_id = :project_id
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                'id' => $projectAcademicYearId,
+                'project_id' => $projectId,
+            ]);
+            $projectAcademicYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($projectAcademicYear !== false) {
+                return $projectAcademicYear;
+            }
+        }
+
         $stmt = $this->pdo()->prepare(
             'SELECT pay.id, pay.project_id, pay.academic_year_id, ay.name AS academic_year_name
              FROM project_academic_years pay
              INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
              WHERE pay.project_id = :project_id
+               AND ay.is_current = 1
              ORDER BY ay.id DESC
              LIMIT 1'
         );

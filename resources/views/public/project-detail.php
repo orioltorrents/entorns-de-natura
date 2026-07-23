@@ -21,6 +21,7 @@ $gradeAchievementClass = static function (array $grade): string {
         <a class="button" href="<?= url('ca/projectes') ?>">Torna als projectes</a>
     </section>
 <?php else: ?>
+    <?php $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : ''; ?>
     <article class="public-project-detail">
         <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url('ca/projectes') ?>">Projectes</a></p>
         <?php $projectAsset = $project['logo_asset'] ?? ($project['assets'][0] ?? null); ?>
@@ -63,12 +64,12 @@ $gradeAchievementClass = static function (array $grade): string {
                     $sectionAttrs = '';
                     $sectionKey = (string) ($section['section_key'] ?? '');
                     if (($section['section_key'] ?? '') === 'programacio' || ($section['section_key'] ?? '') === 'planificacio') {
-                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/documents');
+                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/documents') . $editionQuery;
                     } elseif (($section['section_key'] ?? '') === 'tasques') {
-                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/tasques');
+                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/tasques') . $editionQuery;
                         $sectionAttrs = ' target="_blank" rel="noopener noreferrer"';
                     } elseif (($section['section_key'] ?? '') === 'notes') {
-                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/notes');
+                        $sectionHref = url(getLanguage() . '/projectes/' . $project['slug'] . '/notes') . $editionQuery;
                         $sectionAttrs = ' target="_blank" rel="noopener noreferrer"';
                     }
                     ?>

@@ -382,6 +382,11 @@ class AdminController
             return;
         }
 
+        if ($action === 'update_project_academic_year_statuses') {
+            $this->updateProjectAcademicYearStatuses($pdo);
+            return;
+        }
+
         if ($action === 'sync_class_teachers') {
             $this->syncClassTeachers($pdo);
             return;
@@ -1139,6 +1144,60 @@ class AdminController
 
             $this->setMessage('No s’han pogut actualitzar les assignacions del projecte.', 'error');
         }
+    }
+
+    private function updateProjectAcademicYearStatuses(PDO $pdo): void
+    {
+        $projectId = filter_input(INPUT_POST, 'project_id', FILTER_VALIDATE_INT);
+        $statusesInput = $_POST['project_academic_year_statuses'] ?? [];
+        $allowedStatuses = ['pendent', 'actiu', 'realitzat', 'arxivat'];
+
+        if ($projectId === null || $projectId === false) {
+            $this->setMessage('Projecte no vàlid.', 'error');
+            return;
+        }
+
+        if (!is_array($statusesInput)) {
+            $this->setMessage('Estats d’edició no vàlids.', 'error');
+            return;
+        }
+
+        $projectYearIds = [];
+        foreach ($statusesInput as $projectAcademicYearId => $rawStatus) {
+            $projectAcademicYearId = (int) $projectAcademicYearId;
+            $status = $this->normalizeProjectAcademicYearStatus((string) $rawStatus);
+
+            if ($projectAcademicYearId <= 0 || !in_array($status, $allowedStatuses, true)) {
+                $this->setMessage('Estats d’edició no vàlids.', 'error');
+                return;
+            }
+
+            $projectYearIds[$projectAcademicYearId] = $status;
+        }
+
+        if ($projectYearIds === []) {
+            $this->setMessage('No hi ha edicions per actualitzar.', 'error');
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'UPDATE project_academic_years
+             SET status = :status
+             WHERE id = :id
+               AND project_id = :project_id'
+        );
+
+        $updated = 0;
+        foreach ($projectYearIds as $projectAcademicYearId => $status) {
+            $stmt->execute([
+                'status' => $status,
+                'id' => $projectAcademicYearId,
+                'project_id' => (int) $projectId,
+            ]);
+            $updated += $stmt->rowCount();
+        }
+
+        $this->setMessage('Estats d’edició actualitzats (' . $updated . ').', 'success');
     }
 
     private function updateProjectAssignmentStatus(PDO $pdo): void
@@ -2126,6 +2185,16 @@ class AdminController
             'planned', 'previst', 'pendent' => 'pendent',
             'active', 'actiu' => 'actiu',
             'completed', 'completat', 'realitzat' => 'realitzat',
+            default => $normalized,
+        };
+    }
+
+    private function normalizeProjectAcademicYearStatus(string $status): string
+    {
+        $normalized = $this->normalizeProjectAssignmentStatus($status);
+
+        return match ($normalized) {
+            'archived', 'archive', 'arxiu', 'arxivat' => 'arxivat',
             default => $normalized,
         };
     }

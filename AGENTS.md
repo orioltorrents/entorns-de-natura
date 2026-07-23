@@ -354,6 +354,13 @@ Quan usar cada una:
 - `project_academic_years`: documents, imports, notes, assignacions i visibilitat que poden variar per curs;
 - si una dada pot canviar l'any següent sense canviar el projecte base, ha d'anar a `project_academic_years`.
 
+Estats d'edició:
+
+- `project_academic_years.status` controla l'estat global de l'edició i pot ser `pendent`, `actiu`, `realitzat` o `arxivat`;
+- `project_class_assignments.status` controla l'estat d'una edició per classe i pot ser `pendent`, `actiu` o `realitzat`;
+- l'alumnat veu només edicions de l'any acadèmic actual amb estat `actiu` o `realitzat` i assignació de classe `actiu` o `realitzat`;
+- professorat, coordinació i administració veuen al dashboard edicions de l'any actual amb estat `pendent`, `actiu` o `realitzat`; `arxivat` queda fora dels dashboards normals.
+
 - `documents` han d'anar per `project_academic_year_id`;
 - `assessment_sources` i `assessment_import_runs` han d'anar per `project_academic_year_id`;
 - `assessment_phases` i `assessment_tasks` són definició base;

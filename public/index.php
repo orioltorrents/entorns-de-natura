@@ -46,6 +46,7 @@ if ($basePath !== '' && str_starts_with($requestUri, $basePath)) {
 }
 
 $requestUri = '/' . trim($requestUri, '/');
+$projectAcademicYearId = isset($_GET['edicio']) ? max(0, (int) $_GET['edicio']) : null;
 $currentUser = $authService->user();
 $analyticsService->recordVisit($requestUri, $_SERVER, $currentUser['id'] ?? null);
 
@@ -154,22 +155,22 @@ switch ($requestUri) {
 
     default:
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/tasques$#', $requestUri, $matches) === 1) {
-            echo $controller->projectTasks($matches[2]);
+            echo $controller->projectTasks($matches[2], $projectAcademicYearId);
             break;
         }
 
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/notes$#', $requestUri, $matches) === 1) {
-            echo $controller->projectNotes($matches[2]);
+            echo $controller->projectNotes($matches[2], $projectAcademicYearId);
             break;
         }
 
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)/documents$#', $requestUri, $matches) === 1) {
-            echo $controller->projectDocuments($matches[2]);
+            echo $controller->projectDocuments($matches[2], $projectAcademicYearId);
             break;
         }
 
         if (preg_match('#^/(ca|es|en)/projectes/([a-z0-9-]+)$#', $requestUri, $matches) === 1) {
-            echo $controller->projectDetail($matches[2]);
+            echo $controller->projectDetail($matches[2], $projectAcademicYearId);
             break;
         }
 

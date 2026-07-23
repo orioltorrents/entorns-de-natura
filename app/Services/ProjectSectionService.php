@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class ProjectSectionService
 {
-    public function visibleSectionsForProject(string $projectSlug, ?array $currentUser = null): array
+    public function visibleSectionsForProject(string $projectSlug, ?array $currentUser = null, ?int $projectAcademicYearId = null): array
     {
         $pdo = $this->pdo();
         $project = $this->projectBySlug($projectSlug);
@@ -21,7 +21,7 @@ class ProjectSectionService
         $sections = $this->fetchSections($projectId);
         $sectionIds = array_map(static fn (array $section): int => (int) $section['id'], $sections);
         $rolesBySection = $this->groupRolesBySectionId($this->fetchSectionRoles($sectionIds));
-        $context = $this->buildContext($currentUser, $projectId);
+        $context = $this->buildContext($currentUser, $projectId, $projectAcademicYearId);
 
         foreach ($sections as &$section) {
             $sectionId = (int) $section['id'];
@@ -40,7 +40,7 @@ class ProjectSectionService
         ];
     }
 
-    private function buildContext(?array $currentUser, ?int $projectId): array
+    private function buildContext(?array $currentUser, ?int $projectId, ?int $projectAcademicYearId = null): array
     {
         $context = [
             'user' => $currentUser,
@@ -64,7 +64,7 @@ class ProjectSectionService
         $context['is_student'] = in_array('student', $context['roles'], true);
         $context['class_ids'] = $this->userClassIds((int) $currentUser['id']);
         $context['teacher_class_ids'] = $this->userTeacherClassIds((int) $currentUser['id']);
-        $context['project_class_ids'] = $projectId !== null ? $this->projectClassIds($projectId) : [];
+        $context['project_class_ids'] = $projectId !== null ? $this->projectClassIds($projectId, $projectAcademicYearId) : [];
         $context['is_assigned_teacher'] = $context['is_teacher'] && array_intersect($context['teacher_class_ids'], $context['project_class_ids']) !== [];
 
         return $context;
@@ -216,8 +216,24 @@ class ProjectSectionService
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function projectClassIds(int $projectId): array
+    private function projectClassIds(int $projectId, ?int $projectAcademicYearId = null): array
     {
+        if ($projectAcademicYearId !== null && $projectAcademicYearId > 0) {
+            $stmt = $this->pdo()->prepare(
+                'SELECT project_class_assignments.class_id
+                 FROM project_class_assignments
+                 INNER JOIN project_academic_years ON project_academic_years.id = project_class_assignments.project_academic_year_id
+                 WHERE project_academic_years.project_id = :project_id
+                   AND project_academic_years.id = :project_academic_year_id'
+            );
+            $stmt->execute([
+                'project_id' => $projectId,
+                'project_academic_year_id' => $projectAcademicYearId,
+            ]);
+
+            return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        }
+
         $stmt = $this->pdo()->prepare(
             'SELECT project_class_assignments.class_id
              FROM project_class_assignments

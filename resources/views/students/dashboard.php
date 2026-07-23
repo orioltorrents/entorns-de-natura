@@ -39,7 +39,7 @@ ob_start();
                                 <p class="student-project-card__text"><?= htmlspecialchars($project['description'], ENT_QUOTES, 'UTF-8') ?></p>
                             <?php endif; ?>
                             <div class="student-project-card__actions">
-                                <a class="button student-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>">Obre</a>
+                                <a class="button student-project-card__button" href="<?= url('ca/projectes/' . $project['slug']) ?>?edicio=<?= (int) ($project['project_academic_year_id'] ?? 0) ?>">Obre</a>
                             </div>
                         </div>
                     </article>

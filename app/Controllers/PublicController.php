@@ -35,7 +35,7 @@ class PublicController
         ]);
     }
 
-    public function projectDetail(string $slug): string
+    public function projectDetail(string $slug, ?int $projectAcademicYearId = null): string
     {
         $project = $this->projectService->findActiveBySlug($slug, getLanguage());
 
@@ -49,7 +49,7 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
-        $projectSectionsData = $this->projectSectionService->visibleSectionsForProject($slug, $currentUser);
+        $projectSectionsData = $this->projectSectionService->visibleSectionsForProject($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-detail', [
             'title' => (string) $project['title'],
@@ -57,10 +57,11 @@ class PublicController
             'projectSections' => $projectSectionsData['sections'] ?? [],
             'projectSectionsContext' => $projectSectionsData['context'] ?? [],
             'currentUser' => $currentUser,
+            'projectAcademicYearId' => $projectAcademicYearId,
         ]);
     }
 
-    public function projectTasks(string $slug): string
+    public function projectTasks(string $slug, ?int $projectAcademicYearId = null): string
     {
         $project = $this->projectService->findActiveBySlug($slug, getLanguage());
 
@@ -77,7 +78,7 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
-        $tasksData = $this->assessmentService->visibleTaskSectionsForProject($slug, $currentUser);
+        $tasksData = $this->assessmentService->visibleTaskSectionsForProject($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-tasks', [
             'title' => 'Tasques de ' . (string) $project['title'],
@@ -88,7 +89,7 @@ class PublicController
         ]);
     }
 
-    public function projectNotes(string $slug): string
+    public function projectNotes(string $slug, ?int $projectAcademicYearId = null): string
     {
         $project = $this->projectService->findActiveBySlug($slug, getLanguage());
 
@@ -105,7 +106,7 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
-        $notes = $this->resolveProjectNotes($slug, $currentUser);
+        $notes = $this->resolveProjectNotes($slug, $currentUser, $projectAcademicYearId);
 
         if ($notes === null) {
             http_response_code(403);
@@ -128,7 +129,7 @@ class PublicController
         ]);
     }
 
-    public function projectDocuments(string $slug): string
+    public function projectDocuments(string $slug, ?int $projectAcademicYearId = null): string
     {
         $project = $this->projectService->findActiveBySlug($slug, getLanguage());
 
@@ -145,7 +146,7 @@ class PublicController
         }
 
         $currentUser = $this->authService->user();
-        $documentsData = $this->documentService->projectDocuments($slug, $currentUser);
+        $documentsData = $this->documentService->projectDocuments($slug, $currentUser, $projectAcademicYearId);
 
         return view('public.project-documents', [
             'title' => 'Documents de ' . (string) $project['title'],
@@ -156,7 +157,7 @@ class PublicController
         ]);
     }
 
-    private function resolveProjectNotes(string $slug, ?array $currentUser): ?array
+    private function resolveProjectNotes(string $slug, ?array $currentUser, ?int $projectAcademicYearId = null): ?array
     {
         if ($currentUser === null) {
             return null;
@@ -168,6 +169,6 @@ class PublicController
             return null;
         }
 
-        return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug);
+        return $this->assessmentService->gradesForStudentProject((int) $currentUser['id'], $slug, $projectAcademicYearId);
     }
 }

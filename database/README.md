@@ -41,6 +41,8 @@ La base de dades gestiona principalment:
 
 - `projects` és el catàleg base del projecte.
 - `project_academic_years` és la unitat funcional quan les dades depenen del curs o de l'edició.
+- `project_academic_years.status` controla l'estat global de l'edició: `pendent`, `actiu`, `realitzat` o `arxivat`.
+- `project_class_assignments.status` controla l'estat d'aquella edició per classe: `pendent`, `actiu` o `realitzat`.
 - Si una dada pot canviar l'any següent sense canviar el projecte base, ha d'anar a `project_academic_years`.
 - `project_id` és correcte per a relacions de catàleg base.
 - `project_id` no s'ha d'usar com a context de document, import o avaluació quan el context real és l'edició.
@@ -68,6 +70,7 @@ Canvis incrementals recents per a bases existents:
 
 - `40_users_password_change_required.sql`: afegeix `must_change_password` i `password_changed_at` a `users` per forçar el canvi de contrasenya inicial.
 - `41_google_workspace_table_rename.sql`: renombra `synced_documents` i `synced_sheet_rows` a `google_documents` i `google_sheet_rows`, i afegeix `google_document_blocks`.
+- `42_project_academic_year_statuses.sql`: normalitza els estats d'edició de projecte a `pendent`, `actiu`, `realitzat` i `arxivat`.
 
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 

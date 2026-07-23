@@ -46,6 +46,8 @@
 --   no cal executar-la en una reconstrucció neta perquè users ja inclou aquests camps.
 -- - `41_google_workspace_table_rename.sql` és una migració no destructiva per a BD existents;
 --   no cal executar-la en una reconstrucció neta perquè Google Workspace ja usa noms homogenis.
+-- - `42_project_academic_year_statuses.sql` és una migració no destructiva per a BD existents;
+--   en reconstrucció neta els valors nous ja són els esperats.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
