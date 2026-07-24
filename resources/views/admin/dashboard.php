@@ -1495,6 +1495,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                     <h3>Importar tasques de Classroom</h3>
                     <p class="muted">Format previst: <code>academic_year, classroom_key, classroom_name, classroom_url, google_classroom_id, project_slug, phase_key, phase_title, task_key, task_title, task_url, role_filter</code>.</p>
                     <p class="muted">Aquest CSV crea o actualitza fases i tasques reals provinents de Classroom, vincula el Classroom amb el projecte i desa la URL de cada tasca.</p>
+                    <p class="muted">Si diversos Classrooms fan les mateixes tasques, repeteix les files per cada <code>classroom_key</code> però mantén iguals <code>phase_key</code> i <code>task_key</code>. Així l’estructura queda compartida pel projecte i només canvia la <code>task_url</code> de cada Classroom.</p>
                     <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
                         <input type="hidden" name="action" value="import_classroom_task_links">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">

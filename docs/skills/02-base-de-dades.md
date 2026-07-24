@@ -446,6 +446,14 @@ Regles:
 - la unicitat funcional nova és `academic_year_id + classroom_key`;
 - la relació amb projectes és `classroom_id + project_academic_year_id` a `classroom_project_academic_years`.
 
+Classrooms amb un o més projectes:
+
+- si un Classroom correspon a un sol projecte, el CSV de membres pot portar `project_slug` i el vincle queda creat automàticament;
+- si un Classroom agrupa alumnes que treballen en dos o més projectes, el CSV de membres ha de deixar `project_slug` buit;
+- en aquest cas, després s'ha d'importar el CSV de vincles `academic_year,classroom_key,project_slug,is_active`;
+- no s'ha de crear un projecte fals per representar el tema comú del Classroom;
+- exemple: `25-26_4esoab_estudi-impacte-ambiental` pot estar vinculat alhora a `mat-penedes` i `agroparc`.
+
 El CSV unificat de fases, tasques i Classroom podrà alimentar `classrooms`, `assessment_phases`, `assessment_tasks` i les taules pont d'edició. L'importador és responsable de separar el CSV en el model normalitzat de base de dades.
 
 ### Enllacos de tasques per Classroom
@@ -559,6 +567,25 @@ Regles:
 - l'importador crea o actualitza els vincles d'edició a `project_academic_year_phases` i `project_academic_year_phase_tasks`;
 - `task_url` ha de ser una URL `http` o `https` vàlida;
 - una mateixa tasca pot tenir una URL diferent per cada Classroom.
+
+Fases i tasques compartides entre Classrooms:
+
+- les fases i tasques són estructura del projecte i del curs, no del Classroom concret;
+- `phase_key` i `task_key` són les claus que fan que una fase o tasca comuna es reutilitzi;
+- si tres Classrooms fan les mateixes tasques, el CSV ha de repetir les files per cada `classroom_key`, però mantenint iguals `phase_key` i `task_key`;
+- el que canvia entre Classrooms és normalment `classroom_key`, `classroom_name`, `classroom_url`, `google_classroom_id` i `task_url`;
+- si `phase_key` o `task_key` canvien encara que el títol sembli igual, l'importador crearà fases o tasques diferents;
+- és millor importar primer només les fases i tasques imprescindibles i afegir-ne més endavant si cal, perquè l'importador és incremental.
+
+Exemple de tasca compartida:
+
+```text
+2025-2026,25-26_4esoab_vespa-velutina,...,vespa-velutina,fase-1,Preparació,observacio-inicial,Observació inicial,https://classroom.google.com/...,científic/a
+2025-2026,25-26_4esocd_vespa-velutina,...,vespa-velutina,fase-1,Preparació,observacio-inicial,Observació inicial,https://classroom.google.com/...,científic/a
+2025-2026,25-26_4esoef_vespa-velutina,...,vespa-velutina,fase-1,Preparació,observacio-inicial,Observació inicial,https://classroom.google.com/...,científic/a
+```
+
+Aquest exemple crea o reutilitza una sola fase `fase-1` i una sola tasca `observacio-inicial` per al projecte `vespa-velutina`, però guarda tres `task_url`, una per Classroom.
 
 ### Importació de fases
 
