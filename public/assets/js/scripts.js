@@ -104,6 +104,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const openCollapsibleForHash = (hash) => {
+        if (!hash || hash === '#') return;
+
+        const target = document.getElementById(hash.slice(1));
+        const collapsibleCard = target?.closest('.admin-collapsible, .collapsible-card');
+        if (!target || !collapsibleCard) return;
+
+        if (collapsibleCard.classList.contains('is-collapsed')) {
+            collapsibleCard.classList.remove('is-collapsed');
+            const collapseBtn = collapsibleCard.querySelector('.collapse-toggle');
+            if (collapseBtn) collapseBtn.textContent = 'Amagar';
+        }
+
+        window.setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 40);
+    };
+
     document.querySelectorAll('[data-nav-group-toggle]').forEach((toggle) => {
         const targetId = toggle.getAttribute('data-nav-group-toggle');
         const submenu = targetId ? document.getElementById(targetId) : null;
@@ -127,7 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         submenuLinks.forEach((link) => {
-            link.addEventListener('click', () => setOpen(true));
+            link.addEventListener('click', () => {
+                setOpen(true);
+                openCollapsibleForHash(link.getAttribute('href'));
+            });
         });
 
         window.addEventListener('hashchange', () => {
@@ -159,6 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    openCollapsibleForHash(window.location.hash);
+    window.addEventListener('hashchange', () => openCollapsibleForHash(window.location.hash));
 
     const backToTop = document.querySelector('.admin-back-to-top');
     if (backToTop) {
