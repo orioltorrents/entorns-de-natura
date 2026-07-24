@@ -73,6 +73,13 @@ class AdminActionService
             return $result;
         }
 
+        if ($action === 'import_classroom_project_links') {
+            $result = (new AdminClassroomService($this->pdo))->importProjectLinksUploadedFile($files['classroom_project_links_file'] ?? []);
+            $this->auditAdminAction($action);
+
+            return $result;
+        }
+
         $assessmentHandlers = [
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',

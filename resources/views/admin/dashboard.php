@@ -1429,7 +1429,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             <div class="admin-panel__header">
                 <h2>Classrooms</h2>
                 <div class="admin-actions">
-                    <span class="status">Classrooms per projecte i curs</span>
+                    <span class="status">Classrooms per curs i projectes vinculats</span>
                     <button class="collapse-toggle" type="button" data-collapse="classrooms-content">Mostrar</button>
                 </div>
             </div>
@@ -1437,8 +1437,8 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             <div id="classrooms-content" class="admin-collapsible__content">
                 <section class="admin-import-block">
                     <h3>Importar membres de Classroom</h3>
-                    <p class="muted">Format previst: <code>academic_year, project_slug, classroom_key, google_classroom_id, email, name, surname, google_user_id, google_photo_url</code>. Opcionalment també pot incloure <code>classroom_name</code> i <code>classroom_url</code>.</p>
-                    <p class="muted">Pot crear o reactivar Classrooms si no existeixen. No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
+                    <p class="muted">Format previst: <code>academic_year, classroom_key, email</code>. Opcionalment pot incloure <code>project_slug</code>, <code>google_classroom_id</code>, <code>name</code>, <code>surname</code>, <code>google_user_id</code>, <code>google_photo_url</code>, <code>classroom_name</code> i <code>classroom_url</code>.</p>
+                    <p class="muted">Pot crear o reactivar Classrooms si no existeixen. Si <code>project_slug</code> ve informat, també crea o reactiva el vincle amb aquell projecte. No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
                     <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
                         <input type="hidden" name="action" value="import_classroom_members">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
@@ -1449,6 +1449,22 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                             </label>
                         </div>
                         <button class="button button--secondary" type="submit">Importar membres</button>
+                    </form>
+                </section>
+
+                <section class="admin-import-block">
+                    <h3>Importar vincles Classroom-projecte</h3>
+                    <p class="muted">Format previst: <code>academic_year, classroom_key, project_slug, is_active</code>. El camp <code>is_active</code> és opcional i accepta valors com <code>1</code>, <code>0</code>, <code>actiu</code> o <code>arxivat</code>.</p>
+                    <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
+                        <input type="hidden" name="action" value="import_classroom_project_links">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                        <div class="form__grid">
+                            <label>
+                                classroom_project_links.csv
+                                <input type="file" name="classroom_project_links_file" accept=".csv,text/csv" required>
+                            </label>
+                        </div>
+                        <button class="button button--secondary" type="submit">Importar vincles</button>
                     </form>
                 </section>
 
@@ -1486,8 +1502,12 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <strong><?= htmlspecialchars((string) ($classroom['project_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
-                                            <span class="muted"><?= htmlspecialchars((string) ($classroom['project_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if (trim((string) ($classroom['project_names'] ?? '')) !== ''): ?>
+                                                <strong><?= htmlspecialchars((string) ($classroom['project_names'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                                <span class="muted"><?= htmlspecialchars((string) ($classroom['project_slugs'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php else: ?>
+                                                <span class="muted">Sense projecte vinculat</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <strong><?= htmlspecialchars((string) ($classroom['classroom_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>

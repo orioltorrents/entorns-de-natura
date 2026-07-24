@@ -439,7 +439,7 @@ is_active
 Regles:
 
 - `classroom_key` és una clau pròpia estable generada pel procés d'importació;
-- `project_academic_year_id` es manté de moment per compatibilitat amb dades existents, però el codi nou ha d'usar `academic_year_id` i `classroom_project_academic_years`;
+- `project_academic_year_id` es manté de moment com a camp nullable de compatibilitat amb dades existents, però el codi nou ha d'usar `academic_year_id` i `classroom_project_academic_years`;
 - `google_classroom_id` és la referència externa de Google Classroom i pot ser nul si encara no està disponible;
 - `classroom_url` és la URL general del Classroom;
 - `task_url` no s'ha de guardar a `classrooms`, perquè és l'enllaç d'una tasca concreta dins aquell Classroom;
@@ -498,16 +498,17 @@ is_active
 Format CSV d'importació de membres:
 
 ```text
-academic_year,project_slug,classroom_key,google_classroom_id,email,name,surname,google_user_id,google_photo_url
+academic_year,classroom_key,email
 ```
 
-Opcionalment el CSV pot incloure `classroom_name` i `classroom_url`. Si el Classroom no existeix, l'importador el crea amb `classroom_name` o, si aquest camp ve buit, amb `classroom_key` com a nom visible.
+Opcionalment el CSV pot incloure `project_slug`, `google_classroom_id`, `name`, `surname`, `google_user_id`, `google_photo_url`, `classroom_name` i `classroom_url`. Si el Classroom no existeix, l'importador el crea amb `classroom_name` o, si aquest camp ve buit, amb `classroom_key` com a nom visible.
 
 Mapeig:
 
 ```text
-academic_year + project_slug -> project_academic_years.id
-classroom_key                -> classrooms.id dins l'edició
+academic_year                -> classrooms.academic_year_id
+project_slug opcional        -> classroom_project_academic_years.project_academic_year_id
+classroom_key                -> classrooms.id dins el curs
 email                        -> users.email i classroom_members.student_email
 google_user_id               -> classroom_members.google_user_id
 google_photo_url             -> classroom_members.google_photo_url
@@ -517,12 +518,21 @@ Regles:
 
 - `student_email` és obligatori i serveix per auditar l'import de Google Classroom;
 - l'importador ha de resoldre `user_id` a partir de `users.email`;
-- l'importador pot crear o reactivar el Classroom quan existeix l'edició `academic_year + project_slug` però encara no hi ha cap fila a `classrooms` per aquell `classroom_key`;
+- l'importador pot crear o reactivar el Classroom quan existeix el curs `academic_year` però encara no hi ha cap fila a `classrooms` per aquell `classroom_key`;
+- si `project_slug` ve informat, l'importador crea o reactiva el vincle `classroom_project_academic_years`;
 - no s'han de crear usuaris nous automàticament des de l'import de membres de Classroom;
 - si `email` no existeix a `users.email`, la fila s'ha de rebutjar;
 - si l'usuari no té rol `student`, l'importador pot assignar-lo igualment però ha de generar un avís;
 - la unicitat funcional és `classroom_id + user_id`;
 - `google_user_id`, `google_photo_url`, `classroom_group` i `external_group_id` són metadades de sincronització o agrupació.
+
+Format CSV d'importació de vincles Classroom-projecte:
+
+```text
+academic_year,classroom_key,project_slug,is_active
+```
+
+`is_active` és opcional. Si ve buit, el vincle queda actiu.
 
 ### Importació de fases
 

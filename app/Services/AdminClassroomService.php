@@ -41,7 +41,7 @@ class AdminClassroomService
 
         try {
             $csv = $this->readCsvWithHeaders((string) $file['tmp_name']);
-            $this->validateHeaders($csv['headers'], ['academic_year', 'project_slug', 'classroom_key', 'email'], 'classroom_members');
+            $this->validateHeaders($csv['headers'], ['academic_year', 'classroom_key', 'email'], 'classroom_members');
         } catch (Throwable $throwable) {
             return $this->result('No s’ha pogut llegir el CSV: ' . $throwable->getMessage(), 'error');
         }
@@ -81,6 +81,45 @@ class AdminClassroomService
         return $this->result($message, 'success');
     }
 
+    public function importProjectLinksUploadedFile(array $file): array
+    {
+        if (empty($file['tmp_name']) || !is_uploaded_file((string) $file['tmp_name'])) {
+            return $this->result('No s’ha rebut cap fitxer CSV de vincles Classroom-projecte.', 'error');
+        }
+
+        try {
+            $csv = $this->readCsvWithHeaders((string) $file['tmp_name']);
+            $this->validateHeaders($csv['headers'], ['academic_year', 'classroom_key', 'project_slug'], 'classroom_project_links');
+        } catch (Throwable $throwable) {
+            return $this->result('No s’ha pogut llegir el CSV: ' . $throwable->getMessage(), 'error');
+        }
+
+        $created = 0;
+        $updated = 0;
+        $errors = [];
+
+        foreach ($csv['rows'] as $rowNumber => $row) {
+            try {
+                $wasCreated = $this->importProjectLinkRow($row);
+                if ($wasCreated) {
+                    $created++;
+                } else {
+                    $updated++;
+                }
+            } catch (Throwable $throwable) {
+                $errors[] = 'Fila ' . $rowNumber . ': ' . $throwable->getMessage();
+            }
+        }
+
+        $message = 'Importació de vincles Classroom-projecte: ' . $created . ' creats i ' . $updated . ' actualitzats.';
+        if ($errors !== []) {
+            $message .= ' Errors: ' . implode(' | ', array_slice($errors, 0, 5));
+            return $this->result($message, 'error');
+        }
+
+        return $this->result($message, 'success');
+    }
+
     private function importMemberRow(array $row): array
     {
         $academicYear = trim((string) ($row['academic_year'] ?? ''));
@@ -95,18 +134,23 @@ class AdminClassroomService
         $googleUserId = trim((string) ($row['google_user_id'] ?? ''));
         $googlePhotoUrl = trim((string) ($row['google_photo_url'] ?? ''));
 
-        if ($academicYear === '' || $projectSlug === '' || $classroomKey === '' || $email === '') {
-            throw new RuntimeException('academic_year, project_slug, classroom_key i email son obligatoris.');
+        if ($academicYear === '' || $classroomKey === '' || $email === '') {
+            throw new RuntimeException('academic_year, classroom_key i email son obligatoris.');
         }
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             throw new RuntimeException('email no vàlid: ' . $email);
         }
 
-        $projectAcademicYearId = $this->projectAcademicYearId($academicYear, $projectSlug);
-        $classroom = $this->findOrCreateClassroom($projectAcademicYearId, $classroomKey, $classroomName, $classroomUrl, $googleClassroomId);
+        $academicYearId = $this->academicYearId($academicYear);
+        $projectAcademicYearId = $projectSlug !== '' ? $this->projectAcademicYearId($academicYear, $projectSlug) : null;
+        $classroom = $this->findOrCreateClassroom($academicYearId, $projectAcademicYearId, $classroomKey, $classroomName, $classroomUrl, $googleClassroomId);
         $user = $this->userByEmail($email);
         $warnings = [];
+
+        if ($projectAcademicYearId !== null) {
+            $this->upsertProjectLink((int) $classroom['id'], $projectAcademicYearId, true);
+        }
 
         if ($googleClassroomId !== '' && trim((string) ($classroom['google_classroom_id'] ?? '')) !== '' && $googleClassroomId !== trim((string) $classroom['google_classroom_id'])) {
             $warnings[] = 'google_classroom_id no coincideix amb el Classroom configurat.';
@@ -153,6 +197,37 @@ class AdminClassroomService
         ];
     }
 
+    private function importProjectLinkRow(array $row): bool
+    {
+        $academicYear = trim((string) ($row['academic_year'] ?? ''));
+        $classroomKey = trim((string) ($row['classroom_key'] ?? ''));
+        $projectSlug = trim((string) ($row['project_slug'] ?? ''));
+        $isActive = $this->parseActiveFlag($row['is_active'] ?? '1');
+
+        if ($academicYear === '' || $classroomKey === '' || $projectSlug === '') {
+            throw new RuntimeException('academic_year, classroom_key i project_slug son obligatoris.');
+        }
+
+        $academicYearId = $this->academicYearId($academicYear);
+        $projectAcademicYearId = $this->projectAcademicYearId($academicYear, $projectSlug);
+        $classroom = $this->findOrCreateClassroom($academicYearId, $projectAcademicYearId, $classroomKey, '', '', '');
+
+        return $this->upsertProjectLink((int) $classroom['id'], $projectAcademicYearId, $isActive);
+    }
+
+    private function academicYearId(string $academicYear): int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM academic_years WHERE name = :name LIMIT 1');
+        $stmt->execute(['name' => $academicYear]);
+        $id = $stmt->fetchColumn();
+
+        if ($id === false) {
+            throw new RuntimeException('No existeix el curs ' . $academicYear . '.');
+        }
+
+        return (int) $id;
+    }
+
     private function projectAcademicYearId(string $academicYear, string $projectSlug): int
     {
         $stmt = $this->pdo->prepare(
@@ -177,37 +252,41 @@ class AdminClassroomService
         return (int) $id;
     }
 
-    private function findOrCreateClassroom(int $projectAcademicYearId, string $classroomKey, string $classroomName, string $classroomUrl, string $googleClassroomId): array
+    private function findOrCreateClassroom(int $academicYearId, ?int $projectAcademicYearId, string $classroomKey, string $classroomName, string $classroomUrl, string $googleClassroomId): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT id, google_classroom_id
-             FROM classrooms
-             WHERE project_academic_year_id = :project_academic_year_id
-               AND classroom_key = :classroom_key
-             LIMIT 1'
+              FROM classrooms
+              WHERE academic_year_id = :academic_year_id
+                AND classroom_key = :classroom_key
+              LIMIT 1'
         );
         $stmt->execute([
-            'project_academic_year_id' => $projectAcademicYearId,
+            'academic_year_id' => $academicYearId,
             'classroom_key' => $classroomKey,
         ]);
         $classroom = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        $classroomNameInput = $classroomName;
         $classroomName = $classroomName !== '' ? $classroomName : $classroomKey;
         $classroomUrl = $classroomUrl !== '' ? $classroomUrl : null;
         $googleClassroomId = $googleClassroomId !== '' ? $googleClassroomId : null;
 
         if ($classroom !== false) {
             $update = $this->pdo->prepare(
-                'UPDATE classrooms
-                 SET classroom_name = :classroom_name,
+                "UPDATE classrooms
+                 SET classroom_name = CASE WHEN :classroom_name_input = '' THEN classroom_name ELSE :classroom_name END,
+                     project_academic_year_id = COALESCE(project_academic_year_id, :project_academic_year_id),
                      classroom_url = COALESCE(:classroom_url, classroom_url),
                      google_classroom_id = COALESCE(:google_classroom_id, google_classroom_id),
                      is_active = 1,
                      updated_at = CURRENT_TIMESTAMP
-                 WHERE id = :id'
+                 WHERE id = :id"
             );
             $update->execute([
                 'classroom_name' => $classroomName,
+                'classroom_name_input' => $classroomNameInput,
+                'project_academic_year_id' => $projectAcademicYearId,
                 'classroom_url' => $classroomUrl,
                 'google_classroom_id' => $googleClassroomId,
                 'id' => (int) $classroom['id'],
@@ -215,17 +294,18 @@ class AdminClassroomService
 
             return [
                 'id' => (int) $classroom['id'],
-                'google_classroom_id' => $googleClassroomId ?? (string) ($classroom['google_classroom_id'] ?? ''),
+                'google_classroom_id' => trim((string) ($classroom['google_classroom_id'] ?? '')) !== '' ? (string) $classroom['google_classroom_id'] : ($googleClassroomId ?? ''),
             ];
         }
 
         $insert = $this->pdo->prepare(
             'INSERT INTO classrooms
-                (project_academic_year_id, classroom_key, classroom_name, classroom_url, google_classroom_id, is_active)
+                (academic_year_id, project_academic_year_id, classroom_key, classroom_name, classroom_url, google_classroom_id, is_active)
              VALUES
-                (:project_academic_year_id, :classroom_key, :classroom_name, :classroom_url, :google_classroom_id, 1)'
+                (:academic_year_id, :project_academic_year_id, :classroom_key, :classroom_name, :classroom_url, :google_classroom_id, 1)'
         );
         $insert->execute([
+            'academic_year_id' => $academicYearId,
             'project_academic_year_id' => $projectAcademicYearId,
             'classroom_key' => $classroomKey,
             'classroom_name' => $classroomName,
@@ -237,6 +317,57 @@ class AdminClassroomService
             'id' => (int) $this->pdo->lastInsertId(),
             'google_classroom_id' => $googleClassroomId ?? '',
         ];
+    }
+
+    private function upsertProjectLink(int $classroomId, int $projectAcademicYearId, bool $isActive): bool
+    {
+        $exists = $this->classroomProjectLinkExists($classroomId, $projectAcademicYearId);
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO classroom_project_academic_years
+                (classroom_id, project_academic_year_id, is_active)
+             VALUES
+                (:classroom_id, :project_academic_year_id, :is_active)
+             ON DUPLICATE KEY UPDATE
+                is_active = VALUES(is_active),
+                updated_at = CURRENT_TIMESTAMP'
+        );
+        $stmt->execute([
+            'classroom_id' => $classroomId,
+            'project_academic_year_id' => $projectAcademicYearId,
+            'is_active' => $isActive ? 1 : 0,
+        ]);
+
+        return !$exists;
+    }
+
+    private function classroomProjectLinkExists(int $classroomId, int $projectAcademicYearId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*)
+             FROM classroom_project_academic_years
+             WHERE classroom_id = :classroom_id
+               AND project_academic_year_id = :project_academic_year_id'
+        );
+        $stmt->execute([
+            'classroom_id' => $classroomId,
+            'project_academic_year_id' => $projectAcademicYearId,
+        ]);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    private function parseActiveFlag(mixed $value): bool
+    {
+        $value = strtolower(trim((string) $value));
+        if ($value === '' || in_array($value, ['1', 'true', 'yes', 'si', 'sí', 'actiu', 'active'], true)) {
+            return true;
+        }
+
+        if (in_array($value, ['0', 'false', 'no', 'inactiu', 'inactive', 'arxivat'], true)) {
+            return false;
+        }
+
+        throw new RuntimeException('is_active no vàlid: ' . $value);
     }
 
     private function userByEmail(string $email): array

@@ -53,6 +53,7 @@
 -- - `45_classroom_members.sql` afegeix alumnat assignat a Google Classrooms.
 -- - `46_assessment_task_classroom_links.sql` afegeix URLs de tasques per Classroom.
 -- - `47_classroom_project_links.sql` permet vincular un Classroom amb diverses edicions de projecte.
+-- - `48_classrooms_nullable_project_year.sql` deixa el projecte directe de Classrooms com a compatibilitat nullable.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -73,6 +74,7 @@ SOURCE database/44_classrooms.sql
 SOURCE database/45_classroom_members.sql
 SOURCE database/46_assessment_task_classroom_links.sql
 SOURCE database/47_classroom_project_links.sql
+SOURCE database/48_classrooms_nullable_project_year.sql
 SOURCE database/32_project_teams.sql
 SOURCE database/39_project_team_member_roles.sql
 SOURCE database/38_ratpenats_project.sql
