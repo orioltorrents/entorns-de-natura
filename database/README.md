@@ -75,6 +75,7 @@ Canvis incrementals recents per a bases existents:
 - `44_classrooms.sql`: afegeix Classrooms vinculats a una edició concreta de projecte.
 - `45_classroom_members.sql`: afegeix l'assignació d'alumnat a Classrooms.
 - `46_assessment_task_classroom_links.sql`: afegeix les URLs de lliurament de tasques per Classroom.
+- `47_classroom_project_links.sql`: afegeix `classrooms.academic_year_id` i la taula pont entre Classrooms i edicions de projecte.
 
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
@@ -145,6 +146,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `project_academic_year_phases`
 - `project_academic_year_phase_tasks`
 - `classrooms`
+- `classroom_project_academic_years`
 - `classroom_members`
 - `assessment_task_classroom_links`
 
@@ -170,7 +172,8 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `assessment_records` es llegeix a través de `assessment_sources`.
 - `assessment_phases` i `assessment_tasks` són definició base.
 - `project_academic_year_phases` i `project_academic_year_phase_tasks` controlen visibilitat i ordre per curs.
-- `classrooms` descriu els Google Classrooms d'una edició concreta de projecte; les URLs de tasques concretes aniran en una relació posterior entre tasca d'edició i Classroom.
+- `classrooms` descriu els Google Classrooms d'un curs acadèmic; `project_academic_year_id` queda com a compatibilitat temporal.
+- `classroom_project_academic_years` vincula un Classroom amb una o més edicions de projecte.
 - `classroom_members` relaciona usuaris existents amb un Classroom concret i conserva dades d'auditoria provinents de Google Classroom.
 - `assessment_task_classroom_links` relaciona una tasca d'una edició amb un Classroom i guarda la URL concreta de lliurament.
 - Google Workspace també treballa amb `project_academic_year_id`.

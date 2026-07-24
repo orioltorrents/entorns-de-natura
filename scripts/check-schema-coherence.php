@@ -135,14 +135,32 @@ $editionScopedTables = [
         'indexes' => [['project_academic_year_id', 'is_active', 'display_order']],
     ],
     'classrooms' => [
-        'requiredColumns' => ['project_academic_year_id', 'classroom_key', 'classroom_name'],
+        'requiredColumns' => ['academic_year_id', 'project_academic_year_id', 'classroom_key', 'classroom_name'],
         'fks' => [[
+            'column' => 'academic_year_id',
+            'referencedTable' => 'academic_years',
+            'referencedColumn' => 'id',
+        ], [
             'column' => 'project_academic_year_id',
             'referencedTable' => 'project_academic_years',
             'referencedColumn' => 'id',
         ]],
-        'uniqueIndexes' => [['project_academic_year_id', 'classroom_key']],
-        'indexes' => [['project_academic_year_id', 'is_active'], ['google_classroom_id']],
+        'uniqueIndexes' => [['project_academic_year_id', 'classroom_key'], ['academic_year_id', 'classroom_key']],
+        'indexes' => [['project_academic_year_id', 'is_active'], ['academic_year_id', 'is_active'], ['google_classroom_id']],
+    ],
+    'classroom_project_academic_years' => [
+        'requiredColumns' => ['classroom_id', 'project_academic_year_id'],
+        'fks' => [[
+            'column' => 'classroom_id',
+            'referencedTable' => 'classrooms',
+            'referencedColumn' => 'id',
+        ], [
+            'column' => 'project_academic_year_id',
+            'referencedTable' => 'project_academic_years',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['classroom_id', 'project_academic_year_id']],
+        'indexes' => [['classroom_id', 'is_active'], ['project_academic_year_id']],
     ],
     'classroom_members' => [
         'requiredColumns' => ['classroom_id', 'user_id', 'student_email'],
