@@ -185,6 +185,49 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `documents`, `document_sources`, `document_fragments` i `document_visibility_rules` continuen sent la capa publicable que l'aplicació pot mostrar i filtrar segons permisos.
 - El contingut Google s'ha de validar, sanititzar i transformar cap a les taules finals quan calgui abans de publicar-lo.
 
+## Pendent: revisar noms i cognoms d'alumnes antics
+
+S'ha detectat que molts alumnes importats dels cursos `2023-2024` i `2024-2025` poden tenir els camps `users.name` i `users.surname` invertits.
+
+Patró observat:
+
+- `users.name` conté cognoms, sovint amb dues paraules;
+- `users.surname` conté el nom de pila.
+
+Exemple:
+
+- actual: `name = Desembre Peñas`, `surname = Aina`;
+- correcte: `name = Aina`, `surname = Desembre Peñas`.
+
+No es recomana esborrar usuaris per corregir-ho, perquè ja poden tenir relacions amb rols, classes, historial, Classrooms, equips, notes, visites o logs. La correcció ha de conservar el mateix `user_id`.
+
+Criteri recomanat:
+
+- no tocar `2025-2026`, que majoritàriament està correcte;
+- revisar i corregir només `2023-2024` i `2024-2025`;
+- fer abans una consulta de revisió;
+- aplicar un swap controlat només als casos clars;
+- revisar manualment noms compostos i casos ambigus;
+- fer la correcció dins una transacció i amb backup o taula temporal prèvia.
+
+Consulta de revisió orientativa:
+
+```sql
+SELECT u.id, u.name, u.surname, u.email, c.class_code, ay.name AS academic_year
+FROM users u
+INNER JOIN user_web_roles uwr ON uwr.user_id = u.id
+INNER JOIN web_roles wr ON wr.id = uwr.role_id AND wr.name = 'student'
+INNER JOIN class_members cm ON cm.user_id = u.id
+INNER JOIN classes c ON c.id = cm.class_id
+INNER JOIN academic_years ay ON ay.id = c.academic_year_id
+WHERE ay.name IN ('2023-2024', '2024-2025')
+  AND u.name LIKE '% %'
+  AND u.surname NOT LIKE '% %'
+ORDER BY ay.name, c.class_code, u.name, u.surname;
+```
+
+No fer `DELETE` per resoldre aquest cas. La solució recomanada és actualitzar només `users.name` i `users.surname` dels registres confirmats.
+
 ## Validació
 
 Després de qualsevol canvi d'esquema, és obligatori executar:
