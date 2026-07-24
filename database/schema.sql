@@ -51,6 +51,7 @@
 -- - `43_site_pages.sql` afegeix pàgines públiques globals sincronitzables des de Google Docs.
 -- - `44_classrooms.sql` afegeix Google Classrooms vinculats a edicions de projecte.
 -- - `45_classroom_members.sql` afegeix alumnat assignat a Google Classrooms.
+-- - `46_assessment_task_classroom_links.sql` afegeix URLs de tasques per Classroom.
 -- --------------------------------------------------------
 
 SOURCE database/02_education_tables.sql
@@ -69,6 +70,7 @@ SOURCE database/29_google_workspace_tables.sql
 SOURCE database/43_site_pages.sql
 SOURCE database/44_classrooms.sql
 SOURCE database/45_classroom_members.sql
+SOURCE database/46_assessment_task_classroom_links.sql
 SOURCE database/32_project_teams.sql
 SOURCE database/39_project_team_member_roles.sql
 SOURCE database/38_ratpenats_project.sql

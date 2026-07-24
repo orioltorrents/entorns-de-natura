@@ -397,6 +397,7 @@ project_academic_year_phases
 project_academic_year_phase_tasks
 classrooms
 classroom_members
+assessment_task_classroom_links
 ```
 
 Norma clau:
@@ -409,6 +410,7 @@ Norma clau:
 - així no copies la mateixa estructura cada curs.
 - `classrooms` guarda els Google Classrooms vinculats a una edició concreta de projecte, no a una tasca base.
 - `classroom_members` guarda quins usuaris de la web pertanyen a cada Classroom.
+- `assessment_task_classroom_links` guarda la URL concreta d'una tasca dins un Classroom.
 
 ### Classrooms
 
@@ -438,6 +440,31 @@ Regles:
 - la unicitat funcional és `project_academic_year_id + classroom_key`.
 
 El CSV unificat de fases, tasques i Classroom podrà alimentar `classrooms`, `assessment_phases`, `assessment_tasks` i les taules pont d'edició. L'importador és responsable de separar el CSV en el model normalitzat de base de dades.
+
+### Enllacos de tasques per Classroom
+
+La taula `assessment_task_classroom_links` relaciona una tasca assignada a una edició amb un Classroom concret.
+
+```text
+assessment_task_classroom_links.project_academic_year_phase_task_id -> project_academic_year_phase_tasks.id
+assessment_task_classroom_links.classroom_id                         -> classrooms.id
+```
+
+Camps principals:
+
+```text
+project_academic_year_phase_task_id
+classroom_id
+task_url
+is_visible
+```
+
+Regles:
+
+- `task_url` és la URL directa a la tasca de Google Classroom on l'alumnat ha de lliurar la feina;
+- una mateixa tasca conceptual pot tenir URLs diferents segons el Classroom;
+- la unicitat funcional és `project_academic_year_phase_task_id + classroom_id`;
+- aquesta taula no substitueix `assessment_tasks`, perquè `assessment_tasks` continua representant la tasca base.
 
 ### Membres de Classrooms
 
