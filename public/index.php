@@ -22,6 +22,7 @@ require_once dirname(__DIR__) . '/app/Services/AnalyticsService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminActionService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminAssessmentStructureService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminClassService.php';
+require_once dirname(__DIR__) . '/app/Services/AdminClassroomService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminDashboardService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminProjectService.php';
 require_once dirname(__DIR__) . '/app/Services/AdminStudentImportService.php';

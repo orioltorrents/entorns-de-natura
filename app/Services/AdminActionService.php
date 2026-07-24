@@ -59,6 +59,20 @@ class AdminActionService
             return $result;
         }
 
+        if ($action === 'toggle_classroom') {
+            $result = (new AdminClassroomService($this->pdo))->toggleClassroom($post);
+            $this->auditAdminAction($action);
+
+            return $result;
+        }
+
+        if ($action === 'import_classroom_members') {
+            $result = (new AdminClassroomService($this->pdo))->importMembersUploadedFile($files['classroom_members_file'] ?? []);
+            $this->auditAdminAction($action);
+
+            return $result;
+        }
+
         $assessmentHandlers = [
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',

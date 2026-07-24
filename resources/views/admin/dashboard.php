@@ -23,6 +23,7 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <a href="#classes">Classes</a>
+            <a href="#classrooms">Classrooms</a>
             <div class="admin-layout__nav-group" data-nav-group>
                 <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="projectes-submenu" aria-expanded="false" aria-controls="projectes-submenu">
                     Projectes
@@ -87,6 +88,8 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
             $projectTeamsByAcademicYear[$academicYearName] = (int) ($projectTeamsByAcademicYear[$academicYearName] ?? 0) + 1;
         }
         ksort($projectTeamsByAcademicYear, SORT_NATURAL);
+        $classroomSummary = is_array($classroomSummary ?? null) ? $classroomSummary : [];
+        $classrooms = is_array($classrooms ?? null) ? $classrooms : [];
         $userYearBreakdown = static function (array $usersToCount): array {
             $breakdown = [];
 
@@ -202,6 +205,24 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
+                </div>
+            </div>
+            <div class="admin-summary__card">
+                <div class="admin-summary__icon">🏫</div>
+                <div class="admin-summary__body">
+                    <span class="admin-summary__label">Classrooms</span>
+                    <span class="admin-summary__value"><?= (int) ($classroomSummary['total'] ?? 0) ?></span>
+                    <span class="admin-summary__desc admin-summary__desc--inline">
+                        <span class="admin-summary__state admin-summary__state--active"><?= (int) ($classroomSummary['active'] ?? 0) ?> actius</span>
+                        <span aria-hidden="true">·</span>
+                        <span class="admin-summary__state admin-summary__state--inactive"><?= (int) ($classroomSummary['archived'] ?? 0) ?> arxivats</span>
+                    </span>
+                    <div class="admin-summary__breakdown" aria-label="Alumnat assignat a Classrooms">
+                        <span class="admin-summary__breakdown-row">
+                            <span class="admin-summary__breakdown-count"><?= (int) ($classroomSummary['members'] ?? 0) ?></span>
+                            <span class="admin-summary__breakdown-label">alumnes assignats</span>
+                        </span>
+                    </div>
                 </div>
             </div>
             <div class="admin-summary__card">
@@ -1399,6 +1420,98 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                 </div>
                             </section>
                         <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div id="classrooms" class="card admin-panel admin-collapsible is-collapsed">
+            <div class="admin-panel__header">
+                <h2>Classrooms</h2>
+                <div class="admin-actions">
+                    <span class="status">Classrooms per projecte i curs</span>
+                    <button class="collapse-toggle" type="button" data-collapse="classrooms-content">Mostrar</button>
+                </div>
+            </div>
+
+            <div id="classrooms-content" class="admin-collapsible__content">
+                <section class="admin-import-block">
+                    <h3>Importar membres de Classroom</h3>
+                    <p class="muted">Format previst: <code>academic_year, project_slug, classroom_key, google_classroom_id, email, name, surname, google_user_id, google_photo_url</code>.</p>
+                    <p class="muted">No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
+                    <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
+                        <input type="hidden" name="action" value="import_classroom_members">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                        <div class="form__grid">
+                            <label>
+                                classroom_members.csv
+                                <input type="file" name="classroom_members_file" accept=".csv,text/csv" required>
+                            </label>
+                        </div>
+                        <button class="button button--secondary" type="submit">Importar membres</button>
+                    </form>
+                </section>
+
+                <?php if ($classrooms === []): ?>
+                    <div class="empty-state">
+                        <p>Encara no hi ha cap Classroom importat.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="admin-table__wrapper">
+                        <table class="admin-table admin-table--compact">
+                            <thead>
+                                <tr>
+                                    <th>Curs</th>
+                                    <th>Projecte</th>
+                                    <th>Classroom</th>
+                                    <th>Google ID</th>
+                                    <th>Alumnes</th>
+                                    <th>Tasques</th>
+                                    <th>Estat</th>
+                                    <th>Accions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($classrooms as $classroom): ?>
+                                    <?php
+                                    $classroomIsActive = (int) ($classroom['is_active'] ?? 0) === 1;
+                                    $classroomUrl = trim((string) ($classroom['classroom_url'] ?? ''));
+                                    $classroomStatusClass = $classroomIsActive ? 'status--active' : 'status--inactive';
+                                    ?>
+                                    <tr class="<?= $classroomIsActive ? '' : 'admin-assessment__row--muted' ?>">
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($classroom['academic_year_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <?php if ((int) ($classroom['academic_year_is_current'] ?? 0) === 1): ?>
+                                                <br><span class="status status--active">curs actual</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($classroom['project_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="muted"><?= htmlspecialchars((string) ($classroom['project_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td>
+                                            <strong><?= htmlspecialchars((string) ($classroom['classroom_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="muted"><?= htmlspecialchars((string) ($classroom['classroom_key'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($classroomUrl !== ''): ?>
+                                                <br><a class="admin-site-page-source-form__link" href="<?= htmlspecialchars($classroomUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Obrir Classroom</a>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?= trim((string) ($classroom['google_classroom_id'] ?? '')) !== '' ? htmlspecialchars((string) $classroom['google_classroom_id'], ENT_QUOTES, 'UTF-8') : '<span class="muted">No informat</span>' ?></td>
+                                        <td><?= (int) ($classroom['member_count'] ?? 0) ?></td>
+                                        <td><?= (int) ($classroom['task_link_count'] ?? 0) ?></td>
+                                        <td><span class="status <?= $classroomStatusClass ?>"><?= $classroomIsActive ? 'Actiu' : 'Arxivat' ?></span></td>
+                                        <td>
+                                            <form method="post" action="<?= url('admin') ?>#classrooms" class="admin-inline-action">
+                                                <input type="hidden" name="action" value="toggle_classroom">
+                                                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                                <input type="hidden" name="classroom_id" value="<?= (int) ($classroom['id'] ?? 0) ?>">
+                                                <button class="button button--secondary" type="submit"><?= $classroomIsActive ? 'Arxivar' : 'Reactivar' ?></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 <?php endif; ?>
             </div>

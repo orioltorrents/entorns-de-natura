@@ -481,10 +481,27 @@ Camps principals:
 classroom_id
 user_id
 student_email
+google_user_id
 google_photo_url
 classroom_group
 external_group_id
 is_active
+```
+
+Format CSV d'importació de membres:
+
+```text
+academic_year,project_slug,classroom_key,google_classroom_id,email,name,surname,google_user_id,google_photo_url
+```
+
+Mapeig:
+
+```text
+academic_year + project_slug -> project_academic_years.id
+classroom_key                -> classrooms.id dins l'edició
+email                        -> users.email i classroom_members.student_email
+google_user_id               -> classroom_members.google_user_id
+google_photo_url             -> classroom_members.google_photo_url
 ```
 
 Regles:
@@ -492,6 +509,8 @@ Regles:
 - `student_email` és obligatori i serveix per auditar l'import de Google Classroom;
 - l'importador ha de resoldre `user_id` a partir de `users.email`;
 - no s'han de crear usuaris nous automàticament des de l'import de membres de Classroom;
+- si `email` no existeix a `users.email`, la fila s'ha de rebutjar;
+- si l'usuari no té rol `student`, l'importador pot assignar-lo igualment però ha de generar un avís;
 - la unicitat funcional és `classroom_id + user_id`;
 - `google_user_id`, `google_photo_url`, `classroom_group` i `external_group_id` són metadades de sincronització o agrupació.
 

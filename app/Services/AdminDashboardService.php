@@ -24,6 +24,8 @@ class AdminDashboardService
         $projectAssignments = $this->projectAssignments();
         $projectTeamData = $this->projectTeamData($typicalProjectRoleNames);
         $sitePages = $this->sitePages();
+        $classrooms = $this->classrooms();
+        $classroomSummary = $this->classroomSummary();
         $classMemberships = $this->classMemberships();
         $classTeachers = $this->classTeachers();
         $assessmentStructure = (new AdminAssessmentStructureService($this->pdo))->assessmentStructure();
@@ -100,6 +102,8 @@ class AdminDashboardService
             'projectTeams' => array_values($projectTeamData['projectTeams']),
             'projectRoleGroups' => array_values($projectTeamData['projectRoleGroups']),
             'sitePages' => $sitePages,
+            'classrooms' => $classrooms,
+            'classroomSummary' => $classroomSummary,
             'projectRoles' => $projectRoles,
             'projectMembersWithoutRole' => $projectMembersWithoutRole,
             'projectTeamMembershipCount' => $projectTeamMembershipCount,
@@ -133,6 +137,57 @@ class AdminDashboardService
                     CHAR_LENGTH(COALESCE(content_json, "")) AS content_json_length
                FROM site_pages
               ORDER BY language_code, slug'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function classroomSummary(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT
+                COUNT(DISTINCT c.id) AS total,
+                SUM(CASE WHEN c.is_active = 1 THEN 1 ELSE 0 END) AS active,
+                SUM(CASE WHEN c.is_active = 0 THEN 1 ELSE 0 END) AS archived,
+                COUNT(DISTINCT cm.id) AS members
+             FROM classrooms c
+             LEFT JOIN classroom_members cm ON cm.classroom_id = c.id'
+        );
+        $summary = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total' => (int) ($summary['total'] ?? 0),
+            'active' => (int) ($summary['active'] ?? 0),
+            'archived' => (int) ($summary['archived'] ?? 0),
+            'members' => (int) ($summary['members'] ?? 0),
+        ];
+    }
+
+    private function classrooms(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT
+                c.id,
+                c.classroom_key,
+                c.classroom_name,
+                c.classroom_url,
+                c.google_classroom_id,
+                c.is_active,
+                p.name AS project_name,
+                p.slug AS project_slug,
+                ay.name AS academic_year_name,
+                ay.is_current AS academic_year_is_current,
+                COUNT(DISTINCT cm.id) AS member_count,
+                COUNT(DISTINCT atcl.id) AS task_link_count
+             FROM classrooms c
+             INNER JOIN project_academic_years pay ON pay.id = c.project_academic_year_id
+             INNER JOIN projects p ON p.id = pay.project_id
+             INNER JOIN academic_years ay ON ay.id = pay.academic_year_id
+             LEFT JOIN classroom_members cm ON cm.classroom_id = c.id AND cm.is_active = 1
+             LEFT JOIN assessment_task_classroom_links atcl ON atcl.classroom_id = c.id
+             GROUP BY c.id, c.classroom_key, c.classroom_name, c.classroom_url, c.google_classroom_id, c.is_active,
+                      p.name, p.slug, ay.name, ay.is_current
+             ORDER BY ay.is_current DESC, ay.start_year DESC, p.display_order, p.name, c.is_active DESC, c.classroom_name'
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

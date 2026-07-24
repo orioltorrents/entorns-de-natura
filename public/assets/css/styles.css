@@ -1567,6 +1567,8 @@ code {
 .form__group { display: grid; gap: .35rem; }
 .admin-form--compact { gap: .75rem; }
 .admin-form--compact .form__grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.admin-import-block { background: #f8fbf6; border: 1px solid #dfe9dc; border-radius: 12px; margin-bottom: 1rem; padding: 1rem; }
+.admin-import-block h3 { margin-top: 0; }
 
 .admin-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .admin-actions--end { justify-content: flex-end; }
