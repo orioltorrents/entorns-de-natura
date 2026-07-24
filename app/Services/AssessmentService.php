@@ -20,6 +20,11 @@ class AssessmentService
         $showAll = in_array('admin', $contextRoles, true) || in_array('teacher', $contextRoles, true);
         $projectAcademicYear = $this->projectAcademicYearForProject((int) $project['id'], $projectAcademicYearId);
         $structure = $this->assessmentStructureForProjectAcademicYear((int) $projectAcademicYear['id']);
+        $userId = (int) ($currentUser['id'] ?? 0);
+        $isStudent = $userId > 0 && in_array('student', $contextRoles, true);
+        $projectRoles = $isStudent ? $this->studentProjectRoles($userId, (int) $projectAcademicYear['id']) : [];
+        $taskUrls = $isStudent ? $this->studentClassroomTaskUrls($userId, (int) $projectAcademicYear['id']) : [];
+        $filterRoles = array_values(array_unique(array_merge($contextRoles, $projectRoles)));
 
         if ($structure === []) {
             return [
@@ -28,6 +33,7 @@ class AssessmentService
                 'sections' => [],
                 'context' => [
                     'roles' => $contextRoles,
+                    'project_roles' => $projectRoles,
                     'show_all' => $showAll,
                 ],
             ];
@@ -39,16 +45,18 @@ class AssessmentService
             $items = [];
 
             foreach ($phase['tasks'] as $task) {
-                if (!$showAll && !$this->taskMatchesAnyRole((string) ($task['role_filter'] ?? ''), $contextRoles)) {
+                if (!$showAll && !$this->taskMatchesAnyRole((string) ($task['role_filter'] ?? ''), $filterRoles)) {
                     continue;
                 }
 
+                $phaseTaskId = (int) ($task['phase_task_id'] ?? 0);
                 $items[] = [
                     'label' => (string) $task['title'],
                     'description' => $task['description'] !== null ? (string) $task['description'] : '',
                     'weight' => $task['weight_label'] !== null ? (string) $task['weight_label'] : '',
                     'source_column' => (string) $task['source_column'],
                     'role_filter' => (string) ($task['role_filter'] ?? ''),
+                    'task_url' => $taskUrls[$phaseTaskId] ?? '',
                 ];
             }
 
@@ -69,6 +77,7 @@ class AssessmentService
             'sections' => $sections,
             'context' => [
                 'roles' => $contextRoles,
+                'project_roles' => $projectRoles,
                 'show_all' => $showAll,
             ],
         ];
@@ -284,6 +293,7 @@ class AssessmentService
                 ap.section_type,
                 payp.display_order AS phase_order,
                 at.id AS task_id,
+                paypt.id AS phase_task_id,
                 at.source_column,
                 at.title AS task_title,
                 at.description AS task_description,
@@ -322,6 +332,7 @@ class AssessmentService
 
             $phases[$phaseId]['tasks'][] = [
                 'id' => (int) $row['task_id'],
+                'phase_task_id' => (int) $row['phase_task_id'],
                 'source_column' => (string) $row['source_column'],
                 'title' => (string) $row['task_title'],
                 'description' => $row['task_description'],
@@ -332,6 +343,73 @@ class AssessmentService
         }
 
         return array_values($phases);
+    }
+
+    private function studentProjectRoles(int $userId, int $projectAcademicYearId): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT DISTINCT role_name
+             FROM (
+                 SELECT pr.name AS role_name
+                 FROM project_teams pt
+                 INNER JOIN project_team_members ptm ON ptm.project_team_id = pt.id
+                 INNER JOIN project_team_member_roles ptmr ON ptmr.project_team_member_id = ptm.id
+                 INNER JOIN project_roles pr ON pr.id = ptmr.project_role_id
+                 WHERE pt.project_academic_year_id = :project_academic_year_id_multi
+                   AND ptm.user_id = :user_id_multi
+
+                 UNION
+
+                 SELECT pr.name AS role_name
+                 FROM project_teams pt
+                 INNER JOIN project_team_members ptm ON ptm.project_team_id = pt.id
+                 INNER JOIN project_roles pr ON pr.id = ptm.project_role_id
+                 WHERE pt.project_academic_year_id = :project_academic_year_id_primary
+                   AND ptm.user_id = :user_id_primary
+             ) roles
+             WHERE role_name IS NOT NULL
+             ORDER BY role_name'
+        );
+        $stmt->execute([
+            'project_academic_year_id_multi' => $projectAcademicYearId,
+            'user_id_multi' => $userId,
+            'project_academic_year_id_primary' => $projectAcademicYearId,
+            'user_id_primary' => $userId,
+        ]);
+
+        return array_values(array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
+    private function studentClassroomTaskUrls(int $userId, int $projectAcademicYearId): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT atcl.project_academic_year_phase_task_id, atcl.task_url
+             FROM assessment_task_classroom_links atcl
+             INNER JOIN classrooms c ON c.id = atcl.classroom_id
+             INNER JOIN classroom_members cm ON cm.classroom_id = c.id
+             INNER JOIN classroom_project_academic_years cpay ON cpay.classroom_id = c.id
+             WHERE cm.user_id = :user_id
+               AND cm.is_active = 1
+               AND c.is_active = 1
+               AND cpay.project_academic_year_id = :project_academic_year_id
+               AND cpay.is_active = 1
+               AND atcl.is_visible = 1
+             ORDER BY atcl.project_academic_year_phase_task_id, atcl.id'
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'project_academic_year_id' => $projectAcademicYearId,
+        ]);
+
+        $urls = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $phaseTaskId = (int) $row['project_academic_year_phase_task_id'];
+            if ($phaseTaskId > 0 && !isset($urls[$phaseTaskId])) {
+                $urls[$phaseTaskId] = (string) $row['task_url'];
+            }
+        }
+
+        return $urls;
     }
 
     private function projectAcademicYearForProject(int $projectId, ?int $projectAcademicYearId = null): array

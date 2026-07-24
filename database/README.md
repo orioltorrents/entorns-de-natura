@@ -180,6 +180,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - L'import de membres de Classroom requereix `academic_year`, `classroom_key` i `email`; `project_slug` és opcional i, si ve informat, crea o reactiva el vincle a `classroom_project_academic_years`.
 - L'import separat de vincles Classroom-projecte accepta `academic_year,classroom_key,project_slug,is_active`.
 - L'import de tasques Classroom accepta `academic_year,classroom_key,classroom_name,classroom_url,google_classroom_id,project_slug,phase_key,phase_title,task_key,task_title,task_url,role_filter` i alimenta fases, tasques, vincles d'edició i `assessment_task_classroom_links`.
+- En l'import de tasques Classroom, `role_filter` és opcional: buit vol dir tasca visible per a tots els alumnes del Classroom; només s'ha d'omplir quan la tasca és específica d'un o més rols de projecte, separats per comes.
 - Un Classroom pot estar vinculat a més d'un projecte; en aquest cas no s'ha de crear un projecte fals, sinó vincular el mateix Classroom a les edicions reals amb `classroom_project_academic_years`.
 - Les fases i tasques són comunes al projecte/curs quan mantenen el mateix `phase_key` i `task_key`; `assessment_task_classroom_links` guarda la URL específica de cada Classroom.
 - Google Workspace també treballa amb `project_academic_year_id`.

@@ -292,6 +292,20 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                                     <span class="admin-summary__label">Fases</span>
                                     <span class="admin-summary__value"><?= (int) ($assessmentSummary['phases_total'] ?? 0) ?></span>
                                     <span class="admin-summary__desc"><?= (int) ($assessmentSummary['phases_active'] ?? 0) ?> actives</span>
+                                    <?php if (($assessmentSummary['by_project_year'] ?? []) !== []): ?>
+                                        <div class="admin-summary__breakdown" aria-label="Fases i tasques per projecte i any acadèmic">
+                                            <?php foreach (($assessmentSummary['by_project_year'] ?? []) as $assessmentProjectYear): ?>
+                                                <span class="admin-summary__breakdown-row">
+                                                    <span class="admin-summary__breakdown-count"><?= (int) ($assessmentProjectYear['phase_count'] ?? 0) ?></span>
+                                                    <span class="admin-summary__breakdown-label">
+                                                        <?= htmlspecialchars((string) ($assessmentProjectYear['project_name'] ?? $assessmentProjectYear['project_slug'] ?? 'Projecte'), ENT_QUOTES, 'UTF-8') ?> ·
+                                                        <?= htmlspecialchars((string) ($assessmentProjectYear['academic_year_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?> ·
+                                                        <?= (int) ($assessmentProjectYear['task_count'] ?? 0) ?> tasques
+                                                    </span>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="admin-summary__card">
@@ -300,6 +314,19 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                                     <span class="admin-summary__label">Tasques</span>
                                     <span class="admin-summary__value"><?= (int) ($assessmentSummary['tasks_total'] ?? 0) ?></span>
                                     <span class="admin-summary__desc"><?= (int) ($assessmentSummary['tasks_visible'] ?? 0) ?> visibles</span>
+                                    <?php if (($assessmentSummary['by_project_year'] ?? []) !== []): ?>
+                                        <div class="admin-summary__breakdown" aria-label="Tasques per projecte i any acadèmic">
+                                            <?php foreach (($assessmentSummary['by_project_year'] ?? []) as $assessmentProjectYear): ?>
+                                                <span class="admin-summary__breakdown-row">
+                                                    <span class="admin-summary__breakdown-count"><?= (int) ($assessmentProjectYear['task_count'] ?? 0) ?></span>
+                                                    <span class="admin-summary__breakdown-label">
+                                                        <?= htmlspecialchars((string) ($assessmentProjectYear['project_name'] ?? $assessmentProjectYear['project_slug'] ?? 'Projecte'), ENT_QUOTES, 'UTF-8') ?> ·
+                                                        <?= htmlspecialchars((string) ($assessmentProjectYear['academic_year_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                    </span>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -1496,6 +1523,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                     <p class="muted">Format previst: <code>academic_year, classroom_key, classroom_name, classroom_url, google_classroom_id, project_slug, phase_key, phase_title, task_key, task_title, task_url, role_filter</code>.</p>
                     <p class="muted">Aquest CSV crea o actualitza fases i tasques reals provinents de Classroom, vincula el Classroom amb el projecte i desa la URL de cada tasca.</p>
                     <p class="muted">Si diversos Classrooms fan les mateixes tasques, repeteix les files per cada <code>classroom_key</code> però mantén iguals <code>phase_key</code> i <code>task_key</code>. Així l’estructura queda compartida pel projecte i només canvia la <code>task_url</code> de cada Classroom.</p>
+                    <p class="muted"><strong>Ajuda per a <code>role_filter</code>:</strong> deixa'l buit si la tasca és comuna per a tots els alumnes del Classroom. Omple'l només si la tasca és específica d'un rol de projecte; per a més d'un rol, separa els noms amb comes.</p>
                     <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
                         <input type="hidden" name="action" value="import_classroom_task_links">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">

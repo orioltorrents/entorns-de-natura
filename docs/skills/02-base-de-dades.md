@@ -566,6 +566,8 @@ Regles:
 - l'importador crea o actualitza fases i tasques base a partir de `phase_key` i `task_key`;
 - l'importador crea o actualitza els vincles d'edició a `project_academic_year_phases` i `project_academic_year_phase_tasks`;
 - `task_url` ha de ser una URL `http` o `https` vàlida;
+- `role_filter` és opcional: buit vol dir tasca comuna visible per a tots els alumnes del Classroom;
+- si una tasca és específica d'un rol de projecte, `role_filter` ha de contenir el nom del rol; si n'hi ha més d'un, cal separar-los amb comes;
 - una mateixa tasca pot tenir una URL diferent per cada Classroom.
 
 Fases i tasques compartides entre Classrooms:
@@ -586,6 +588,14 @@ Exemple de tasca compartida:
 ```
 
 Aquest exemple crea o reutilitza una sola fase `fase-1` i una sola tasca `observacio-inicial` per al projecte `vespa-velutina`, però guarda tres `task_url`, una per Classroom.
+
+Exemple de tasca comuna per a tots els rols:
+
+```text
+2025-2026,25-26_4esoab_vespa-velutina,...,vespa-velutina,fase-1,Preparació,observacio-inicial,Observació inicial,https://classroom.google.com/...,
+```
+
+En aquest cas l'última columna queda buida expressament: `role_filter` buit fa que la tasca sigui visible per a tots els alumnes del Classroom.
 
 ### Importació de fases
 
