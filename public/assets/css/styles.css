@@ -487,6 +487,40 @@ code {
 .public-project-detail__meta { align-items: flex-start; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
 .public-project-detail__lead { max-width: 72ch; }
 .public-project-detail__lead--hero { margin-top: .4rem; }
+.project-tasks-hero { grid-template-columns: minmax(0, 760px); justify-content: center; text-align: center; }
+.project-task-context { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; margin-top: 1.25rem; }
+.project-task-context__pill {
+    background: #f4f8f2;
+    border: 1px solid #dce9d5;
+    border-radius: 999px;
+    color: #34533a;
+    display: inline-flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 170px;
+    padding: .65rem 1rem;
+    text-align: center;
+}
+.project-task-context__pill span { color: #637a65; font-size: .76rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.project-task-context__pill strong { font-size: .95rem; line-height: 1.25; }
+.project-task-item__header { align-items: center; display: flex; gap: .55rem; justify-content: flex-start; }
+.project-task-item__classroom-link {
+    align-items: center;
+    background: var(--leaf);
+    border-radius: 999px;
+    color: #fff;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: .85rem;
+    font-weight: 800;
+    height: 1.55rem;
+    justify-content: center;
+    line-height: 1;
+    text-decoration: none;
+    width: 1.55rem;
+}
+.project-task-item__classroom-link:hover,
+.project-task-item__classroom-link:focus-visible { background: var(--leaf-2); color: #fff; }
 .public-project-detail__meta {
     display: grid;
     gap: 1rem;

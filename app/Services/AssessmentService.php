@@ -23,19 +23,22 @@ class AssessmentService
         $userId = (int) ($currentUser['id'] ?? 0);
         $isStudent = $userId > 0 && in_array('student', $contextRoles, true);
         $projectRoles = $isStudent ? $this->studentProjectRoles($userId, (int) $projectAcademicYear['id']) : [];
+        $teamCodes = $isStudent ? $this->studentProjectTeamCodes($userId, (int) $projectAcademicYear['id']) : [];
         $taskUrls = $isStudent ? $this->studentClassroomTaskUrls($userId, (int) $projectAcademicYear['id']) : [];
         $filterRoles = array_values(array_unique(array_merge($contextRoles, $projectRoles)));
+        $context = [
+            'roles' => $contextRoles,
+            'project_roles' => $projectRoles,
+            'team_codes' => $teamCodes,
+            'show_all' => $showAll,
+        ];
 
         if ($structure === []) {
             return [
                 'project' => $project,
                 'projectAcademicYear' => $projectAcademicYear,
                 'sections' => [],
-                'context' => [
-                    'roles' => $contextRoles,
-                    'project_roles' => $projectRoles,
-                    'show_all' => $showAll,
-                ],
+                'context' => $context,
             ];
         }
 
@@ -75,11 +78,7 @@ class AssessmentService
             'project' => $project,
             'projectAcademicYear' => $projectAcademicYear,
             'sections' => $sections,
-            'context' => [
-                'roles' => $contextRoles,
-                'project_roles' => $projectRoles,
-                'show_all' => $showAll,
-            ],
+            'context' => $context,
         ];
     }
 
@@ -410,6 +409,26 @@ class AssessmentService
         }
 
         return $urls;
+    }
+
+    private function studentProjectTeamCodes(int $userId, int $projectAcademicYearId): array
+    {
+        $stmt = $this->pdo()->prepare(
+            'SELECT DISTINCT pt.team_code
+             FROM project_teams pt
+             INNER JOIN project_team_members ptm ON ptm.project_team_id = pt.id
+             WHERE pt.project_academic_year_id = :project_academic_year_id
+               AND ptm.user_id = :user_id
+               AND pt.is_active = 1
+               AND pt.team_code <> ""
+             ORDER BY pt.team_code'
+        );
+        $stmt->execute([
+            'project_academic_year_id' => $projectAcademicYearId,
+            'user_id' => $userId,
+        ]);
+
+        return array_values(array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
     }
 
     private function projectAcademicYearForProject(int $projectId, ?int $projectAcademicYearId = null): array

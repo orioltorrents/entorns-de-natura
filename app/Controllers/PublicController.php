@@ -101,6 +101,7 @@ class PublicController
             'context' => $tasksData['context'] ?? [],
             'currentUser' => $currentUser,
             'projectAcademicYearId' => $projectAcademicYearId,
+            'projectAcademicYear' => $tasksData['projectAcademicYear'] ?? $projectAcademicYear,
         ]);
     }
 

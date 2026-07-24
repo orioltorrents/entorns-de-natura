@@ -9,23 +9,33 @@ ob_start();
     </section>
 <?php else: ?>
     <?php $editionQuery = !empty($projectAcademicYearId) ? '?edicio=' . (int) $projectAcademicYearId : ''; ?>
+    <?php $academicYearName = (string) ($projectAcademicYear['academic_year_name'] ?? ''); ?>
+    <?php $teamCodes = array_values(array_filter(array_map('strval', $context['team_codes'] ?? []))); ?>
+    <?php $projectRoles = array_values(array_filter(array_map('strval', $context['project_roles'] ?? []))); ?>
     <article class="public-project-detail">
         <p class="breadcrumb public-project-detail__breadcrumb"><a href="<?= url(getLanguage() . '/projectes/' . $project['slug']) . $editionQuery ?>">Torna al projecte</a></p>
-        <div class="public-project-detail__hero">
+        <div class="public-project-detail__hero project-tasks-hero">
             <div>
-                <p class="public-project-detail__eyebrow">Projecte</p>
-                <h1 class="public-project-detail__title">Tasques de <?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-                <p class="lead public-project-detail__lead">Consulta les fases i tasques associades al projecte.</p>
+                <h1 class="public-project-detail__title">Les teves tasques del <?= htmlspecialchars($project['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+                <div class="project-task-context" aria-label="Context de les tasques">
+                    <span class="project-task-context__pill">
+                        <span>Projecte i curs</span>
+                        <strong><?= htmlspecialchars((string) $project['title'], ENT_QUOTES, 'UTF-8') ?><?= $academicYearName !== '' ? ' · ' . htmlspecialchars($academicYearName, ENT_QUOTES, 'UTF-8') : '' ?></strong>
+                    </span>
+                    <span class="project-task-context__pill">
+                        <span>El teu codi d'equip</span>
+                        <strong><?= htmlspecialchars($teamCodes !== [] ? implode(', ', $teamCodes) : 'Sense equip assignat', ENT_QUOTES, 'UTF-8') ?></strong>
+                    </span>
+                    <span class="project-task-context__pill">
+                        <span>El teu rol d'equip</span>
+                        <strong><?= htmlspecialchars($projectRoles !== [] ? implode(', ', $projectRoles) : 'Sense rol assignat', ENT_QUOTES, 'UTF-8') ?></strong>
+                    </span>
+                </div>
             </div>
-            <span class="public-project-detail__status status">tasques</span>
         </div>
     </article>
 
     <?php if (!empty($tasks)): ?>
-        <?php if (!empty($context['roles'])): ?>
-            <p class="status" style="margin-bottom: 1rem;">Context: <?= htmlspecialchars(implode(', ', $context['roles']), ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-
         <div class="project-task-phases">
             <?php foreach ($tasks as $phase): ?>
                 <article class="project-task-phase card">
@@ -39,12 +49,14 @@ ob_start();
                     <ul class="project-task-list">
                         <?php foreach ($phase['items'] as $task): ?>
                             <li class="project-task-item">
-                                <strong><?= htmlspecialchars((string) $task['label'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                <div class="project-task-item__header">
+                                    <strong><?= htmlspecialchars((string) $task['label'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <?php if (!empty($task['task_url'])): ?>
+                                        <a class="project-task-item__classroom-link" href="<?= htmlspecialchars((string) $task['task_url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="Obrir tasca a Classroom" title="Obrir tasca a Classroom">↗</a>
+                                    <?php endif; ?>
+                                </div>
                                 <?php if (!empty($task['description'])): ?>
                                     <p><?= htmlspecialchars((string) $task['description'], ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php endif; ?>
-                                <?php if (!empty($task['task_url'])): ?>
-                                    <a class="button button--small" href="<?= htmlspecialchars((string) $task['task_url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Obrir tasca a Classroom</a>
                                 <?php endif; ?>
                             </li>
                         <?php endforeach; ?>
