@@ -862,6 +862,30 @@ code {
 .admin-summary-shell .admin-summary { margin-bottom: 0; }
 .admin-summary-shell .admin-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .admin-summary-shell:not(.is-collapsed) .admin-collapsible__content { overflow: visible; }
+.admin-summary--sectioned {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.admin-summary__section {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.admin-summary__section-title {
+    color: #2f5d3a;
+    font-size: .9rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    margin: 0;
+    text-transform: uppercase;
+}
+.admin-summary__section-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.admin-summary__section-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .admin-summary__card {
     background: linear-gradient(180deg, #fff 0%, #fbfdf8 100%);
     border: 1px solid var(--border);
@@ -1594,6 +1618,8 @@ code {
     .teacher-dashboard__projects,
     .student-dashboard__projects { grid-template-columns: 1fr; }
     .admin-summary { grid-template-columns: 1fr 1fr; }
+    .admin-summary__section-grid,
+    .admin-summary__section-grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-metrics { grid-template-columns: 1fr; }
     .admin-panels { grid-template-columns: 1fr; }
     .admin-chart-grid { grid-template-columns: 1fr; }
@@ -1605,6 +1631,8 @@ code {
 
 @media (max-width: 680px) {
     .admin-summary { grid-template-columns: 1fr; }
+    .admin-summary__section-grid,
+    .admin-summary__section-grid--three { grid-template-columns: 1fr; }
     .admin-summary__body { padding-right: 3.5rem; }
     .site-header { align-items: flex-start; padding: .85rem 1rem; }
     .site-header__nav { justify-content: flex-start; }

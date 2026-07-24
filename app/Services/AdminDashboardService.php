@@ -26,6 +26,7 @@ class AdminDashboardService
         $sitePages = $this->sitePages();
         $classrooms = $this->classrooms();
         $classroomSummary = $this->classroomSummary();
+        $assessmentSummary = $this->assessmentSummary();
         $classMemberships = $this->classMemberships();
         $classTeachers = $this->classTeachers();
         $assessmentStructure = (new AdminAssessmentStructureService($this->pdo))->assessmentStructure();
@@ -104,6 +105,7 @@ class AdminDashboardService
             'sitePages' => $sitePages,
             'classrooms' => $classrooms,
             'classroomSummary' => $classroomSummary,
+            'assessmentSummary' => $assessmentSummary,
             'projectRoles' => $projectRoles,
             'projectMembersWithoutRole' => $projectMembersWithoutRole,
             'projectTeamMembershipCount' => $projectTeamMembershipCount,
@@ -154,12 +156,60 @@ class AdminDashboardService
              LEFT JOIN classroom_members cm ON cm.classroom_id = c.id'
         );
         $summary = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $projectRows = $this->classroomProjectSummary();
 
         return [
             'total' => (int) ($summary['total'] ?? 0),
             'active' => (int) ($summary['active'] ?? 0),
             'archived' => (int) ($summary['archived'] ?? 0),
-            'members' => (int) ($summary['members'] ?? 0),
+            'project_count' => count($projectRows),
+            'projects' => $projectRows,
+        ];
+    }
+
+    private function classroomProjectSummary(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT
+                p.name,
+                p.slug,
+                COUNT(DISTINCT c.id) AS classroom_count
+             FROM classroom_project_academic_years cpay
+             INNER JOIN classrooms c ON c.id = cpay.classroom_id
+             INNER JOIN project_academic_years pay ON pay.id = cpay.project_academic_year_id
+             INNER JOIN projects p ON p.id = pay.project_id
+             WHERE cpay.is_active = 1
+               AND c.is_active = 1
+             GROUP BY p.id, p.name, p.slug, p.display_order
+             ORDER BY p.display_order, p.name'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function assessmentSummary(): array
+    {
+        $phaseStmt = $this->pdo->query(
+            'SELECT
+                COUNT(DISTINCT id) AS total,
+                COUNT(DISTINCT CASE WHEN is_active = 1 THEN id END) AS active
+             FROM project_academic_year_phases'
+        );
+        $phaseSummary = $phaseStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $taskStmt = $this->pdo->query(
+            'SELECT
+                COUNT(DISTINCT id) AS total,
+                COUNT(DISTINCT CASE WHEN is_visible = 1 THEN id END) AS visible
+             FROM project_academic_year_phase_tasks'
+        );
+        $taskSummary = $taskStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'phases_total' => (int) ($phaseSummary['total'] ?? 0),
+            'phases_active' => (int) ($phaseSummary['active'] ?? 0),
+            'tasks_total' => (int) ($taskSummary['total'] ?? 0),
+            'tasks_visible' => (int) ($taskSummary['visible'] ?? 0),
         ];
     }
 

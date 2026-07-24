@@ -97,6 +97,7 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
         }
         ksort($projectTeamsByAcademicYear, SORT_NATURAL);
         $classroomSummary = is_array($classroomSummary ?? null) ? $classroomSummary : [];
+        $assessmentSummary = is_array($assessmentSummary ?? null) ? $assessmentSummary : [];
         $classrooms = is_array($classrooms ?? null) ? $classrooms : [];
         $userYearBreakdown = static function (array $usersToCount): array {
             $breakdown = [];
@@ -141,164 +142,168 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
             </div>
 
             <div id="resum-content" class="admin-collapsible__content">
-                <div class="admin-summary">
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">🛡️</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Rols de la web</span>
-                    <span class="admin-summary__value"><?= count($roles) ?></span>
-                    <div class="admin-summary__roles">
-                        <?php foreach ($roles as $role): ?>
-                            <span class="admin-summary__role-badge">
-                                <span class="admin-summary__breakdown-count"><?= (int) $role['user_count'] ?></span>
-                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">📅</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Anys acadèmics</span>
-                    <span class="admin-summary__value"><?= count($academicYears ?? []) ?></span>
-                    <div class="admin-summary__roles">
-                        <?php foreach (($academicYears ?? []) as $academicYear): ?>
-                            <span class="admin-summary__role-badge <?= ((int) ($academicYear['is_current'] ?? 0) === 1) ? 'admin-summary__role-badge--active' : '' ?>">
-                                <?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?>
-                                <?php if ((int) ($academicYear['is_current'] ?? 0) === 1): ?>
-                                    <span class="admin-summary__role-badge-status">actiu</span>
-                                <?php endif; ?>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">🌿</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Projectes</span>
-                    <span class="admin-summary__value"><?= count($projects) ?></span>
-                    <span class="admin-summary__desc admin-summary__desc--inline">
-                        <span class="admin-summary__state admin-summary__state--active"><?= $activeProjectsCount ?> actius</span>
-                        <span aria-hidden="true">·</span>
-                        <span class="admin-summary__state admin-summary__state--inactive"><?= $inactiveProjectsCount ?> inactius</span>
-                    </span>
-                    <?php if ($completedEditionsByProject !== []): ?>
-                        <div class="admin-summary__breakdown" aria-label="Vegades que s'ha fet cada projecte, sense comptar pendents">
-                            <?php foreach ($completedEditionsByProject as $projectName => $count): ?>
-                                <?php $projectStateClass = ($projectActiveByName[$projectName] ?? false) ? '' : ' admin-summary__breakdown-row--inactive'; ?>
-                                <span class="admin-summary__breakdown-row<?= $projectStateClass ?>">
-                                    <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
-                                    <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $projectName, ENT_QUOTES, 'UTF-8') ?></span>
-                                </span>
-                            <?php endforeach; ?>
+                <div class="admin-summary admin-summary--sectioned">
+                    <section class="admin-summary__section" aria-labelledby="summary-web-title">
+                        <h3 id="summary-web-title" class="admin-summary__section-title">Web</h3>
+                        <div class="admin-summary__section-grid">
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">👤</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Usuaris</span>
+                                    <span class="admin-summary__value"><?= count($users) ?></span>
+                                    <span class="admin-summary__desc">Registrats al sistema</span>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card admin-summary__card--good">
+                                <div class="admin-summary__icon">✅</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Usuaris actius</span>
+                                    <span class="admin-summary__value"><?= $activeUsersCount ?></span>
+                                    <span class="admin-summary__desc">Usuaris amb accés actiu</span>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">🛡️</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Rols de la web</span>
+                                    <span class="admin-summary__value"><?= count($roles) ?></span>
+                                    <div class="admin-summary__roles">
+                                        <?php foreach ($roles as $role): ?>
+                                            <span class="admin-summary__role-badge">
+                                                <span class="admin-summary__breakdown-count"><?= (int) $role['user_count'] ?></span>
+                                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $role['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card admin-summary__card--muted">
+                                <div class="admin-summary__icon">⏸️</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Usuaris inactius</span>
+                                    <span class="admin-summary__value"><?= $inactiveUsersCount ?></span>
+                                    <span class="admin-summary__desc">Usuaris desactivats</span>
+                                </div>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">👥</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Equips</span>
-                    <span class="admin-summary__value"><?= count($projectTeams ?? []) ?></span>
-                    <span class="admin-summary__desc"><?= (int) ($projectTeamMembershipCount ?? 0) ?> assignacions alumne-equip</span>
-                    <?php if ($projectTeamsByAcademicYear !== []): ?>
-                        <div class="admin-summary__breakdown" aria-label="Equips per any acadèmic">
-                            <?php foreach ($projectTeamsByAcademicYear as $academicYearName => $count): ?>
-                                <span class="admin-summary__breakdown-row">
-                                    <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
-                                    <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
-                                </span>
-                            <?php endforeach; ?>
+                    </section>
+
+                    <section class="admin-summary__section" aria-labelledby="summary-projectes-title">
+                        <h3 id="summary-projectes-title" class="admin-summary__section-title">Projectes</h3>
+                        <div class="admin-summary__section-grid">
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">🌿</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Projectes</span>
+                                    <span class="admin-summary__value"><?= count($projects) ?></span>
+                                    <span class="admin-summary__desc admin-summary__desc--inline">
+                                        <span class="admin-summary__state admin-summary__state--active"><?= $activeProjectsCount ?> actius</span>
+                                        <span aria-hidden="true">·</span>
+                                        <span class="admin-summary__state admin-summary__state--inactive"><?= $inactiveProjectsCount ?> inactius</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">📅</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Anys acadèmics</span>
+                                    <span class="admin-summary__value"><?= count($academicYears ?? []) ?></span>
+                                    <div class="admin-summary__roles">
+                                        <?php foreach (($academicYears ?? []) as $academicYear): ?>
+                                            <span class="admin-summary__role-badge <?= ((int) ($academicYear['is_current'] ?? 0) === 1) ? 'admin-summary__role-badge--active' : '' ?>">
+                                                <?= htmlspecialchars((string) $academicYear['name'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php if ((int) ($academicYear['is_current'] ?? 0) === 1): ?>
+                                                    <span class="admin-summary__role-badge-status">actiu</span>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">🎒</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Rols del projecte</span>
+                                    <span class="admin-summary__value"><?= count($projectRoles ?? []) ?></span>
+                                    <div class="admin-summary__roles">
+                                        <?php foreach (($projectRoles ?? []) as $projectRole): ?>
+                                            <span class="admin-summary__role-badge">
+                                                <span class="admin-summary__breakdown-count"><?= (int) $projectRole['member_count'] ?></span>
+                                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $projectRole['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            </span>
+                                        <?php endforeach; ?>
+                                        <?php if ((int) ($projectMembersWithoutRole ?? 0) > 0): ?>
+                                            <span class="admin-summary__role-badge admin-summary__role-badge--muted"><span class="admin-summary__breakdown-count"><?= (int) $projectMembersWithoutRole ?></span> <span class="admin-summary__role-badge-label">Sense rol</span></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">👥</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Equips</span>
+                                    <span class="admin-summary__value"><?= count($projectTeams ?? []) ?></span>
+                                    <span class="admin-summary__desc"><?= (int) ($projectTeamMembershipCount ?? 0) ?> assignacions alumne-equip</span>
+                                    <?php if ($projectTeamsByAcademicYear !== []): ?>
+                                        <div class="admin-summary__breakdown" aria-label="Equips per any acadèmic">
+                                            <?php foreach ($projectTeamsByAcademicYear as $academicYearName => $count): ?>
+                                                <span class="admin-summary__breakdown-row">
+                                                    <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
+                                                    <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">🏫</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Classrooms</span>
-                    <span class="admin-summary__value"><?= (int) ($classroomSummary['total'] ?? 0) ?></span>
-                    <span class="admin-summary__desc admin-summary__desc--inline">
-                        <span class="admin-summary__state admin-summary__state--active"><?= (int) ($classroomSummary['active'] ?? 0) ?> actius</span>
-                        <span aria-hidden="true">·</span>
-                        <span class="admin-summary__state admin-summary__state--inactive"><?= (int) ($classroomSummary['archived'] ?? 0) ?> arxivats</span>
-                    </span>
-                    <div class="admin-summary__breakdown" aria-label="Alumnat assignat a Classrooms">
-                        <span class="admin-summary__breakdown-row">
-                            <span class="admin-summary__breakdown-count"><?= (int) ($classroomSummary['members'] ?? 0) ?></span>
-                            <span class="admin-summary__breakdown-label">alumnes assignats</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">🎒</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Rols del projecte</span>
-                    <span class="admin-summary__value"><?= count($projectRoles ?? []) ?></span>
-                    <div class="admin-summary__roles">
-                        <?php foreach (($projectRoles ?? []) as $projectRole): ?>
-                            <span class="admin-summary__role-badge">
-                                <span class="admin-summary__breakdown-count"><?= (int) $projectRole['member_count'] ?></span>
-                                <span class="admin-summary__role-badge-label"><?= htmlspecialchars((string) $projectRole['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                        <?php if ((int) ($projectMembersWithoutRole ?? 0) > 0): ?>
-                            <span class="admin-summary__role-badge admin-summary__role-badge--muted"><span class="admin-summary__breakdown-count"><?= (int) $projectMembersWithoutRole ?></span> <span class="admin-summary__role-badge-label">Sense rol</span></span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card">
-                <div class="admin-summary__icon">👤</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Usuaris</span>
-                    <span class="admin-summary__value"><?= count($users) ?></span>
-                    <span class="admin-summary__desc">Registrats al sistema</span>
-                    <div class="admin-summary__breakdown" aria-label="Usuaris per any acadèmic">
-                        <?php foreach ($usersByAcademicYear as $academicYearName => $count): ?>
-                            <span class="admin-summary__breakdown-row">
-                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
-                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card admin-summary__card--good">
-                <div class="admin-summary__icon">✅</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Usuaris actius</span>
-                    <span class="admin-summary__value"><?= $activeUsersCount ?></span>
-                    <span class="admin-summary__desc">Usuaris amb accés actiu</span>
-                    <div class="admin-summary__breakdown" aria-label="Usuaris actius per any acadèmic">
-                        <?php foreach ($activeUsersByAcademicYear as $academicYearName => $count): ?>
-                            <span class="admin-summary__breakdown-row">
-                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
-                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-            <div class="admin-summary__card admin-summary__card--muted">
-                <div class="admin-summary__icon">⏸️</div>
-                <div class="admin-summary__body">
-                    <span class="admin-summary__label">Usuaris inactius</span>
-                    <span class="admin-summary__value"><?= $inactiveUsersCount ?></span>
-                    <span class="admin-summary__desc">Usuaris desactivats</span>
-                    <div class="admin-summary__breakdown" aria-label="Usuaris inactius per any acadèmic">
-                        <?php foreach ($inactiveUsersByAcademicYear as $academicYearName => $count): ?>
-                            <span class="admin-summary__breakdown-row">
-                                <span class="admin-summary__breakdown-count"><?= (int) $count ?></span>
-                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) $academicYearName, ENT_QUOTES, 'UTF-8') ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
+                    </section>
+
+                    <section class="admin-summary__section" aria-labelledby="summary-classroom-title">
+                        <h3 id="summary-classroom-title" class="admin-summary__section-title">Classroom</h3>
+                        <div class="admin-summary__section-grid admin-summary__section-grid--three">
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">🏫</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Classrooms</span>
+                                    <span class="admin-summary__value"><?= (int) ($classroomSummary['total'] ?? 0) ?></span>
+                                    <span class="admin-summary__desc admin-summary__desc--inline">
+                                        <span class="admin-summary__state admin-summary__state--active"><?= (int) ($classroomSummary['active'] ?? 0) ?> actius</span>
+                                        <span aria-hidden="true">·</span>
+                                        <span class="admin-summary__state admin-summary__state--inactive"><?= (int) ($classroomSummary['archived'] ?? 0) ?> arxivats</span>
+                                    </span>
+                                    <div class="admin-summary__breakdown" aria-label="Projectes vinculats a Classrooms">
+                                        <span class="admin-summary__breakdown-row">
+                                            <span class="admin-summary__breakdown-count"><?= (int) ($classroomSummary['project_count'] ?? 0) ?></span>
+                                            <span class="admin-summary__breakdown-label">projectes vinculats</span>
+                                        </span>
+                                        <?php foreach (($classroomSummary['projects'] ?? []) as $classroomProject): ?>
+                                            <span class="admin-summary__breakdown-row">
+                                                <span class="admin-summary__breakdown-count"><?= (int) ($classroomProject['classroom_count'] ?? 0) ?></span>
+                                                <span class="admin-summary__breakdown-label"><?= htmlspecialchars((string) ($classroomProject['name'] ?? $classroomProject['slug'] ?? 'Projecte'), ENT_QUOTES, 'UTF-8') ?></span>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">🧩</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Fases</span>
+                                    <span class="admin-summary__value"><?= (int) ($assessmentSummary['phases_total'] ?? 0) ?></span>
+                                    <span class="admin-summary__desc"><?= (int) ($assessmentSummary['phases_active'] ?? 0) ?> actives</span>
+                                </div>
+                            </div>
+                            <div class="admin-summary__card">
+                                <div class="admin-summary__icon">📝</div>
+                                <div class="admin-summary__body">
+                                    <span class="admin-summary__label">Tasques</span>
+                                    <span class="admin-summary__value"><?= (int) ($assessmentSummary['tasks_total'] ?? 0) ?></span>
+                                    <span class="admin-summary__desc"><?= (int) ($assessmentSummary['tasks_visible'] ?? 0) ?> visibles</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </section>
