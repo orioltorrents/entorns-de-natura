@@ -1437,8 +1437,8 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             <div id="classrooms-content" class="admin-collapsible__content">
                 <section class="admin-import-block">
                     <h3>Importar membres de Classroom</h3>
-                    <p class="muted">Format previst: <code>academic_year, project_slug, classroom_key, google_classroom_id, email, name, surname, google_user_id, google_photo_url</code>.</p>
-                    <p class="muted">No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
+                    <p class="muted">Format previst: <code>academic_year, project_slug, classroom_key, google_classroom_id, email, name, surname, google_user_id, google_photo_url</code>. Opcionalment també pot incloure <code>classroom_name</code> i <code>classroom_url</code>.</p>
+                    <p class="muted">Pot crear o reactivar Classrooms si no existeixen. No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
                     <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
                         <input type="hidden" name="action" value="import_classroom_members">
                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">

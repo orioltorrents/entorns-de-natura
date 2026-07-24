@@ -147,8 +147,8 @@ class AdminDashboardService
         $stmt = $this->pdo->query(
             'SELECT
                 COUNT(DISTINCT c.id) AS total,
-                SUM(CASE WHEN c.is_active = 1 THEN 1 ELSE 0 END) AS active,
-                SUM(CASE WHEN c.is_active = 0 THEN 1 ELSE 0 END) AS archived,
+                COUNT(DISTINCT CASE WHEN c.is_active = 1 THEN c.id END) AS active,
+                COUNT(DISTINCT CASE WHEN c.is_active = 0 THEN c.id END) AS archived,
                 COUNT(DISTINCT cm.id) AS members
              FROM classrooms c
              LEFT JOIN classroom_members cm ON cm.classroom_id = c.id'

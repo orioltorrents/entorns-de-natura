@@ -494,6 +494,8 @@ Format CSV d'importació de membres:
 academic_year,project_slug,classroom_key,google_classroom_id,email,name,surname,google_user_id,google_photo_url
 ```
 
+Opcionalment el CSV pot incloure `classroom_name` i `classroom_url`. Si el Classroom no existeix, l'importador el crea amb `classroom_name` o, si aquest camp ve buit, amb `classroom_key` com a nom visible.
+
 Mapeig:
 
 ```text
@@ -508,6 +510,7 @@ Regles:
 
 - `student_email` és obligatori i serveix per auditar l'import de Google Classroom;
 - l'importador ha de resoldre `user_id` a partir de `users.email`;
+- l'importador pot crear o reactivar el Classroom quan existeix l'edició `academic_year + project_slug` però encara no hi ha cap fila a `classrooms` per aquell `classroom_key`;
 - no s'han de crear usuaris nous automàticament des de l'import de membres de Classroom;
 - si `email` no existeix a `users.email`, la fila s'ha de rebutjar;
 - si l'usuari no té rol `student`, l'importador pot assignar-lo igualment però ha de generar un avís;

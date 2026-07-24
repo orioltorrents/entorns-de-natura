@@ -86,6 +86,8 @@ class AdminClassroomService
         $academicYear = trim((string) ($row['academic_year'] ?? ''));
         $projectSlug = trim((string) ($row['project_slug'] ?? ''));
         $classroomKey = trim((string) ($row['classroom_key'] ?? ''));
+        $classroomName = trim((string) ($row['classroom_name'] ?? ''));
+        $classroomUrl = trim((string) ($row['classroom_url'] ?? ''));
         $googleClassroomId = trim((string) ($row['google_classroom_id'] ?? ''));
         $email = strtolower(trim((string) ($row['email'] ?? '')));
         $name = trim((string) ($row['name'] ?? ''));
@@ -102,7 +104,7 @@ class AdminClassroomService
         }
 
         $projectAcademicYearId = $this->projectAcademicYearId($academicYear, $projectSlug);
-        $classroom = $this->classroom($projectAcademicYearId, $classroomKey);
+        $classroom = $this->findOrCreateClassroom($projectAcademicYearId, $classroomKey, $classroomName, $classroomUrl, $googleClassroomId);
         $user = $this->userByEmail($email);
         $warnings = [];
 
@@ -175,7 +177,7 @@ class AdminClassroomService
         return (int) $id;
     }
 
-    private function classroom(int $projectAcademicYearId, string $classroomKey): array
+    private function findOrCreateClassroom(int $projectAcademicYearId, string $classroomKey, string $classroomName, string $classroomUrl, string $googleClassroomId): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT id, google_classroom_id
@@ -190,11 +192,51 @@ class AdminClassroomService
         ]);
         $classroom = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($classroom === false) {
-            throw new RuntimeException('No existeix el Classroom ' . $classroomKey . ' per aquesta edició.');
+        $classroomName = $classroomName !== '' ? $classroomName : $classroomKey;
+        $classroomUrl = $classroomUrl !== '' ? $classroomUrl : null;
+        $googleClassroomId = $googleClassroomId !== '' ? $googleClassroomId : null;
+
+        if ($classroom !== false) {
+            $update = $this->pdo->prepare(
+                'UPDATE classrooms
+                 SET classroom_name = :classroom_name,
+                     classroom_url = COALESCE(:classroom_url, classroom_url),
+                     google_classroom_id = COALESCE(:google_classroom_id, google_classroom_id),
+                     is_active = 1,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id'
+            );
+            $update->execute([
+                'classroom_name' => $classroomName,
+                'classroom_url' => $classroomUrl,
+                'google_classroom_id' => $googleClassroomId,
+                'id' => (int) $classroom['id'],
+            ]);
+
+            return [
+                'id' => (int) $classroom['id'],
+                'google_classroom_id' => $googleClassroomId ?? (string) ($classroom['google_classroom_id'] ?? ''),
+            ];
         }
 
-        return $classroom;
+        $insert = $this->pdo->prepare(
+            'INSERT INTO classrooms
+                (project_academic_year_id, classroom_key, classroom_name, classroom_url, google_classroom_id, is_active)
+             VALUES
+                (:project_academic_year_id, :classroom_key, :classroom_name, :classroom_url, :google_classroom_id, 1)'
+        );
+        $insert->execute([
+            'project_academic_year_id' => $projectAcademicYearId,
+            'classroom_key' => $classroomKey,
+            'classroom_name' => $classroomName,
+            'classroom_url' => $classroomUrl,
+            'google_classroom_id' => $googleClassroomId,
+        ]);
+
+        return [
+            'id' => (int) $this->pdo->lastInsertId(),
+            'google_classroom_id' => $googleClassroomId ?? '',
+        ];
     }
 
     private function userByEmail(string $email): array
