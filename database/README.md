@@ -73,6 +73,7 @@ Canvis incrementals recents per a bases existents:
 - `42_project_academic_year_statuses.sql`: normalitza els estats d'edició de projecte a `pendent`, `actiu`, `realitzat` i `arxivat`.
 - `43_site_pages.sql`: afegeix pàgines públiques globals sincronitzables des de Google Docs, sense dependre d'una edició de projecte.
 - `44_classrooms.sql`: afegeix Classrooms vinculats a una edició concreta de projecte.
+- `45_classroom_members.sql`: afegeix l'assignació d'alumnat a Classrooms.
 
 No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qualsevol base existent. Cal identificar-ne la versió o inspeccionar-ne l'estructura abans d'aplicar-les.
 
@@ -143,6 +144,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `project_academic_year_phases`
 - `project_academic_year_phase_tasks`
 - `classrooms`
+- `classroom_members`
 
 ### Google Workspace
 
@@ -167,6 +169,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `assessment_phases` i `assessment_tasks` són definició base.
 - `project_academic_year_phases` i `project_academic_year_phase_tasks` controlen visibilitat i ordre per curs.
 - `classrooms` descriu els Google Classrooms d'una edició concreta de projecte; les URLs de tasques concretes aniran en una relació posterior entre tasca d'edició i Classroom.
+- `classroom_members` relaciona usuaris existents amb un Classroom concret i conserva dades d'auditoria provinents de Google Classroom.
 - Google Workspace també treballa amb `project_academic_year_id`.
 - `site_pages` guarda contingut global del web que no depèn d'una edició acadèmica, com `/ca/que-es-entorns`.
 - Les taules `google_*` són capa d'origen i sincronització; no substitueixen les taules internes `documents_*`.

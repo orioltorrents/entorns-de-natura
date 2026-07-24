@@ -396,6 +396,7 @@ assessment_tasks
 project_academic_year_phases
 project_academic_year_phase_tasks
 classrooms
+classroom_members
 ```
 
 Norma clau:
@@ -407,6 +408,7 @@ Norma clau:
 - les fases i tasques es defineixen una sola vegada i després s'assignen a cada edició de projecte amb les taules pont;
 - així no copies la mateixa estructura cada curs.
 - `classrooms` guarda els Google Classrooms vinculats a una edició concreta de projecte, no a una tasca base.
+- `classroom_members` guarda quins usuaris de la web pertanyen a cada Classroom.
 
 ### Classrooms
 
@@ -436,6 +438,35 @@ Regles:
 - la unicitat funcional és `project_academic_year_id + classroom_key`.
 
 El CSV unificat de fases, tasques i Classroom podrà alimentar `classrooms`, `assessment_phases`, `assessment_tasks` i les taules pont d'edició. L'importador és responsable de separar el CSV en el model normalitzat de base de dades.
+
+### Membres de Classrooms
+
+La taula `classroom_members` relaciona l'alumnat existent a `users` amb un Classroom concret.
+
+```text
+classroom_members.classroom_id -> classrooms.id
+classroom_members.user_id      -> users.id
+```
+
+Camps principals:
+
+```text
+classroom_id
+user_id
+student_email
+google_photo_url
+classroom_group
+external_group_id
+is_active
+```
+
+Regles:
+
+- `student_email` és obligatori i serveix per auditar l'import de Google Classroom;
+- l'importador ha de resoldre `user_id` a partir de `users.email`;
+- no s'han de crear usuaris nous automàticament des de l'import de membres de Classroom;
+- la unicitat funcional és `classroom_id + user_id`;
+- `google_user_id`, `google_photo_url`, `classroom_group` i `external_group_id` són metadades de sincronització o agrupació.
 
 ### Importació de fases
 
