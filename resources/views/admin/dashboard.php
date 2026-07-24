@@ -1427,7 +1427,16 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
         <div id="classrooms" class="card admin-panel admin-collapsible is-collapsed">
             <div class="admin-panel__header">
-                <h2>Classrooms</h2>
+                <h2>
+                    <span class="admin-help">
+                        Classrooms
+                        <button class="admin-help__trigger" type="button" aria-label="Ajuda sobre els vincles entre Classrooms i projectes" aria-describedby="classrooms-project-links-help">?</button>
+                        <span class="admin-help__tooltip" id="classrooms-project-links-help" role="tooltip">
+                            Un Classroom pot tenir alumnes que treballen en més d’un projecte del mateix curs. Per això els membres s’importen una sola vegada i els projectes es vinculen a part.<br>
+                            <strong>Exemple:</strong> el Classroom <code>25-26_4esoab_estudi-impacte-ambiental</code> pot estar vinculat a <strong>MAT Penedès</strong> i <strong>Agroparc</strong>.
+                        </span>
+                    </span>
+                </h2>
                 <div class="admin-actions">
                     <span class="status">Classrooms per curs i projectes vinculats</span>
                     <button class="collapse-toggle" type="button" data-collapse="classrooms-content">Mostrar</button>
