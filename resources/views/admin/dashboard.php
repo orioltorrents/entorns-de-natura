@@ -1432,7 +1432,8 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                         Classrooms
                         <button class="admin-help__trigger" type="button" aria-label="Ajuda sobre els vincles entre Classrooms i projectes" aria-describedby="classrooms-project-links-help">?</button>
                         <span class="admin-help__tooltip" id="classrooms-project-links-help" role="tooltip">
-                            Un Classroom pot tenir alumnes que treballen en més d’un projecte del mateix curs. Per això els membres s’importen una sola vegada i els projectes es vinculen a part.<br>
+                            Si un Classroom correspon a un sol projecte, pots informar <code>project_slug</code> al CSV de membres i quedarà vinculat automàticament.<br>
+                            Si un Classroom inclou dos o més projectes, deixa <code>project_slug</code> buit al CSV de membres i després puja el fitxer petit de vincles Classroom-projecte.<br>
                             <strong>Exemple:</strong> el Classroom <code>25-26_4esoab_estudi-impacte-ambiental</code> pot estar vinculat a <strong>MAT Penedès</strong> i <strong>Agroparc</strong>.
                         </span>
                     </span>
