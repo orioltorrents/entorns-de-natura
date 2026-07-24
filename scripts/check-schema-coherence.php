@@ -134,6 +134,16 @@ $editionScopedTables = [
         'uniqueIndexes' => [['project_academic_year_id', 'team_code']],
         'indexes' => [['project_academic_year_id', 'is_active', 'display_order']],
     ],
+    'classrooms' => [
+        'requiredColumns' => ['project_academic_year_id', 'classroom_key', 'classroom_name'],
+        'fks' => [[
+            'column' => 'project_academic_year_id',
+            'referencedTable' => 'project_academic_years',
+            'referencedColumn' => 'id',
+        ]],
+        'uniqueIndexes' => [['project_academic_year_id', 'classroom_key']],
+        'indexes' => [['project_academic_year_id', 'is_active'], ['google_classroom_id']],
+    ],
     'project_team_members' => [
         'requiredColumns' => ['project_team_id', 'user_id', 'class_id', 'project_role_id'],
         'fks' => [[

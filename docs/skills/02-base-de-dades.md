@@ -395,6 +395,7 @@ assessment_phases
 assessment_tasks
 project_academic_year_phases
 project_academic_year_phase_tasks
+classrooms
 ```
 
 Norma clau:
@@ -405,6 +406,36 @@ Norma clau:
 - el filtratge de notes i imports s'ha de fer per edició, a través de `assessment_sources`;
 - les fases i tasques es defineixen una sola vegada i després s'assignen a cada edició de projecte amb les taules pont;
 - així no copies la mateixa estructura cada curs.
+- `classrooms` guarda els Google Classrooms vinculats a una edició concreta de projecte, no a una tasca base.
+
+### Classrooms
+
+La taula `classrooms` representa els Google Classrooms associats a una edició concreta de projecte.
+
+```text
+classrooms.project_academic_year_id -> project_academic_years.id
+```
+
+Camps principals:
+
+```text
+project_academic_year_id
+classroom_key
+classroom_name
+classroom_url
+google_classroom_id
+is_active
+```
+
+Regles:
+
+- `classroom_key` és una clau pròpia estable generada pel procés d'importació;
+- `google_classroom_id` és la referència externa de Google Classroom i pot ser nul si encara no està disponible;
+- `classroom_url` és la URL general del Classroom;
+- `task_url` no s'ha de guardar a `classrooms`, perquè és l'enllaç d'una tasca concreta dins aquell Classroom;
+- la unicitat funcional és `project_academic_year_id + classroom_key`.
+
+El CSV unificat de fases, tasques i Classroom podrà alimentar `classrooms`, `assessment_phases`, `assessment_tasks` i les taules pont d'edició. L'importador és responsable de separar el CSV en el model normalitzat de base de dades.
 
 ### Importació de fases
 
