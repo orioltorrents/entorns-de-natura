@@ -179,6 +179,7 @@ No s'ha d'inferir que totes les migracions incrementals s'han d'executar en qual
 - `assessment_task_classroom_links` relaciona una tasca d'una edició amb un Classroom i guarda la URL concreta de lliurament.
 - L'import de membres de Classroom requereix `academic_year`, `classroom_key` i `email`; `project_slug` és opcional i, si ve informat, crea o reactiva el vincle a `classroom_project_academic_years`.
 - L'import separat de vincles Classroom-projecte accepta `academic_year,classroom_key,project_slug,is_active`.
+- L'import de tasques Classroom accepta `academic_year,classroom_key,classroom_name,classroom_url,google_classroom_id,project_slug,phase_key,phase_title,task_key,task_title,task_url,role_filter` i alimenta fases, tasques, vincles d'edició i `assessment_task_classroom_links`.
 - Google Workspace també treballa amb `project_academic_year_id`.
 - `site_pages` guarda contingut global del web que no depèn d'una edició acadèmica, com `/ca/que-es-entorns`.
 - Les taules `google_*` són capa d'origen i sincronització; no substitueixen les taules internes `documents_*`.

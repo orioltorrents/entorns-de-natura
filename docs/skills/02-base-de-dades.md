@@ -534,6 +534,32 @@ academic_year,classroom_key,project_slug,is_active
 
 `is_active` és opcional. Si ve buit, el vincle queda actiu.
 
+Format CSV d'importació de tasques de Classroom:
+
+```text
+academic_year,classroom_key,classroom_name,classroom_url,google_classroom_id,project_slug,phase_key,phase_title,task_key,task_title,task_url,role_filter
+```
+
+Mapeig:
+
+```text
+academic_year + classroom_key -> classrooms.id
+project_slug + academic_year  -> project_academic_years.id
+phase_key + project_slug      -> assessment_phases.phase_key dins el projecte base
+task_key                      -> assessment_tasks.source_column dins la fase
+task_url                      -> assessment_task_classroom_links.task_url
+role_filter                   -> assessment_tasks.role_filter
+```
+
+Regles:
+
+- l'importador pot crear o actualitzar el Classroom;
+- l'importador vincula el Classroom amb el projecte a `classroom_project_academic_years`;
+- l'importador crea o actualitza fases i tasques base a partir de `phase_key` i `task_key`;
+- l'importador crea o actualitza els vincles d'edició a `project_academic_year_phases` i `project_academic_year_phase_tasks`;
+- `task_url` ha de ser una URL `http` o `https` vàlida;
+- una mateixa tasca pot tenir una URL diferent per cada Classroom.
+
 ### Importació de fases
 
 Les fases es poden importar des de CSV exportat de Google Sheets. El format actual espera aquests headers:

@@ -80,6 +80,13 @@ class AdminActionService
             return $result;
         }
 
+        if ($action === 'import_classroom_task_links') {
+            $result = (new AdminClassroomService($this->pdo))->importTaskLinksUploadedFile($files['classroom_task_links_file'] ?? []);
+            $this->auditAdminAction($action);
+
+            return $result;
+        }
+
         $assessmentHandlers = [
             'import_assessment_structure' => 'importAssessmentStructure',
             'toggle_assessment_phase' => 'toggleAssessmentPhase',

@@ -23,7 +23,16 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                 </div>
             </div>
             <a href="#classes">Classes</a>
-            <a href="#classrooms">Classrooms</a>
+            <div class="admin-layout__nav-group" data-nav-group>
+                <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="classrooms-submenu" aria-expanded="false" aria-controls="classrooms-submenu">
+                    Classrooms
+                </button>
+                <div class="admin-layout__submenu" id="classrooms-submenu" hidden>
+                    <a href="#classroom-membres">Membres</a>
+                    <a href="#classroom-projectes">Classroom-projectes</a>
+                    <a href="#classroom-tasques">Fases i tasques</a>
+                </div>
+            </div>
             <div class="admin-layout__nav-group" data-nav-group>
                 <button class="admin-layout__nav-toggle" type="button" data-nav-group-toggle="projectes-submenu" aria-expanded="false" aria-controls="projectes-submenu">
                     Projectes
@@ -34,7 +43,6 @@ $csrfToken = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
                     <a href="#rols">Rols de projecte</a>
                 </div>
             </div>
-            <a href="#avaluacio">Fases i tasques</a>
             <a href="#pagines-publiques">Pàgines públiques</a>
             <a href="<?= url('admin/sync-documents') ?>">Google Sync</a>
             <a href="#logs">Logs</a>
@@ -1445,7 +1453,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
             </div>
 
             <div id="classrooms-content" class="admin-collapsible__content">
-                <section class="admin-import-block">
+                <section id="classroom-membres" class="admin-import-block">
                     <h3>Importar membres de Classroom</h3>
                     <p class="muted">Format previst: <code>academic_year, classroom_key, email</code>. Opcionalment pot incloure <code>project_slug</code>, <code>google_classroom_id</code>, <code>name</code>, <code>surname</code>, <code>google_user_id</code>, <code>google_photo_url</code>, <code>classroom_name</code> i <code>classroom_url</code>.</p>
                     <p class="muted">Pot crear o reactivar Classrooms si no existeixen. Si <code>project_slug</code> ve informat, també crea o reactiva el vincle amb aquell projecte. No crea usuaris nous: assigna només emails que ja existeixen a <code>users.email</code>.</p>
@@ -1462,7 +1470,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                     </form>
                 </section>
 
-                <section class="admin-import-block">
+                <section id="classroom-projectes" class="admin-import-block">
                     <h3>Importar vincles Classroom-projecte</h3>
                     <p class="muted">Format previst: <code>academic_year, classroom_key, project_slug, is_active</code>. El camp <code>is_active</code> és opcional i accepta valors com <code>1</code>, <code>0</code>, <code>actiu</code> o <code>arxivat</code>.</p>
                     <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
@@ -1475,6 +1483,23 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                             </label>
                         </div>
                         <button class="button button--secondary" type="submit">Importar vincles</button>
+                    </form>
+                </section>
+
+                <section id="classroom-tasques" class="admin-import-block">
+                    <h3>Importar tasques de Classroom</h3>
+                    <p class="muted">Format previst: <code>academic_year, classroom_key, classroom_name, classroom_url, google_classroom_id, project_slug, phase_key, phase_title, task_key, task_title, task_url, role_filter</code>.</p>
+                    <p class="muted">Aquest CSV crea o actualitza fases i tasques reals provinents de Classroom, vincula el Classroom amb el projecte i desa la URL de cada tasca.</p>
+                    <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>#classrooms">
+                        <input type="hidden" name="action" value="import_classroom_task_links">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                        <div class="form__grid">
+                            <label>
+                                classroom_task_links.csv
+                                <input type="file" name="classroom_task_links_file" accept=".csv,.tsv,text/csv,text/tab-separated-values" required>
+                            </label>
+                        </div>
+                        <button class="button button--secondary" type="submit">Importar tasques</button>
                     </form>
                 </section>
 
@@ -1549,31 +1574,14 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
 
         <div id="avaluacio" class="card admin-panel admin-panel--assessment admin-collapsible is-collapsed">
             <div class="admin-panel__header">
-                <h2>Fases i tasques</h2>
+                <h2>Visibilitat de fases i tasques</h2>
                 <div class="admin-actions">
-                    <span class="status">Estructura d’avaluació</span>
+                    <span class="status">Estructura importada des de Classroom</span>
                     <button class="collapse-toggle" type="button" data-collapse="avaluacio-content">Mostrar</button>
                 </div>
             </div>
             <div id="avaluacio-content" class="admin-collapsible__content">
-            <p>Puja els CSV exportats de les pestanyes <strong>assessment_phases</strong> i <strong>assessment_tasks</strong>. Les fases i tasques es vinculen a una edició concreta fent servir <code>academic_year</code> i el projecte.</p>
-            <form class="admin-form" method="post" enctype="multipart/form-data" action="<?= url('admin') ?>">
-                <input type="hidden" name="action" value="import_assessment_structure">
-                <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
-                <div class="form__grid">
-                    <label>
-                        assessment_phases.csv
-                        <input type="file" name="phases_file" accept=".csv,text/csv" required>
-                    </label>
-                    <label>
-                        assessment_tasks.csv
-                        <input type="file" name="tasks_file" accept=".csv,text/csv" required>
-                    </label>
-                </div>
-                <p class="muted">Headers fases: academic_year, project, phase_key, phase_num, phase_name, phase_complet_name, phase_description, phase_comment, display_order, is_active.</p>
-                <p class="muted">Headers tasques: id, academic_year, project_slug, phase_key, task_name, title, description, weight_label, role_filter, display_order, is_visible.</p>
-                <button class="button" type="submit">Importar estructura</button>
-            </form>
+            <p class="muted">Les fases i tasques s’importen ara des de <strong>Classrooms &gt; Fases i tasques</strong>. Aquest bloc només gestiona la visibilitat de l’estructura ja importada.</p>
 
             <div class="admin-assessment">
                 <div class="admin-panel__header">
@@ -1607,7 +1615,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                 ordre <?= (int) $phase['display_order'] ?>
                                             </p>
                                         </div>
-                                        <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
+                                        <form method="post" action="<?= url('admin') ?>#classroom-tasques" class="admin-inline-action">
                                             <input type="hidden" name="action" value="toggle_assessment_phase">
                                             <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                             <input type="hidden" name="project_academic_year_phase_id" value="<?= (int) $phase['project_academic_year_phase_id'] ?>">
@@ -1646,7 +1654,7 @@ silvia@example.com,Sílvia,Serra,1,24-25_4ESOB,agroparc,2024-2025,24-25_agroparc
                                                             <td><?= $task['role_filter'] !== '' ? htmlspecialchars((string) $task['role_filter'], ENT_QUOTES, 'UTF-8') : '<span class="muted">Tots</span>' ?></td>
                                                             <td><span class="status"><?= ((int) $task['is_visible'] === 1) ? 'Visible' : 'Amagada' ?></span></td>
                                                             <td>
-                                                                  <form method="post" action="<?= url('admin') ?>#avaluacio" class="admin-inline-action">
+                                                                  <form method="post" action="<?= url('admin') ?>#classroom-tasques" class="admin-inline-action">
                                                                     <input type="hidden" name="action" value="toggle_assessment_task">
                                                                     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                                     <input type="hidden" name="project_academic_year_phase_task_id" value="<?= (int) $task['project_academic_year_phase_task_id'] ?>">
